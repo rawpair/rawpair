@@ -20,12 +20,24 @@ export default {
     channel.on("output", ({ data }) => term.write(data))
 
     term.onData(data => {
-      channel.push("input", { data })
-
-      // Echo it manually *except* for newline
-      if (data !== "\r") {
-        term.write(data)
+      channel.push("input", { data });
+    
+      if (data === '\r') {
+        // Force newline visually
+        term.write('\r\n');
+        return;
       }
-    })
+    
+      if (data === '\x7f') {
+        // Handle backspace
+        term.write('\b \b');
+      } else {
+        term.write(data);
+      }
+    });
+    
+    
+    
+
   }
 }

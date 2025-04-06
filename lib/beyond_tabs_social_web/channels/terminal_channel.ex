@@ -8,8 +8,10 @@ defmodule BeyondTabsSocialWeb.TerminalChannel do
     {:ok, assign(socket, :bridge, pid)}
   end
 
-  def handle_in("input", %{"data" => char}, socket) do
-    TerminalBridge.send_input(socket.assigns.bridge, char)
+  def handle_in("input", %{"data" => data}, socket) do
+    TerminalBridge.send_input(socket.assigns.bridge, data)
     {:noreply, socket}
   end
+
+
 end
