@@ -35,7 +35,7 @@ const EditorHook = {
 
     const editor = monaco.editor.create(this.el, {
       value: '',
-      language: 'javascript',
+      language: 'elixir',
       theme: 'vs-dark',
       automaticLayout: true
     })
