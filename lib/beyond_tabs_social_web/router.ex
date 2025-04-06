@@ -23,6 +23,13 @@ defmodule BeyondTabsSocialWeb.Router do
 
     live "/repo_repos", Repo.Index, :index
     live "/repo_repos/:id", Repo.Show
+
+    live "/workspaces", WorkspaceLive.Index, :index
+    live "/workspaces/new", WorkspaceLive.Index, :new
+    live "/workspaces/:id/edit", WorkspaceLive.Index, :edit
+
+    live "/workspaces/:id", WorkspaceLive.Show, :show
+    live "/workspaces/:id/show/edit", WorkspaceLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.

@@ -58,7 +58,8 @@ defmodule BeyondTabsSocial.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:httpoison, "~> 1.8"}
+      {:httpoison, "~> 1.8"},
+      {:slugify, "~> 1.3"}
     ]
   end
 
