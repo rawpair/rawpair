@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "monaco-editor": "^0.52.2",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.24"
+  }
+}

@@ -18,6 +18,9 @@ defmodule BeyondTabsSocialWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live "/repo_repos", Repo.Index, :index
+    live "/repo_repos/:id", Repo.Show
   end
 
   # Other scopes may use custom stacks.
