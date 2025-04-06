@@ -20,6 +20,19 @@ defmodule BeyondTabsSocialWeb.WorkspaceLive.Index do
     |> assign(:workspace, Workspaces.get_workspace!(id))
   end
 
+  @impl true
+  def handle_event("launch", %{"id" => id}, socket) do
+    workspace = Workspaces.get_workspace!(id)
+
+    case BeyondTabsSocial.Docker.WorkspaceManager.start_workspace(workspace) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Workspace launched!")}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to launch: #{inspect(reason)}")}
+    end
+  end
+
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New Workspace")

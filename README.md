@@ -30,3 +30,7 @@ docker run --name beyond-tabs-db \
   -e POSTGRES_DB=beyond_tabs_dev \
   -p 5432:5432 \
   -d postgres:15
+
+docker network create beyond_tabs_net
+
+

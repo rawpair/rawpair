@@ -26,7 +26,29 @@
       <.link navigate={~p"/workspaces/#{workspace}"}>Show</.link>
     </div>
     <.link patch={~p"/workspaces/#{workspace}/edit"}>Edit</.link>
+    
   </:action>
+  <:action :let={{_id, workspace}}>
+    <.link
+      phx-click={JS.push("launch", value: %{id: workspace.id})}
+      data-confirm="Start this workspace?"
+      class="text-blue-600 hover:underline"
+    >
+      Launch
+    </.link>
+  </:action>
+  <:action :let={{_id, workspace}}>
+    <%= if workspace.workspace_port do %>
+      <.link
+        href={"http://localhost:#{workspace.workspace_port}"}
+        target="_blank"
+        class="text-green-600 hover:underline"
+      >
+        Visit
+      </.link>
+    <% end %>
+  </:action>
+
   <:action :let={{id, workspace}}>
     <.link
       phx-click={JS.push("delete", value: %{id: workspace.id}) |> hide("##{id}")}
