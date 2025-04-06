@@ -1,0 +1,18 @@
+<!-- Monaco Editor -->
+<div id="monaco-editor" phx-hook="EditorHook" phx-update="ignore" class="h-[400px] border"></div>
+
+<!-- Chat UI -->
+<div class="mt-6 space-y-4">
+  <h2 class="text-lg font-semibold">Chat</h2>
+
+  <div id="chat-messages" class="bg-gray-900 text-white p-4 rounded max-h-[300px] overflow-y-auto">
+    <%= for msg <- Enum.reverse(@messages) do %>
+      <p><strong><%= msg.user %>:</strong> <%= msg.content %></p>
+    <% end %>
+  </div>
+
+  <form phx-submit="send_message" class="flex space-x-2">
+    <input name="message" type="text" placeholder="Say something…" class="flex-1 p-2 rounded" />
+    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Send</button>
+  </form>
+</div>

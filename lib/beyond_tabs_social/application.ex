@@ -12,6 +12,7 @@ defmodule BeyondTabsSocial.Application do
       BeyondTabsSocial.Repo,
       {DNSCluster, query: Application.get_env(:beyond_tabs_social, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: BeyondTabsSocial.PubSub},
+      BeyondTabsSocial.Chat,
       # Start the Finch HTTP client for sending emails
       {Finch, name: BeyondTabsSocial.Finch},
       # Start a worker by calling: BeyondTabsSocial.Worker.start_link(arg)

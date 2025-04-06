@@ -23,6 +23,10 @@ self.MonacoEnvironment = {
 
 const EditorHook = {
   mounted() {
+    if (this.initialized) return
+
+    this.initialized = true
+
     const slug = this.el.dataset.slug || 'default-room'
     const ydoc = new Y.Doc()
 
