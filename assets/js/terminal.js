@@ -14,7 +14,17 @@ export default {
     const socket = new Socket("/socket")
     socket.connect()
 
-    const channel = socket.channel(`terminal:${slug}`)
+
+
+    let sessionId = window.sessionStorage.getItem("terminal-session-id")
+    if (!sessionId) {
+      sessionId = crypto.randomUUID()
+      window.sessionStorage.setItem("terminal-session-id", sessionId)
+    }
+
+    const topic = `terminal:${slug}`
+
+    const channel = socket.channel(topic, { session_id: sessionId })
     channel.join()
 
     channel.on("output", ({ data }) => term.write(data))

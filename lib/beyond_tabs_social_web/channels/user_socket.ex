@@ -26,7 +26,7 @@ defmodule BeyondTabsSocialWeb.UserSocket do
   # performing token verification on connect.
   @impl true
   def connect(_params, socket, _connect_info) do
-    {:ok, socket}
+    {:ok, assign(socket, :session_id, Ecto.UUID.generate())}
   end
 
   # Socket IDs are topics that allow you to identify all sockets for a given user:
@@ -40,5 +40,5 @@ defmodule BeyondTabsSocialWeb.UserSocket do
   #
   # Returning `nil` makes this socket anonymous.
   @impl true
-  def id(_socket), do: nil
+  def id(socket), do: "session:#{socket.assigns.session_id}"
 end

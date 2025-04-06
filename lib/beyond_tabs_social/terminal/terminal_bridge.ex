@@ -18,6 +18,7 @@ defmodule BeyondTabsSocial.TerminalBridge do
         ]]
       )
 
+      Port.command(port, "export TERM=xterm\n")
 
 
     {:ok, %{port: port, slug: slug}}
