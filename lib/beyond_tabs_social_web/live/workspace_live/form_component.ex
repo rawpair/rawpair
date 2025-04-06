@@ -3,6 +3,14 @@ defmodule BeyondTabsSocialWeb.WorkspaceLive.FormComponent do
 
   alias BeyondTabsSocial.Workspaces
 
+  @docker_images [
+    {"Elixir (latest)", "elixir:latest"},
+    {"Node.js (20)", "node:20"},
+    {"Python (3.12)", "python:3.12"},
+    {"Go (1.22)", "golang:1.22"},
+    {"Rust (1.76)", "rust:1.76"}
+  ]
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -23,7 +31,13 @@ defmodule BeyondTabsSocialWeb.WorkspaceLive.FormComponent do
         <.input field={@form[:slug]} label="Slug" readonly />
         <p class="text-sm text-gray-500 mt-1">This will be used in the URL.</p>
         <.input field={@form[:description]} type="text" label="Description" />
-        <.input field={@form[:docker_image]} type="text" label="Docker image" />
+        <.input
+          field={@form[:docker_image]}
+          type="select"
+          label="Docker image"
+          options={@docker_images}
+        />
+
         <.input field={@form[:with_db]} type="select" label="Database" options={[
           {"None", :none},
           {"PostgreSQL", :postgres},
@@ -38,11 +52,13 @@ defmodule BeyondTabsSocialWeb.WorkspaceLive.FormComponent do
     """
   end
 
+
   @impl true
   def update(%{workspace: workspace} = assigns, socket) do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:docker_images, @docker_images)
      |> assign_new(:form, fn ->
        to_form(Workspaces.change_workspace(workspace))
      end)}

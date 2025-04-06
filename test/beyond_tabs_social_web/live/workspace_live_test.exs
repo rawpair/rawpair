@@ -4,9 +4,9 @@ defmodule BeyondTabsSocialWeb.WorkspaceLiveTest do
   import Phoenix.LiveViewTest
   import BeyondTabsSocial.WorkspacesFixtures
 
-  @create_attrs %{name: "some name", status: "some status", description: "some description", slug: "some slug", docker_image: "some docker_image", with_postgres: true, workspace_port: 42, postgres_port: 42, last_active_at: "2025-04-05T15:56:00Z"}
-  @update_attrs %{name: "some updated name", status: "some updated status", description: "some updated description", slug: "some updated slug", docker_image: "some updated docker_image", with_postgres: false, workspace_port: 43, postgres_port: 43, last_active_at: "2025-04-06T15:56:00Z"}
-  @invalid_attrs %{name: nil, status: nil, description: nil, slug: nil, docker_image: nil, with_postgres: false, workspace_port: nil, postgres_port: nil, last_active_at: nil}
+  @create_attrs %{name: "some name", status: "some status", description: "some description", slug: "some slug", docker_image: "some docker_image", with_db: 'None', workspace_port: 42, postgres_port: 42, last_active_at: "2025-04-05T15:56:00Z"}
+  @update_attrs %{name: "some updated name", status: "some updated status", description: "some updated description", slug: "some updated slug", docker_image: "some updated docker_image", with_db: 'None', workspace_port: 43, postgres_port: 43, last_active_at: "2025-04-06T15:56:00Z"}
+  @invalid_attrs %{name: nil, status: nil, description: nil, slug: nil, docker_image: nil, with_db: 'None', workspace_port: nil, postgres_port: nil, last_active_at: nil}
 
   defp create_workspace(_) do
     workspace = workspace_fixture()
