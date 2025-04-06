@@ -1,40 +1,42 @@
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
-import * as monaco from 'monaco-editor'
+import { MonacoBinding } from 'y-monaco'
 
-let editor = null
+self.MonacoEnvironment = {
+  getWorker: function (moduleId, label) {
+    if (label === 'json') {
+      return new Worker(new URL('monaco-editor/esm/vs/language/json/json.worker', import.meta.url), { type: 'module' })
+    }
+    if (label === 'css') {
+      return new Worker(new URL('monaco-editor/esm/vs/language/css/css.worker', import.meta.url), { type: 'module' })
+    }
+    if (label === 'html') {
+      return new Worker(new URL('monaco-editor/esm/vs/language/html/html.worker', import.meta.url), { type: 'module' })
+    }
+    if (label === 'typescript' || label === 'javascript') {
+      return new Worker(new URL('monaco-editor/esm/vs/language/typescript/ts.worker', import.meta.url), { type: 'module' })
+    }
+    return new Worker(new URL('monaco-editor/esm/vs/editor/editor.worker', import.meta.url), { type: 'module' })
+  }
+}
 
 const EditorHook = {
   mounted() {
-    const roomSlug = this.el.dataset.slug
+    const slug = this.el.dataset.slug || 'default-room'
     const ydoc = new Y.Doc()
 
-    // Connect to y-websocket server (assumes it's running on port 1234)
-    const provider = new WebsocketProvider('ws://localhost:1234', roomSlug, ydoc)
+    const provider = new WebsocketProvider('ws://localhost:1234', slug, ydoc)
     const yText = ydoc.getText('monaco')
 
-    // Monaco editor setup
-    editor = monaco.editor.create(this.el, {
+    const editor = monaco.editor.create(this.el, {
       value: '',
-      language: 'javascript', // or any other supported language
+      language: 'javascript',
       theme: 'vs-dark',
       automaticLayout: true
     })
 
-    // Bind Monaco <-> Yjs
-    const monacoBinding = new window.Y.MonacoBinding(
-      yText,
-      editor.getModel(),
-      new Set([editor]),
-      provider.awareness
-    )
-
-    // Save editor instance in hook
-    this.editor = editor
-  },
-
-  destroyed() {
-    this.editor?.dispose()
+    new MonacoBinding(yText, editor.getModel(), new Set([editor]), provider.awareness)
   }
 }
 

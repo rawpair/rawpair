@@ -35,8 +35,17 @@ config :beyond_tabs_social, BeyondTabsSocial.Mailer, adapter: Swoosh.Adapters.Lo
 config :esbuild,
   version: "0.17.11",
   beyond_tabs_social: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    args: ~w(
+      js/app.js
+      --bundle
+      --target=es2020
+      --format=esm
+      --outdir=../priv/static/assets
+      --external:/fonts/*
+      --external:/images/*
+      --loader:.ttf=file
+      --loader:.css=text
+    ),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]

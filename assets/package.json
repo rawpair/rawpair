@@ -1,6 +1,8 @@
 {
   "dependencies": {
+    "@y/websocket-server": "^0.1.1",
     "monaco-editor": "^0.52.2",
+    "y-monaco": "^0.1.6",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.24"
   }

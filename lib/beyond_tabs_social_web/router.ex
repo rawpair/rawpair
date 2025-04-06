@@ -19,6 +19,8 @@ defmodule BeyondTabsSocialWeb.Router do
 
     get "/", PageController, :home
 
+    live "/rooms/:slug", RoomLive.Show
+
     live "/repo_repos", Repo.Index, :index
     live "/repo_repos/:id", Repo.Show
   end
