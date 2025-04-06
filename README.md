@@ -33,4 +33,4 @@ docker run --name beyond-tabs-db \
 
 docker network create beyond_tabs_net
 
-
+HOST=localhost PORT=1234 npx y-websocket
