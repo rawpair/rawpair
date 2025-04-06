@@ -2,6 +2,9 @@
   <div class="col-span-3 border-r">
     <!-- Monaco Editor -->
     <div id="monaco-editor" phx-hook="EditorHook" phx-update="ignore" class="h-[400px] border"></div>
+
+    <div id="term" phx-hook="TerminalHook" data-slug={@slug} class="w-full h-[500px] bg-black"></div>
+
   </div>
 
   <!-- Chat UI -->

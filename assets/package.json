@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@xterm/xterm": "^5.5.0",
     "@y/websocket-server": "^0.1.1",
     "monaco-editor": "^0.52.2",
     "y-monaco": "^0.1.6",
