@@ -5,7 +5,7 @@ defmodule BeyondTabsSocialWeb.WorkspaceLive.FormComponent do
 
   @docker_images [
     {"Ada FSF GNAT (2022) [Debian Bookworm]", "ada:bookworm-2022"},
-    {"Ada FSF GNAT (2024) [Debian Trixie]", "ada:bookworm-2024"},
+    {"Ada FSF GNAT (2024) [Debian Trixie]", "ada:trixie-2024"},
     {"Clojure (temurin-21-tools-deps-bookworm)", "clojure:temurin-21"},
     {"Clojure (temurin-22-tools-deps-bookworm)", "clojure:temurin-22"},
     {"Clojure (temurin-23-tools-deps-bookworm)", "clojure:temurin-23"},

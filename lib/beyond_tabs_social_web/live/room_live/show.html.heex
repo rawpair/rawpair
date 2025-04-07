@@ -3,7 +3,13 @@
     <!-- Monaco Editor -->
     <div id="monaco-editor" phx-hook="EditorHook" phx-update="ignore" class="h-[400px] border"></div>
 
-    <div id="term" phx-hook="TerminalHook" phx-update="ignore" data-slug={@slug} class="w-full h-[500px] bg-black"></div>
+    <iframe
+      id="ttyd-frame"
+      phx-hook="TtydHook"
+      data-port={@workspace.workspace_port}
+      phx-update="ignore"
+      class="w-full h-[500px] border rounded"
+    />
 
   </div>
 

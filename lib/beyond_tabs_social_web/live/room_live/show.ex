@@ -1,10 +1,12 @@
 defmodule BeyondTabsSocialWeb.RoomLive.Show do
   use BeyondTabsSocialWeb, :live_view
 
+  alias BeyondTabsSocial.Workspaces
   alias BeyondTabsSocial.Chat
 
   @impl true
   def mount(%{"slug" => slug} = params, _session, socket) do
+    workspace = Workspaces.get_workspace_by_slug!(slug)
     username = Map.get(params, "user", random_username())
     topic = "room:#{slug}"
     messages = Chat.get_history(slug) |> Enum.reverse()
@@ -16,7 +18,8 @@ defmodule BeyondTabsSocialWeb.RoomLive.Show do
      |> assign(:user, username)
      |> assign(:page_title, "Room: #{slug}")
      |> assign(:topic, topic)
-     |> assign(:messages, messages)}
+     |> assign(:messages, messages)
+     |> assign(:workspace, workspace)}
   end
 
   @impl true

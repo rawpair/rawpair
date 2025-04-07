@@ -22,11 +22,13 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import EditorHook from './editor'
-import TerminalHook from "./terminal"
+// import TerminalHook from "./terminal"
+import TtydHook from "./ttyd"
 
 let Hooks = {
-  TerminalHook,
-  EditorHook
+  // TerminalHook,
+  EditorHook,
+  TtydHook
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

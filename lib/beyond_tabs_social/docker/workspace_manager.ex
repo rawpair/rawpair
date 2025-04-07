@@ -52,9 +52,12 @@ defmodule BeyondTabsSocial.Docker.WorkspaceManager do
       "docker", "run", "-d",
       "--name", container_name,
       "--network", @docker_network,
-      "-p", "#{port}:4000",
+      "-p", "#{port}:7681",
       image,
-      "tail", "-f", "/dev/null"
+      # individual bash instances
+      # "ttyd", "--writable", "-p", "7681", "bash",
+      # shared tmux based session
+      "ttyd", "--writable", "-p", "7681", "tmux", "new", "-A", "-s", "dev", "bash"
     ]
 
     :ok = remove_existing_container(container_name)
