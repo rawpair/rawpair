@@ -1,5 +1,5 @@
 import { Terminal } from "@xterm/xterm"
-
+import {v4 as uuidv4} from 'uuid'
 import { Socket } from "phoenix"
 
 export default {
@@ -18,7 +18,7 @@ export default {
 
     let sessionId = window.sessionStorage.getItem("terminal-session-id")
     if (!sessionId) {
-      sessionId = crypto.randomUUID()
+      sessionId = uuidv4()
       window.sessionStorage.setItem("terminal-session-id", sessionId)
     }
 

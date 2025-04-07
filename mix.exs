@@ -76,7 +76,7 @@ defmodule BeyondTabsSocial.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.copy": [
-        "cmd cp assets/css/monaco-editor.css priv/static/assets/monaco-editor.css",
+        "cmd cp assets/node_modules/monaco-editor/min/vs/editor/editor.main.css priv/static/assets/monaco-editor.css",
         "cmd cp assets/node_modules/@xterm/xterm/css/xterm.css priv/static/assets/xterm.css"
       ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],

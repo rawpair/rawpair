@@ -30,7 +30,9 @@ const EditorHook = {
     const slug = this.el.dataset.slug || 'default-room'
     const ydoc = new Y.Doc()
 
-    const provider = new WebsocketProvider('ws://localhost:1234', slug, ydoc)
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const host = window.location.hostname
+    const provider = new WebsocketProvider(`${protocol}://${host}:1234`, slug, ydoc)
     const yText = ydoc.getText('monaco')
 
     const editor = monaco.editor.create(this.el, {

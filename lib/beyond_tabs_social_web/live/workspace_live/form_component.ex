@@ -4,11 +4,15 @@ defmodule BeyondTabsSocialWeb.WorkspaceLive.FormComponent do
   alias BeyondTabsSocial.Workspaces
 
   @docker_images [
-    {"Elixir (latest)", "elixir:latest"},
-    {"Node.js (20)", "node:20"},
-    {"Python (3.12)", "python:3.12"},
-    {"Go (1.22)", "golang:1.22"},
-    {"Rust (1.76)", "rust:1.76"}
+    {"Ada FSF GNAT (2022) [Debian Bookworm]", "ada:bookworm-2022"},
+    {"Ada FSF GNAT (2024) [Debian Trixie]", "ada:bookworm-2024"},
+    {"Clojure (temurin-21-tools-deps-bookworm)", "clojure:temurin-21"},
+    {"Clojure (temurin-22-tools-deps-bookworm)", "clojure:temurin-22"},
+    {"Clojure (temurin-23-tools-deps-bookworm)", "clojure:temurin-23"},
+    {"Clojure (temurin-24-tools-deps-bookworm)", "clojure:temurin-24"},
+    {"GNU Cobol (3.1.2) [Debian Bookworm]", "gnucobol:bookworm"},
+    {"GNU Cobol (3.2.0) [Debian Trixie]", "gnucobol:trixie"},
+    {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "sbcl:trixie"},
   ]
 
   @impl true
