@@ -1,11 +1,26 @@
 {
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.0",
+    "@radix-ui/react-tabs": "^1.1.3",
     "@xterm/xterm": "^5.5.0",
     "@y/websocket-server": "^0.1.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.487.0",
     "monaco-editor": "^0.52.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.2.0",
+    "tw-animate-css": "^1.2.5",
     "uuid": "^11.1.0",
     "y-monaco": "^0.1.6",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.24"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "typescript": "^5.8.3"
   }
 }

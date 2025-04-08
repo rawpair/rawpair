@@ -1,7 +1,13 @@
 <div class="grid grid-cols-4 h-[100%]">
   <div class="col-span-3 border-r">
     <!-- Monaco Editor -->
-    <div id="monaco-editor" phx-hook="EditorHook" phx-update="ignore" class="h-[400px] border"></div>
+    <div 
+      phx-hook="EditorHook" 
+      phx-update="ignore" 
+      id="react-container" 
+      class="h-[400px] border"
+      data-slug={@slug}
+    ></div>
 
     <iframe
       id="ttyd-frame"

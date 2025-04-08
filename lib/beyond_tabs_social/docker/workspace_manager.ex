@@ -5,6 +5,8 @@ defmodule BeyondTabsSocial.Docker.WorkspaceManager do
 
   @docker_network "beyond_tabs_net"
 
+  @app_dir "/home/devuser/app"
+
 
   def start_workspace(%Workspace{} = workspace) do
     # generate container name
@@ -47,10 +49,12 @@ defmodule BeyondTabsSocial.Docker.WorkspaceManager do
   defp launch_container(workspace, container_name) do
     image = workspace.docker_image
     port = workspace.workspace_port
+    volume_name = "#{container_name}_volume"
 
     cmd = [
       "docker", "run", "-d",
       "--name", container_name,
+      "--mount", "source=#{volume_name},target=#{@app_dir}",
       "--network", @docker_network,
       "-p", "#{port}:7681",
       image,
@@ -111,4 +115,34 @@ defmodule BeyondTabsSocial.Docker.WorkspaceManager do
   defp update_status(workspace, status) do
     Workspaces.update_workspace(workspace, %{status: status})
   end
+
+  def list_files(slug) do
+    container = "workspace-#{slug}"
+
+    base_dir = "/home/devuser/app"
+
+    cmd = [
+      "docker", "exec", container,
+      "find", base_dir,
+      "-type", "f",
+      "-not", "-path", "*/node_modules/*",
+      "-not", "-path", "*/.git/*",
+      "-not", "-path", "*/*.swp"
+    ]
+
+    case System.cmd(Enum.at(cmd, 0), Enum.drop(cmd, 1), stderr_to_stdout: true) do
+      {output, 0} ->
+        files =
+          output
+          |> String.trim()
+          |> String.split("\n")
+          |> Enum.map(&String.replace_prefix(&1, base_dir <> "/", ""))
+
+        {:ok, files}
+
+      {error_output, _exit_code} ->
+        {:error, error_output}
+    end
+  end
+
 end

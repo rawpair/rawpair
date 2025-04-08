@@ -36,7 +36,7 @@ config :esbuild,
   version: "0.17.11",
   beyond_tabs_social: [
     args: ~w(
-      js/app.js
+      js/app.ts
       --bundle
       --target=es2020
       --format=esm
@@ -45,6 +45,7 @@ config :esbuild,
       --external:/images/*
       --loader:.ttf=file
       --loader:.css=text
+      --loader:.js=jsx
     ),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}

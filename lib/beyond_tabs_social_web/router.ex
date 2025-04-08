@@ -30,6 +30,11 @@ defmodule BeyondTabsSocialWeb.Router do
 
     live "/workspaces/:id", WorkspaceLive.Show, :show
     live "/workspaces/:id/show/edit", WorkspaceLive.Show, :edit
+
+    get "/api/workspaces/:slug/files", FileController, :index
+    get "/api/workspaces/:slug/files/*path", FileController, :get_file_contents
+    put "/api/workspaces/:slug/files/*path", FileController, :update_file
+
   end
 
   # Other scopes may use custom stacks.

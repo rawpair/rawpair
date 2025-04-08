@@ -1,7 +1,6 @@
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
-import * as Y from 'yjs'
-import { WebsocketProvider } from 'y-websocket'
-import { MonacoBinding } from 'y-monaco'
+import * as React from 'react'
+import ReactDOM from 'react-dom/client'
+import Editor from './editor/Editor'
 
 self.MonacoEnvironment = {
   getWorker: function (moduleId, label) {
@@ -27,22 +26,13 @@ const EditorHook = {
 
     this.initialized = true
 
-    const slug = this.el.dataset.slug || 'default-room'
-    const ydoc = new Y.Doc()
+    const slug = this.el.dataset.slug;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const host = window.location.hostname
-    const provider = new WebsocketProvider(`${protocol}://${host}:1234`, slug, ydoc)
-    const yText = ydoc.getText('monaco')
-
-    const editor = monaco.editor.create(this.el, {
-      value: '',
-      language: 'elixir',
-      theme: 'vs-dark',
-      automaticLayout: true
-    })
-
-    new MonacoBinding(yText, editor.getModel(), new Set([editor]), provider.awareness)
+    this.root = ReactDOM.createRoot(this.el)
+    this.root.render(<Editor slug={slug} />)
+  },
+  destroyed() {
+    this.root?.unmount()
   }
 }
 

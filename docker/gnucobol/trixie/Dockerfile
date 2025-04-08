@@ -14,12 +14,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     emacs \
     nano \
     git \
+    file \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN curl -L https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.aarch64 -o /usr/local/bin/ttyd \
     && chmod +x /usr/local/bin/ttyd
 
 ENV TERM xterm
+
+RUN useradd -ms /bin/bash devuser
+WORKDIR /home/devuser/app
+
+RUN chown devuser:devuser /home/devuser/app
+
+USER devuser
 
 EXPOSE 7681
 
