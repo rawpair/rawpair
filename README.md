@@ -58,6 +58,8 @@ SECRET_KEY_BASE=SV/7XaCy1K3ZxDqgRZluV0IfgHaSmD5oC1mVCH5vEd2ZWFmJERcSwadMOfvl1o5H
 CHECK_ORIGIN=//localhost:4000
 ```
 
+Then run:
+
 ```bash
 git clone https://github.com/rawpair/rawpair
 cd rawpair
@@ -65,6 +67,12 @@ docker compose up -d
 cd phoenix-app
 ./deploy.sh
 ./start.sh
+```
+
+**Important**: You should generate your own `SECRET_KEY_BASE`
+
+```bash
+mix phx.gen.secret
 ```
 
 Then open [http://localhost:4000](http://localhost:4000) to begin.
