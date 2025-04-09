@@ -35,3 +35,7 @@ HOST=0.0.0.0 PORT=1234 npx y-websocket
 
 
 docker run aquasec/trivy fs --scanners vuln,secret,misconfig .
+
+
+docker run --rm -it 99a88e241eca ash
+

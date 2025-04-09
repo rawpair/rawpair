@@ -21,6 +21,12 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  check_origin =
+    System.get_env("CHECK_ORIGIN")
+    |> to_string()
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -63,7 +69,8 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
-    secret_key_base: secret_key_base
+    secret_key_base: secret_key_base,
+    check_origin: check_origin
 
   # ## SSL Support
   #

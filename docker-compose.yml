@@ -1,0 +1,40 @@
+services:
+  web:
+    build:
+      context: ./phoenix-app
+    container_name: rawpair_web
+    ports:
+      - "4000:4000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db/rawpair_dev
+      - SECRET_KEY_BASE=SV/7XaCy1K3ZxDqgRZluV0IfgHaSmD5oC1mVCH5vEd2ZWFmJERcSwadMOfvl1o5H
+      - CHECK_ORIGIN=//localhost,//localhost:4000
+    depends_on:
+      - db
+      - yjs
+
+  db:
+    image: postgres:15
+    container_name: rawpair_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rawpair_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  yjs:
+    build:
+      context: ./yjs-server
+    container_name: rawpair_yjs
+    environment:
+      - HOST=0.0.0.0
+      - PORT=1234
+    ports:
+      - "1234:1234"
+
+volumes:
+  pgdata:
