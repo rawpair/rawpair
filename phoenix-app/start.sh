@@ -1,16 +1,25 @@
 #!/bin/sh
 set -e
 
-# Wait until Postgres is ready
-echo "Waiting for DB..."
-until pg_isready -h db -U postgres; do
-  sleep 1
-done
+if [ -z "$DATABASE_URL" ]; then
+  echo "DATABASE_URL is not set"
+  exit 1
+fi
+
+if [ -z "$SECRET_KEY_BASE" ]; then
+  echo "SECRET_KEY_BASE is not set"
+  exit 1
+fi
+
+if [ -z "$CHECK_ORIGIN" ]; then
+  echo "CHECK_ORIGIN is not set"
+  exit 1
+fi
 
 # Run migrations
 echo "Running migrations..."
-bin/rawpair eval "Rawpair.Release.migrate"
+_build/prod/rel/rawpair/bin/rawpair eval "Rawpair.Release.migrate"
 
 # Start app
 echo "Starting app..."
-exec bin/rawpair start
+MIX_ENV=prod PHX_SERVER=true exec _build/prod/rel/rawpair/bin/rawpair start

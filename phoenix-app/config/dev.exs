@@ -4,7 +4,7 @@ import Config
 config :rawpair, RawPair.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "db",
+  hostname: "localhost",
   database: "rawpair_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
