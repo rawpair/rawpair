@@ -67,7 +67,7 @@ cd phoenix-app
 ./start.sh
 ```
 
-Then open [http://<host>:4000](http://<host>:4000) to begin.
+Then open [http://localhost:4000](http://localhost:4000) to begin.
 
 In production you may want to run this behind a reverse proxy
 
