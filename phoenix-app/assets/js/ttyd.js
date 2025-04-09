@@ -1,8 +1,8 @@
 export default {
     mounted() {
-        const port = this.el.dataset.port
+        const slug = this.el.dataset.slug
         const { protocol, hostname } = window.location
-        const url = `${protocol}//${hostname}:${port}`
+        const url = `${protocol}//${hostname}/terminal/${slug}`
 
         this.el.src = url
     }

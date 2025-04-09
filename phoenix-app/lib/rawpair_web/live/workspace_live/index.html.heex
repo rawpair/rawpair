@@ -40,11 +40,21 @@
   <:action :let={{_id, workspace}}>
     <%= if workspace.workspace_port do %>
       <.link
-        href={"http://localhost:#{workspace.workspace_port}"}
-        target="_blank"
+        href={"/rooms/#{workspace.slug}"}
         class="text-green-600 hover:underline"
       >
-        Visit
+        Open
+      </.link>
+    <% end %>
+  </:action>
+  <:action :let={{_id, workspace}}>
+    <%= if workspace.workspace_port do %>
+      <.link
+        href={"http://localhost/terminal/#{workspace.slug}"}
+        class="text-green-800 hover:underline"
+        target="_blank"
+      >
+        Open Terminal
       </.link>
     <% end %>
   </:action>
