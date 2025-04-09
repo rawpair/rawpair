@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(BeyondTabsSocial.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(RawPair.Repo, :manual)

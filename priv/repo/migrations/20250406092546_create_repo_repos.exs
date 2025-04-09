@@ -1,4 +1,4 @@
-defmodule BeyondTabsSocial.Repo.Migrations.CreateRepoRepos do
+defmodule RawPair.Repo.Migrations.CreateRepoRepos do
   use Ecto.Migration
 
   def change do

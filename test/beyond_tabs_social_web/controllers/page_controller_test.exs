@@ -1,5 +1,5 @@
-defmodule BeyondTabsSocialWeb.PageControllerTest do
-  use BeyondTabsSocialWeb.ConnCase
+defmodule RawPairWeb.PageControllerTest do
+  use RawPairWeb.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")

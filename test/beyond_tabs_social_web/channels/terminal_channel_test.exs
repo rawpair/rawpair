@@ -1,11 +1,11 @@
-defmodule BeyondTabsSocialWeb.TerminalChannelTest do
-  use BeyondTabsSocialWeb.ChannelCase
+defmodule RawPairWeb.TerminalChannelTest do
+  use RawPairWeb.ChannelCase
 
   setup do
     {:ok, _, socket} =
-      BeyondTabsSocialWeb.UserSocket
+      RawPairWeb.UserSocket
       |> socket("user_id", %{some: :assign})
-      |> subscribe_and_join(BeyondTabsSocialWeb.TerminalChannel, "terminal:lobby")
+      |> subscribe_and_join(RawPairWeb.TerminalChannel, "terminal:lobby")
 
     %{socket: socket}
   end

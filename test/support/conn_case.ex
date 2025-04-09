@@ -1,4 +1,4 @@
-defmodule BeyondTabsSocialWeb.ConnCase do
+defmodule RawPairWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -11,7 +11,7 @@ defmodule BeyondTabsSocialWeb.ConnCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use BeyondTabsSocialWeb.ConnCase, async: true`, although
+  by setting `use RawPairWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -20,19 +20,19 @@ defmodule BeyondTabsSocialWeb.ConnCase do
   using do
     quote do
       # The default endpoint for testing
-      @endpoint BeyondTabsSocialWeb.Endpoint
+      @endpoint RawPairWeb.Endpoint
 
-      use BeyondTabsSocialWeb, :verified_routes
+      use RawPairWeb, :verified_routes
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import BeyondTabsSocialWeb.ConnCase
+      import RawPairWeb.ConnCase
     end
   end
 
   setup tags do
-    BeyondTabsSocial.DataCase.setup_sandbox(tags)
+    RawPair.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

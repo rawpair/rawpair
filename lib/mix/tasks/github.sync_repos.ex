@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Github.SyncRepos do
   use Mix.Task
-  alias BeyondTabsSocial.Repo
-  alias BeyondTabsSocial.Repos.Repo, as: RepoRecord
+  alias RawPair.Repo
+  alias RawPair.Repos.Repo, as: RepoRecord
 
   @shortdoc "Syncs popular GitHub repos for a given language"
 
@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Github.SyncRepos do
     url = "#{@github_api}?q=language:#{URI.encode(language)}&sort=stars&order=desc&per_page=10"
 
     headers = [
-      {"User-Agent", "beyond-tabs"},
+      {"User-Agent", "raw-tabs"},
       {"Accept", "application/vnd.github+json"}
     ]
 

@@ -1,11 +1,11 @@
 import Config
 
 # Configure your database
-config :beyond_tabs_social, BeyondTabsSocial.Repo,
+config :rawpair, RawPair.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "beyond_tabs_social_dev",
+  database: "rawpair_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -16,7 +16,7 @@ config :beyond_tabs_social, BeyondTabsSocial.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :beyond_tabs_social, BeyondTabsSocialWeb.Endpoint,
+config :rawpair, RawPairWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {0, 0, 0, 0}, port: 4000],
@@ -25,8 +25,8 @@ config :beyond_tabs_social, BeyondTabsSocialWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "12c8yQ/BJd9Vt4gGqm/Jk8wJZ3x3532I88vx6+lkoRHkq5C2HV7/zWt3lOvej3dY",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:beyond_tabs_social, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:beyond_tabs_social, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:rawpair, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:rawpair, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -53,17 +53,17 @@ config :beyond_tabs_social, BeyondTabsSocialWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :beyond_tabs_social, BeyondTabsSocialWeb.Endpoint,
+config :rawpair, RawPairWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/beyond_tabs_social_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/rawpair_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :beyond_tabs_social, dev_routes: true
+config :rawpair, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

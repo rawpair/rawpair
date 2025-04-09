@@ -1,4 +1,4 @@
-defmodule BeyondTabsSocial.Repo.Migrations.AddUniqueIndexToRepoGithubId do
+defmodule RawPair.Repo.Migrations.AddUniqueIndexToRepoGithubId do
   use Ecto.Migration
 
   def change do

@@ -76,9 +76,10 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    /* This used to work and then it suddenly stopped working... */
+    /* @apply border-border outline-ring/50; */
   }
   body {
-    @apply bg-background text-foreground;
+    /* @apply bg-background text-foreground; */
   }
 }

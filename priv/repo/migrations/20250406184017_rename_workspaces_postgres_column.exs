@@ -1,4 +1,4 @@
-defmodule BeyondTabsSocial.Repo.Migrations.RenameWithPostgresToWithDb do
+defmodule RawPair.Repo.Migrations.RenameWithPostgresToWithDb do
   use Ecto.Migration
 
   def change do

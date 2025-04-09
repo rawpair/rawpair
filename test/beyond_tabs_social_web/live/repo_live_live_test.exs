@@ -1,8 +1,8 @@
-defmodule BeyondTabsSocialWeb.RepoLiveTest do
-  use BeyondTabsSocialWeb.ConnCase
+defmodule RawPairWeb.RepoLiveTest do
+  use RawPairWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import BeyondTabsSocial.ReposFixtures
+  import RawPair.ReposFixtures
 
   @create_attrs %{name: "some name", owner: "some owner", primary_language: "some primary_language", stars: 42}
   @update_attrs %{name: "some updated name", owner: "some updated owner", primary_language: "some updated primary_language", stars: 43}

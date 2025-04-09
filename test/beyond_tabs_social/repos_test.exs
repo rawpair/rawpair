@@ -1,12 +1,12 @@
-defmodule BeyondTabsSocial.ReposTest do
-  use BeyondTabsSocial.DataCase
+defmodule RawPair.ReposTest do
+  use RawPair.DataCase
 
-  alias BeyondTabsSocial.Repos
+  alias RawPair.Repos
 
   describe "repo_repos" do
-    alias BeyondTabsSocial.Repos.Repo
+    alias RawPair.Repos.Repo
 
-    import BeyondTabsSocial.ReposFixtures
+    import RawPair.ReposFixtures
 
     @invalid_attrs %{name: nil, owner: nil, primary_language: nil, stars: nil}
 

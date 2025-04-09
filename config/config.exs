@@ -7,19 +7,19 @@
 # General application configuration
 import Config
 
-config :beyond_tabs_social,
-  ecto_repos: [BeyondTabsSocial.Repo],
+config :rawpair,
+  ecto_repos: [RawPair.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
-config :beyond_tabs_social, BeyondTabsSocialWeb.Endpoint,
+config :rawpair, RawPairWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: BeyondTabsSocialWeb.ErrorHTML, json: BeyondTabsSocialWeb.ErrorJSON],
+    formats: [html: RawPairWeb.ErrorHTML, json: RawPairWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: BeyondTabsSocial.PubSub,
+  pubsub_server: RawPair.PubSub,
   live_view: [signing_salt: "VAKpHlZy"]
 
 # Configures the mailer
@@ -29,12 +29,12 @@ config :beyond_tabs_social, BeyondTabsSocialWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :beyond_tabs_social, BeyondTabsSocial.Mailer, adapter: Swoosh.Adapters.Local
+config :rawpair, RawPair.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
-  beyond_tabs_social: [
+  rawpair: [
     args: ~w(
       js/app.ts
       --bundle
@@ -54,7 +54,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "4.0.9",
-  beyond_tabs_social: [
+  rawpair: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/app.css

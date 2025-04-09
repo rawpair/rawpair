@@ -1,7 +1,7 @@
-defmodule BeyondTabsSocial.ReposFixtures do
+defmodule RawPair.ReposFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `BeyondTabsSocial.Repos` context.
+  entities via the `RawPair.Repos` context.
   """
 
   @doc """
@@ -16,7 +16,7 @@ defmodule BeyondTabsSocial.ReposFixtures do
         primary_language: "some primary_language",
         stars: 42
       })
-      |> BeyondTabsSocial.Repos.create_repo()
+      |> RawPair.Repos.create_repo()
 
     repo
   end

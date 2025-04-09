@@ -1,9 +1,9 @@
-defmodule BeyondTabsSocial.MixProject do
+defmodule RawPair.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :beyond_tabs_social,
+      app: :rawpair,
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -18,7 +18,7 @@ defmodule BeyondTabsSocial.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {BeyondTabsSocial.Application, []},
+      mod: {RawPair.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -80,11 +80,11 @@ defmodule BeyondTabsSocial.MixProject do
         "cmd cp assets/node_modules/@xterm/xterm/css/xterm.css priv/static/assets/xterm.css"
       ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind beyond_tabs_social", "esbuild beyond_tabs_social"],
+      "assets.build": ["tailwind rawpair", "esbuild rawpair"],
       "assets.deploy": [
         "assets.copy",
-        "tailwind beyond_tabs_social --minify",
-        "esbuild beyond_tabs_social --minify",
+        "tailwind rawpair --minify",
+        "esbuild rawpair --minify",
         "phx.digest"
       ]
     ]

@@ -1,4 +1,4 @@
-defmodule BeyondTabsSocialWeb.ChannelCase do
+defmodule RawPairWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -11,7 +11,7 @@ defmodule BeyondTabsSocialWeb.ChannelCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use BeyondTabsSocialWeb.ChannelCase, async: true`, although
+  by setting `use RawPairWeb.ChannelCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -21,15 +21,15 @@ defmodule BeyondTabsSocialWeb.ChannelCase do
     quote do
       # Import conveniences for testing with channels
       import Phoenix.ChannelTest
-      import BeyondTabsSocialWeb.ChannelCase
+      import RawPairWeb.ChannelCase
 
       # The default endpoint for testing
-      @endpoint BeyondTabsSocialWeb.Endpoint
+      @endpoint RawPairWeb.Endpoint
     end
   end
 
   setup tags do
-    BeyondTabsSocial.DataCase.setup_sandbox(tags)
+    RawPair.DataCase.setup_sandbox(tags)
     :ok
   end
 end
