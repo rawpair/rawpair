@@ -1,9 +1,8 @@
 # rawpair
 
 **rawpair** is a self-hosted, real-time collaborative development environment.  
-It enables you to spin up isolated containers with a shared terminal and code editor for effective pair programming.
+It enables you to spin up isolated containers with a shared terminal and code editor for effective pair (or mob) programming.
 
-No cloud IDEs. No Docker-in-Docker.  
 Just fast, focused collaboration on your own infrastructure.
 
 ---
@@ -18,12 +17,33 @@ Just fast, focused collaboration on your own infrastructure.
 
 ---
 
+## Set up
+
+In case you haven't yet installed Erlang and Elixir.
+
+```bash
+asdf plugin add elixir
+asdf install elixir 27.3.2
+asdf set -u erlang 27.3.2
+
+asdf plugin add elixir
+asdf install elixir 1.18.3
+asdf set -u elixir 1.18.3
+```
+
 ## Quick Start (Development)
 
 ```bash
 git clone https://github.com/rawpair/rawpair
 cd rawpair
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+docker compose up -d
+cd phoenix-app
+mix deps.get
+cd assets
+npm i
+cd ..
+mkdir -p priv/static/assets
+mix phx.server
 ```
 
 Then open [http://localhost:4000](http://localhost:4000) to begin.
@@ -35,13 +55,16 @@ Set the required ENV variables, such as:
 ```bash
 DATABASE_URL=postgres://postgres:postgres@db/rawpair_dev
 SECRET_KEY_BASE=SV/7XaCy1K3ZxDqgRZluV0IfgHaSmD5oC1mVCH5vEd2ZWFmJERcSwadMOfvl1o5H
-CHECK_ORIGIN=//localhost,//localhost:4000,//192.168.0.213
+CHECK_ORIGIN=//localhost:4000
 ```
 
 ```bash
 git clone https://github.com/rawpair/rawpair
 cd rawpair
-docker compose up
+docker compose up -d
+cd phoenix-app
+./deploy.sh
+./start.sh
 ```
 
 Then open [http://<host>:4000](http://<host>:4000) to begin.
