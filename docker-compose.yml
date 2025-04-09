@@ -1,5 +1,11 @@
+networks:
+  rawpair:
+    name: rawpair
+
 services:
   web:
+    networks:
+      - rawpair
     build:
       context: ./phoenix-app
     container_name: rawpair_web
@@ -10,12 +16,14 @@ services:
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db/rawpair_dev
       - SECRET_KEY_BASE=SV/7XaCy1K3ZxDqgRZluV0IfgHaSmD5oC1mVCH5vEd2ZWFmJERcSwadMOfvl1o5H
-      - CHECK_ORIGIN=//localhost,//localhost:4000
+      - CHECK_ORIGIN=//localhost,//localhost:4000,//192.168.0.213
     depends_on:
       - db
       - yjs
 
   db:
+    networks:
+      - rawpair
     image: postgres:15
     container_name: rawpair_db
     restart: always
@@ -27,6 +35,8 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   yjs:
+    networks:
+      - rawpair
     build:
       context: ./yjs-server
     container_name: rawpair_yjs
@@ -35,6 +45,19 @@ services:
       - PORT=1234
     ports:
       - "1234:1234"
+
+  nginx:
+    networks:
+      - rawpair
+    image: nginx:stable
+    container_name: rawpair_nginx
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "7681:7681"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
 
 volumes:
   pgdata:

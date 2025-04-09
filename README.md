@@ -23,10 +23,22 @@ Just fast, focused collaboration on your own infrastructure.
 ```bash
 git clone https://github.com/rawpair/rawpair
 cd rawpair
-docker compose up
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
 Then open [http://localhost:4000](http://localhost:4000) to begin.
+
+## Quick Start (Production)
+
+```bash
+git clone https://github.com/rawpair/rawpair
+cd rawpair
+docker compose up
+```
+
+Then open [http://<host>:4000](http://<host>:4000) to begin.
+
+In production you may want to run this behind a reverse proxy
 
 ---
 

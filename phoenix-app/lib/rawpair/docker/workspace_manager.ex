@@ -3,7 +3,7 @@ defmodule RawPair.Docker.WorkspaceManager do
   alias RawPair.Workspaces.Workspace
   alias RawPair.Repo
 
-  @docker_network "rawpair_net"
+  @docker_network "rawpair"
 
   @app_dir "/home/devuser/app"
 
@@ -56,11 +56,7 @@ defmodule RawPair.Docker.WorkspaceManager do
       "--name", container_name,
       "--mount", "source=#{volume_name},target=#{@app_dir}",
       "--network", @docker_network,
-      "-p", "#{port}:7681",
       image,
-      # individual bash instances
-      # "ttyd", "--writable", "-p", "7681", "bash",
-      # shared tmux based session
       "ttyd", "--writable", "-p", "7681", "tmux", "new", "-A", "-s", "dev", "bash"
     ]
 

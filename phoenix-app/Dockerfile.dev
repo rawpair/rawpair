@@ -1,0 +1,21 @@
+FROM elixir:1.18-alpine
+
+RUN apk add --no-cache build-base git nodejs npm postgresql-client inotify-tools docker-cli
+
+WORKDIR /app
+
+ENV MIX_ENV=dev
+
+# Pre-install Hex & Rebar
+RUN mix local.hex --force && mix local.rebar --force
+
+# Copy only mix files first (for cache)
+# COPY mix.exs mix.lock ./
+# COPY config config
+# RUN mix deps.get
+
+# Copy the rest
+# COPY . .
+
+# Default dev command
+CMD ["mix", "phx.server"]

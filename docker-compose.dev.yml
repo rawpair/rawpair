@@ -1,0 +1,19 @@
+services:
+  web:
+    networks:
+      - rawpair
+    build:
+      context: ./phoenix-app
+      dockerfile: Dockerfile.dev
+    container_name: rawpair_web
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./phoenix-app:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db/rawpair_dev
+    depends_on:
+      - db
+      - yjs
+

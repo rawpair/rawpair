@@ -28,7 +28,7 @@ docker run --name rawpair_db \
   -p 5432:5432 \
   -d postgres:15
 
-docker network create rawpair_net
+docker network create rawpair
 
 HOST=localhost PORT=1234 npx y-websocket
 HOST=0.0.0.0 PORT=1234 npx y-websocket
@@ -37,5 +37,5 @@ HOST=0.0.0.0 PORT=1234 npx y-websocket
 docker run aquasec/trivy fs --scanners vuln,secret,misconfig .
 
 
-docker run --rm -it 99a88e241eca ash
 
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
