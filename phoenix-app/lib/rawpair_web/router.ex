@@ -23,9 +23,6 @@ defmodule RawPairWeb.Router do
 
     live "/rooms/:slug", RoomLive.Show
 
-    live "/repo_repos", Repo.Index, :index
-    live "/repo_repos/:id", Repo.Show
-
     live "/workspaces", WorkspaceLive.Index, :index
     live "/workspaces/new", WorkspaceLive.Index, :new
     live "/workspaces/:id/edit", WorkspaceLive.Index, :edit
