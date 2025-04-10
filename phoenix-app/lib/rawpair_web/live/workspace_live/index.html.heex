@@ -1,73 +1,77 @@
-<.header>
-  Listing Workspaces
-  <:actions>
-    <.link patch={~p"/workspaces/new"}>
-      <.button>New Workspace</.button>
-    </.link>
-  </:actions>
-</.header>
+<div class="flex w-full justify-center">
+  <div class="w-[90%] py-12">
+    <.header>
+      Listing Workspaces
+      <:actions>
+        <.link patch={~p"/workspaces/new"}>
+          <.button>New Workspace</.button>
+        </.link>
+      </:actions>
+    </.header>
 
-<.table
-  id="workspaces"
-  rows={@streams.workspaces}
-  row_click={fn {_id, workspace} -> JS.navigate(~p"/workspaces/#{workspace}") end}
->
-  <:col :let={{_id, workspace}} label="Name">{workspace.name}</:col>
-  <:col :let={{_id, workspace}} label="Slug">{workspace.slug}</:col>
-  <:col :let={{_id, workspace}} label="Description">{workspace.description}</:col>
-  <:col :let={{_id, workspace}} label="Docker image">{workspace.docker_image}</:col>
-  <:col :let={{_id, workspace}} label="With postgres">{workspace.with_db}</:col>
-  <:col :let={{_id, workspace}} label="Workspace port">{workspace.workspace_port}</:col>
-  <:col :let={{_id, workspace}} label="Postgres port">{workspace.postgres_port}</:col>
-  <:col :let={{_id, workspace}} label="Status">{workspace.status}</:col>
-  <:col :let={{_id, workspace}} label="Last active at">{workspace.last_active_at}</:col>
-  <:action :let={{_id, workspace}}>
-    <div class="sr-only">
-      <.link navigate={~p"/workspaces/#{workspace}"}>Show</.link>
-    </div>
-    <.link patch={~p"/workspaces/#{workspace}/edit"}>Edit</.link>
-    
-  </:action>
-  <:action :let={{_id, workspace}}>
-    <.link
-      phx-click={JS.push("launch", value: %{id: workspace.id})}
-      data-confirm="Start this workspace?"
-      class="text-blue-600 hover:underline"
+    <.table
+      id="workspaces"
+      rows={@streams.workspaces}
+      row_click={fn {_id, workspace} -> JS.navigate(~p"/workspaces/#{workspace}") end}
     >
-      Launch
-    </.link>
-  </:action>
-  <:action :let={{_id, workspace}}>
-    <%= if workspace.workspace_port do %>
-      <.link
-        href={"/rooms/#{workspace.slug}"}
-        class="text-green-600 hover:underline"
-      >
-        Open
-      </.link>
-    <% end %>
-  </:action>
-  <:action :let={{_id, workspace}}>
-    <%= if workspace.workspace_port do %>
-      <.link
-        href={"http://localhost/terminal/#{workspace.slug}"}
-        class="text-green-800 hover:underline"
-        target="_blank"
-      >
-        Open Terminal
-      </.link>
-    <% end %>
-  </:action>
+      <:col :let={{_id, workspace}} label="Name">{workspace.name}</:col>
+      <:col :let={{_id, workspace}} label="Slug">{workspace.slug}</:col>
+      <:col :let={{_id, workspace}} label="Description">{workspace.description}</:col>
+      <:col :let={{_id, workspace}} label="Docker image">{workspace.docker_image}</:col>
+      <:col :let={{_id, workspace}} label="With postgres">{workspace.with_db}</:col>
+      <:col :let={{_id, workspace}} label="Workspace port">{workspace.workspace_port}</:col>
+      <:col :let={{_id, workspace}} label="Postgres port">{workspace.postgres_port}</:col>
+      <:col :let={{_id, workspace}} label="Status">{workspace.status}</:col>
+      <:col :let={{_id, workspace}} label="Last active at">{workspace.last_active_at}</:col>
+      <:action :let={{_id, workspace}}>
+        <div class="sr-only">
+          <.link navigate={~p"/workspaces/#{workspace}"}>Show</.link>
+        </div>
+        <.link patch={~p"/workspaces/#{workspace}/edit"}>Edit</.link>
+        
+      </:action>
+      <:action :let={{_id, workspace}}>
+        <.link
+          phx-click={JS.push("launch", value: %{id: workspace.id})}
+          data-confirm="Start this workspace?"
+          class="text-blue-600 hover:underline"
+        >
+          Launch
+        </.link>
+      </:action>
+      <:action :let={{_id, workspace}}>
+        <%= if workspace.workspace_port do %>
+          <.link
+            href={"/rooms/#{workspace.slug}"}
+            class="text-green-600 hover:underline"
+          >
+            Open
+          </.link>
+        <% end %>
+      </:action>
+      <:action :let={{_id, workspace}}>
+        <%= if workspace.workspace_port do %>
+          <.link
+            href={"http://localhost/terminal/#{workspace.slug}"}
+            class="text-green-800 hover:underline"
+            target="_blank"
+          >
+            Open Terminal
+          </.link>
+        <% end %>
+      </:action>
 
-  <:action :let={{id, workspace}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: workspace.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
-</.table>
+      <:action :let={{id, workspace}}>
+        <.link
+          phx-click={JS.push("delete", value: %{id: workspace.id}) |> hide("##{id}")}
+          data-confirm="Are you sure?"
+        >
+          Delete
+        </.link>
+      </:action>
+    </.table>
+  </div>
+</div>
 
 <.modal :if={@live_action in [:new, :edit]} id="workspace-modal" show on_cancel={JS.patch(~p"/workspaces")}>
   <.live_component

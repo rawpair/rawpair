@@ -54,6 +54,8 @@ defmodule RawPair.Docker.WorkspaceManager do
     cmd = [
       "docker", "run", "-d",
       "--name", container_name,
+      "--label", "rawpair.managed=true",
+      "--label", "rawpair.workspace_slug=#{workspace.slug}",
       "--mount", "source=#{volume_name},target=#{@app_dir}",
       "--network", @docker_network,
       image,

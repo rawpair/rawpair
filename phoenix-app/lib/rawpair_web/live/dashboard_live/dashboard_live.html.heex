@@ -1,0 +1,26 @@
+<div class="flex w-full justify-center">
+  <div class="w-[90%] py-12">
+    <h1 class="text-2xl font-bold mb-6">RawPair Container Dashboard</h1>
+
+    <table class="min-w-full text-sm border border-zinc-200">
+      <thead class="bg-zinc-100 text-left font-semibold text-zinc-700">
+        <tr>
+          <th class="px-4 py-2">ID</th>
+          <th class="px-4 py-2">Image</th>
+          <th class="px-4 py-2">Name</th>
+          <th class="px-4 py-2">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for c <- @containers do %>
+          <tr class="border-t border-zinc-200">
+            <td class="px-4 py-2 font-mono text-zinc-500"><%= String.slice(c.id, 0, 12) %></td>
+            <td class="px-4 py-2"><%= c.image %></td>
+            <td class="px-4 py-2"><%= c.name %></td>
+            <td class="px-4 py-2 text-zinc-700"><%= c.status %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

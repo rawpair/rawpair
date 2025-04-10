@@ -19,6 +19,8 @@ defmodule RawPairWeb.Router do
 
     get "/", PageController, :home
 
+    live "/dashboard", DashboardLive, :index
+
     live "/rooms/:slug", RoomLive.Show
 
     live "/repo_repos", Repo.Index, :index

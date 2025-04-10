@@ -1,11 +1,11 @@
-<div class="grid grid-cols-4 h-[100%]">
-  <div class="col-span-3 border-r">
+<div class="grid grid-cols-4 w-full flex-1 space-x-1 px-1">
+  <div class="col-span-3 flex-1 flex flex-col">
     <!-- Monaco Editor -->
     <div 
       phx-hook="EditorHook" 
       phx-update="ignore" 
       id="react-container" 
-      class="h-[400px] border"
+      class="w-full flex-1 border"
       data-slug={@slug}
     ></div>
 
@@ -14,19 +14,19 @@
       phx-hook="TtydHook"
       data-slug={@workspace.slug}
       phx-update="ignore"
-      class="w-full h-[500px] border rounded"
+      class="w-full flex-1 border rounded"
     />
 
   </div>
 
   <!-- Chat UI -->
-  <div class="col-span-1 p-2 space-y-4">
-    <div class="h-[90%] overflow-y-auto border p-2 bg-white">
+  <div class="col-span-1 space-y-4 flex flex-col">
+    <div class="flex-1 w-full overflow-y-auto border bg-white">
       <%= for msg <- @messages do %>
         <p><strong><%= msg.user %>:</strong> <%= msg.content %></p>
       <% end %>
     </div>
-    <form phx-submit="send_message" class="flex space-x-2">
+    <form phx-submit="send_message" class="flex">
       <input name="message" type="text" placeholder="Say something…" class="flex-1 p-2 rounded" />
       <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Send</button>
     </form>

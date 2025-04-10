@@ -5,28 +5,25 @@
         <img src={~p"/images/logo.svg"} width="36" />
       </a>
       <p class="bg-brand/5 text-brand rounded-full px-2 font-medium leading-6">
-        v{Application.spec(:phoenix, :vsn)}
+        v{Application.spec(:rawpair, :vsn)}
       </p>
     </div>
     <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-      <a href="https://twitter.com/elixirphoenix" class="hover:text-zinc-700">
-        @elixirphoenix
-      </a>
-      <a href="https://github.com/phoenixframework/phoenix" class="hover:text-zinc-700">
-        GitHub
-      </a>
+      <a href={~p"/workspaces"} class="hover:text-zinc-700">Workspaces</a>
+      <a href={~p"/dashboard"} class="hover:text-zinc-700">Dashboard</a>
       <a
-        href="https://hexdocs.pm/phoenix/overview.html"
+        href="https://rawpair.dev/docs/user-guide"
         class="rounded-lg bg-zinc-100 px-2 py-1 hover:bg-zinc-200/80"
       >
-        Get Started <span aria-hidden="true">&rarr;</span>
+        User Guide <span aria-hidden="true">&rarr;</span>
       </a>
     </div>
   </div>
 </header>
-<main class="">
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-[80vh]">
-    <.flash_group flash={@flash} />
-    {@inner_content}
+
+<main class="min-h-[calc(100vh-64px)] flex flex-col">
+  <div class="w-full flex-1 overflow-y-auto flex flex-col">
+      <.flash_group flash={@flash} />
+      {@inner_content}
   </div>
 </main>
