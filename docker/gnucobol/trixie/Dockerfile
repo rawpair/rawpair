@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install ttyd (arch-aware with mapped names)
+# Install ttyd (arch-aware)
 RUN set -eux; \
     ARCH=$(uname -m); \
     case "$ARCH" in \
@@ -33,7 +33,7 @@ RUN set -eux; \
     curl -L "https://github.com/tsl0922/ttyd/releases/download/1.7.7/${BINARY}" -o /usr/local/bin/ttyd; \
     chmod +x /usr/local/bin/ttyd
 
-# Install Vector cleanly into /usr/local (adds to PATH, no profile hacks)
+# Install Vector
 RUN curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | bash -s -- -y --prefix /usr/local
 
 # Create dev user and working directory
@@ -41,17 +41,23 @@ RUN useradd -ms /bin/bash devuser
 WORKDIR /home/devuser/app
 RUN chown devuser:devuser /home/devuser/app
 
-RUN mkdir -p /var/log && chown devuser:devuser /var/log
-RUN mkdir -p /var/lib/vector && chown devuser:devuser /var/lib/vector
-RUN mkdir -p /var/log/vector && chown devuser:devuser /var/log/vector
-
-RUN mkdir -p /var/run && chown devuser:devuser /var/run
+RUN mkdir -p /var/log /var/lib/vector /var/log/vector /var/run && chown -R devuser:devuser /var/log /var/lib/vector /var/log/vector /var/run
 
 # Vector config
 COPY --chown=devuser:devuser vector.toml /etc/vector/vector.toml
 
 # Supervisord config
 COPY --chown=devuser:devuser supervisord.conf /etc/supervisor/conf.d/rawpair.conf
+
+# TTYD wrapper script
+COPY ttyd-wrapper.sh /usr/local/bin/ttyd-wrapper.sh
+RUN chmod +x /usr/local/bin/ttyd-wrapper.sh
+
+# .bashrc tweaks to trap exits
+RUN echo 'trap "" EXIT' >> /home/devuser/.bashrc && \
+    echo 'alias exit="echo Nope."' >> /home/devuser/.bashrc && \
+    chown devuser:devuser /home/devuser/.bashrc && \
+    chmod 0444 /home/devuser/.bashrc
 
 # Environment
 ENV TERM xterm \

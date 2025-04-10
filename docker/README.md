@@ -4,4 +4,6 @@ https://vector.dev/docs/reference/vrl/functions/#replace
 https://vector.dev/docs/reference/vrl/functions/#strip_whitespace
 https://vector.dev/docs/reference/vrl/functions/#strip_ansi_escape_codes
 
+### Building images
 
+`docker build -f gnucobol/trixie/Dockerfile -t gnucobol:trixie .`

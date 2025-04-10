@@ -1,7 +1,7 @@
 [sources.terminal_output]
 type = "file"
 include = ["/var/log/terminal.log"]
-ignore_older = 86400
+ignore_older = 2592000 # 30 days
 
 [transforms.add_metadata]
 type = "remap"
@@ -17,10 +17,10 @@ type = "remap"
 inputs = ["add_metadata"]
 source = '''
 .message = strip_ansi_escape_codes!(.message)
+.message = replace(.message, r'^.*\$ (?P<cmd>.+)$', "$$cmd")
 .message = replace!(.message,  r'\\r', "")
 .message = strip_whitespace!(.message)
 '''
-
 
 [sinks.loki]
 type = "loki"
@@ -30,3 +30,8 @@ encoding.codec = "json"
 labels.user_id = "{{ user_id }}"
 labels.workspace_id = "{{ workspace_id }}"
 labels.session_id = "{{ session_id }}"
+
+[sinks.loki.request]
+retry_attempts = 10
+retry_backoff_secs = 5
+
