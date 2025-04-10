@@ -12,6 +12,7 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
     {"Clojure (temurin-24-tools-deps-bookworm)", "clojure:temurin-24-bookworm"},
     {"GNU Cobol (3.1.2) [Debian Bookworm]", "gnucobol:bookworm"},
     {"GNU Cobol (3.2.0) [Debian Trixie]", "gnucobol:trixie"},
+    {"OCaml 4.14.1 [Ubuntu 24.04]", "ocaml:ubuntu-2404"},
     {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "sbcl:trixie"},
   ]
 

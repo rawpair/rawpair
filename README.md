@@ -81,6 +81,15 @@ In production you may want to run this behind a reverse proxy
 
 ---
 
+## How do I scroll the terminal?
+
+This terminal runs in your browser and doesn't support mouse scrollback.
+To scroll, press:
+
+`Ctrl-b` followed by `[`
+
+You can now use the mouse wheel or the arrow keys. Press `q` to exit scroll mode.
+
 ## Architecture Overview
 
 - **Phoenix** handles session logic, orchestration, and WebSocket communication
