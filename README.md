@@ -115,3 +115,5 @@ See [`LICENSE`](LICENSE) for details.
 
 Contributions are welcome. Please open issues and submit pull requests through GitHub.
 
+
+`docker build -f gnucobol/trixie/Dockerfile -t gnucobol:trixie .`

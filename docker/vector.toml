@@ -1,0 +1,32 @@
+[sources.terminal_output]
+type = "file"
+include = ["/var/log/terminal.log"]
+ignore_older = 86400
+
+[transforms.add_metadata]
+type = "remap"
+inputs = ["terminal_output"]
+source = '''
+.user_id = get_env_var("LOG_USER_ID") ?? "unknown"
+.workspace_id = get_env_var("LOG_WORKSPACE_ID") ?? "unknown"
+.session_id = get_env_var("LOG_SESSION_ID") ?? "unknown"
+'''
+
+[transforms.clean_terminal]
+type = "remap"
+inputs = ["add_metadata"]
+source = '''
+.message = strip_ansi_escape_codes!(.message)
+.message = replace!(.message,  r'\\r', "")
+.message = strip_whitespace!(.message)
+'''
+
+
+[sinks.loki]
+type = "loki"
+inputs = ["clean_terminal"]
+endpoint = "http://rawpair_loki:3100"
+encoding.codec = "json"
+labels.user_id = "{{ user_id }}"
+labels.workspace_id = "{{ workspace_id }}"
+labels.session_id = "{{ session_id }}"

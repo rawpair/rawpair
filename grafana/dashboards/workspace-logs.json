@@ -1,0 +1,77 @@
+{
+    "title": "Rawpair Terminal Logs",
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 1,
+    "templating": {
+        "list": [
+            {
+                "name": "workspace_id",
+                "type": "query",
+                "datasource": "Loki",
+                "query": "label_values(workspace_id)",
+                "refresh": 1,
+                "includeAll": true,
+                "allValue": ".+",
+                "multi": false,
+                "sort": 1,
+                "label": "Workspace",
+                "current": {
+                    "text": "All",
+                    "value": ".+"
+                }
+            },
+            {
+                "name": "user_id",
+                "type": "query",
+                "datasource": "Loki",
+                "query": "label_values(user_id)",
+                "refresh": 1,
+                "includeAll": true,
+                "allValue": ".+",
+                "multi": false,
+                "sort": 1,
+                "label": "User",
+                "current": {
+                    "text": "All",
+                    "value": ".+"
+                }
+            },
+            {
+                "name": "session_id",
+                "type": "query",
+                "datasource": "Loki",
+                "query": "label_values(session_id)",
+                "refresh": 1,
+                "includeAll": true,
+                "allValue": ".+",
+                "multi": false,
+                "sort": 1,
+                "label": "Session",
+                "current": {
+                    "text": "All",
+                    "value": ".+"
+                }
+            }
+        ]
+    },
+    "panels": [
+        {
+            "type": "logs",
+            "title": "Terminal Output",
+            "datasource": "Loki",
+            "targets": [
+                {
+                    "expr": "{workspace_id=~\"$workspace_id\",user_id=~\"$user_id\",session_id=~\"$session_id\"}",
+                    "refId": "A"
+                }
+            ],
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            }
+        }
+    ]
+}
