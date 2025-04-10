@@ -18,9 +18,9 @@
       <:col :let={{_id, workspace}} label="Slug">{workspace.slug}</:col>
       <:col :let={{_id, workspace}} label="Description">{workspace.description}</:col>
       <:col :let={{_id, workspace}} label="Docker image">{workspace.docker_image}</:col>
-      <:col :let={{_id, workspace}} label="With postgres">{workspace.with_db}</:col>
-      <:col :let={{_id, workspace}} label="Workspace port">{workspace.workspace_port}</:col>
-      <:col :let={{_id, workspace}} label="Postgres port">{workspace.postgres_port}</:col>
+      <:col :let={{_id, workspace}} label="With DB?">{workspace.with_db}</:col>
+      <%!-- <:col :let={{_id, workspace}} label="Workspace port">{workspace.workspace_port}</:col> --%>
+      <%!-- <:col :let={{_id, workspace}} label="Postgres port">{workspace.postgres_port}</:col> --%>
       <:col :let={{_id, workspace}} label="Status">{workspace.status}</:col>
       <:col :let={{_id, workspace}} label="Last active at">{workspace.last_active_at}</:col>
       <:action :let={{_id, workspace}}>
