@@ -4,12 +4,12 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
   alias RawPair.Workspaces
 
   @docker_images [
-    {"Ada FSF GNAT (2022) [Debian Bookworm]", "ada:bookworm-2022"},
-    {"Ada FSF GNAT (2024) [Debian Trixie]", "ada:trixie-2024"},
-    {"Clojure (temurin-21-tools-deps-bookworm)", "clojure:temurin-21"},
-    {"Clojure (temurin-22-tools-deps-bookworm)", "clojure:temurin-22"},
-    {"Clojure (temurin-23-tools-deps-bookworm)", "clojure:temurin-23"},
-    {"Clojure (temurin-24-tools-deps-bookworm)", "clojure:temurin-24"},
+    {"Ada FSF GNAT [Debian Bookworm]", "ada:bookworm"},
+    {"Ada FSF GNAT [Debian Trixie]", "ada:trixie"},
+    {"Clojure (temurin-21-tools-deps-bookworm)", "clojure:temurin-21-bookworm"},
+    {"Clojure (temurin-22-tools-deps-bookworm)", "clojure:temurin-22-bookworm"},
+    {"Clojure (temurin-23-tools-deps-bookworm)", "clojure:temurin-23-bookworm"},
+    {"Clojure (temurin-24-tools-deps-bookworm)", "clojure:temurin-24-bookworm"},
     {"GNU Cobol (3.1.2) [Debian Bookworm]", "gnucobol:bookworm"},
     {"GNU Cobol (3.2.0) [Debian Trixie]", "gnucobol:trixie"},
     {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "sbcl:trixie"},
