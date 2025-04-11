@@ -7,6 +7,9 @@ Built for fast, focused collaboration on your own infrastructure, RawPair also s
 
 ---
 
+![image](https://github.com/user-attachments/assets/2249a084-c7ed-4bd0-9e00-2beeccacca74)
+
+
 ![image](https://github.com/user-attachments/assets/4952788a-4520-4d4f-b17d-dc44a28d9924)
 
 ---
