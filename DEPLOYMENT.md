@@ -17,6 +17,8 @@ Run `docker compose up -d`
 
 ### Phoenix App
 
+Run `deploy.sh` within `phoenix-app`.
+
 #### .env file
 
 Copy the contents of `phoenix-app/.env.example`, paste them into `phoenix-app/.env`. Amend as necessary.
