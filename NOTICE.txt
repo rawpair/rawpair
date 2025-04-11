@@ -1,0 +1,37 @@
+RawPair  
+Copyright (c) 2025 Andrea Mancuso  
+
+This project is licensed under the Mozilla Public License 2.0.  
+See the LICENSE file for full legal terms.
+
+RawPair is intended solely for secure, collaborative software development and educational purposes.  
+Any unauthorized use of this software to access, exploit, or monitor systems without explicit permission is strictly prohibited and may violate applicable law.
+
+This product includes original work by Andrea Mancuso and community contributors.  
+SPDX license headers are used throughout the source to clarify file-level licensing.
+
+---
+
+Includes Third-Party Components:
+
+The following services may be bundled via Docker for development and operational purposes.  
+They are used unmodified and subject to their respective licenses:
+
+- **Grafana** – Licensed under AGPLv3  
+  https://github.com/grafana/grafana/blob/main/LICENSE
+
+- **Loki** – Licensed under Apache License 2.0  
+  https://github.com/grafana/loki/blob/main/LICENSE
+
+- **PostgreSQL** – Licensed under the PostgreSQL License (BSD-style)  
+  https://github.com/postgres/postgres/blob/master/COPYRIGHT
+
+- **NGINX** – Licensed under the 2-clause BSD License  
+  https://github.com/nginx/nginx/blob/master/LICENSE
+
+- **Portainer CE** – Licensed under the zlib/libpng License  
+  https://github.com/portainer/portainer/blob/develop/LICENSE
+
+These components are orchestrated alongside RawPair in a development environment,  
+and are not modified or redistributed as part of the RawPair source code itself.
+
