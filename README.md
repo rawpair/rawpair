@@ -21,21 +21,22 @@ Built for fast, focused collaboration on your own infrastructure, RawPair also s
 
 ## Tech Stack
 
-Rawpair is built on a modern, production-grade foundation:
+RawPair is built on a modern, production-grade foundation:
 
-- [Phoenix](https://github.com/phoenixframework/phoenix) ([Elixir](https://github.com/elixir-lang/elixir)) – handles real-time collaboration and session management
-- [Monaco](https://github.com/microsoft/monaco-editor) + [Yjs](https://github.com/yjs/yjs) – collaborative code editing in the browser
-- [ttyd](https://github.com/tsl0922/ttyd) + [tmux](https://github.com/tmux/tmux) – shared terminal sessions
-- [docker](https://github.com/docker) – isolated containers per user session
-- [Nginx](https://github.com/nginx/nginx) – reverse proxy and traffic routing for ttyd
-- [PostgreSQL](https://github.com/postgres/postgres) – workspace metadata persistence
-- [Vector](https://github.com/vectordotdev/vector) + [Loki](https://github.com/grafana/loki) + [Grafana](https://github.com/grafana/grafana) – observability for logs and metrics
+- [Phoenix](https://github.com/phoenixframework/phoenix) ([Elixir](https://github.com/elixir-lang/elixir)) - handles real-time collaboration and session management
+- [Monaco](https://github.com/microsoft/monaco-editor) + [Yjs](https://github.com/yjs/yjs) - collaborative code editing in the browser
+- [ttyd](https://github.com/tsl0922/ttyd) + [tmux](https://github.com/tmux/tmux) - shared terminal sessions
+- [docker](https://github.com/docker) - isolated containers per user session
+- [Nginx](https://github.com/nginx/nginx) - reverse proxy and traffic routing for ttyd
+- [PostgreSQL](https://github.com/postgres/postgres) - workspace metadata persistence
+- [Vector](https://github.com/vectordotdev/vector) + [Loki](https://github.com/grafana/loki) + [Grafana](https://github.com/grafana/grafana) - observability for logs and metrics
+- [Portainer CE](https://github.com/portainer/portainer) - (optional) convenient docker management
 
 ---
 
 ## System Requirements
 
-To run Rawpair smoothly in a self-hosted environment, you'll need:
+To run RawPair smoothly in a self-hosted environment, you'll need:
 
 - 64-bit Linux host (Debian/Ubuntu recommended), works also on a Raspberry Pi
 - Docker (version 20.10+)
@@ -66,11 +67,11 @@ RawPair provides Docker images to make development environments easier to spin u
 
 To work properly with RawPair, containers **must** include the following packages:
 
-- `bash` – for shell consistency
-- `tmux` – to manage terminal sessions
-- `supervisor` – to coordinate background services
-- `vector` – to stream logs to the host
-- `ttyd` – to expose the terminal over HTTP
+- `bash` - for shell consistency
+- `tmux` - to manage terminal sessions
+- `supervisor` - to coordinate background services
+- `vector` - to stream logs to the host
+- `ttyd` - to expose the terminal over HTTP
 
 These are essential for enabling terminal access, log streaming, and reliable session orchestration. You're welcome to customize the images, but omitting these components will likely break core functionality. In short: build your own, but build smart.
 
@@ -120,18 +121,32 @@ mix phx.gen.secret
 
 Then open [http://localhost:4000](http://localhost:4000) to begin.
 
-In production you may want to run this behind a reverse proxy
+It is advisable to use a reverse proxy in production.
 
 ---
 
-## How do I scroll the terminal?
+## How to scroll the terminal?
 
-This terminal runs in your browser and doesn't support mouse scrollback.
+ttyd terminals run in the browser and don't support mouse scrollback.
 To scroll, press:
 
 `Ctrl-b` followed by `[`
 
-You can now use the mouse wheel or the arrow keys. Press `q` to exit scroll mode.
+It is now possible to use the mouse wheel or the arrow keys. Press `q` to exit scroll mode.
+
+---
+
+## Security considerations
+
+### Mounting /var/run/docker.sock
+
+RawPair does **not** require Docker socket access by default. However, the current Phoenix backend uses System.cmd/3 to invoke Docker directly via the CLI. For this to work, the process must have permission to run docker commands, typically by having access to the Docker daemon—either directly on the host or via a mounted socket.
+
+If you mount `/var/run/docker.sock` into the container running Phoenix (e.g., for local development), you're granting that container **full control over the host's Docker daemon**. This effectively means **root access to the host**. It's powerful, convenient, and generally unsafe in shared or exposed environments.
+
+For safer setups, consider using [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy), a minimal Go-based HTTP proxy that lets you expose only specific Docker API endpoints to containers. This allows for fine-grained access control, so you can limit what the Phoenix backend is allowed to do.
+
+Use socket access only if you understand the risks, and only in environments where trust boundaries are clear.
 
 ---
 

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
-defmodule Rawpair.Env do
+defmodule RawPair.Env do
   def host, do: System.get_env("RAWPAIR_HOST") || "localhost"
   def protocol, do: System.get_env("RAWPAIR_PROTOCOL") || "http"
   def port, do: System.get_env("RAWPAIR_PORT") || "4000"

@@ -74,7 +74,7 @@ fi
 
 # Run migrations
 echo "Running migrations..."
-_build/prod/rel/rawpair/bin/rawpair eval "Rawpair.Release.migrate"
+_build/prod/rel/rawpair/bin/rawpair eval "RawPair.Release.migrate"
 
 # Start app
 echo "Starting app..."

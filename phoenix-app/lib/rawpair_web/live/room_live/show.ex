@@ -12,7 +12,7 @@ defmodule RawPairWeb.RoomLive.Show do
     messages = Chat.get_history(slug) |> Enum.reverse()
     Phoenix.PubSub.subscribe(RawPair.PubSub, topic)
 
-    terminal_base_url = Rawpair.Env.terminal_base_url()
+    terminal_base_url = RawPair.Env.terminal_base_url()
 
     {:ok,
      socket
