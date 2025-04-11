@@ -22,8 +22,8 @@
   </div>
 
   <!-- Chat UI -->
-  <div class="col-span-1 space-y-4 flex flex-col">
-    <div class="flex-1 w-full overflow-y-auto border bg-white">
+  <div class="col-span-1 space-y-4 flex flex-col pr-1">
+    <div class="flex-1 w-full overflow-y-auto border px-2 py-1 bg-white">
       <%= for msg <- @messages do %>
         <p><strong><%= msg.user %>:</strong> <%= msg.content %></p>
       <% end %>
