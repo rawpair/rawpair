@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPair.Monitoring do
   def list_rawpair_containers do
     {output, 0} =

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+
 import "phoenix_html"
 
 // @ts-ignore

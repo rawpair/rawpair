@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+
 import { Terminal } from "@xterm/xterm"
 import {v4 as uuidv4} from 'uuid'
 import { Socket } from "phoenix"

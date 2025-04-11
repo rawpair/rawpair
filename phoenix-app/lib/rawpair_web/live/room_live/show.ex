@@ -12,12 +12,15 @@ defmodule RawPairWeb.RoomLive.Show do
     messages = Chat.get_history(slug) |> Enum.reverse()
     Phoenix.PubSub.subscribe(RawPair.PubSub, topic)
 
+    terminal_base_url = Rawpair.Env.terminal_base_url()
+
     {:ok,
      socket
      |> assign(:slug, slug)
      |> assign(:user, username)
      |> assign(:page_title, "Room: #{slug}")
      |> assign(:topic, topic)
+     |> assign(:terminal_base_url, terminal_base_url)
      |> assign(:messages, messages)
      |> assign(:workspace, workspace)}
   end

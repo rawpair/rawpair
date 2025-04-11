@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Config module.
 #

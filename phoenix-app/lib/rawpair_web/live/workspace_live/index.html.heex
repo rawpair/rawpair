@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 <div class="flex w-full justify-center">
   <div class="w-[90%] py-12">
     <.header>
@@ -49,7 +50,7 @@
       </:action>
       <:action :let={{_id, workspace}}>
           <.link
-            href={"#{Rawpair.Env.protocol()}://#{Rawpair.Env.host()}/terminal/#{workspace.slug}"}
+            href={"#{Rawpair.Env.terminal_base_url()}terminal/#{workspace.slug}"}
             class="text-green-800 hover:underline"
             target="_blank"
           >

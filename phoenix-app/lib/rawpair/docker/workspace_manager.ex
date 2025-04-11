@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPair.Docker.WorkspaceManager do
   alias RawPair.Workspaces
   alias RawPair.Workspaces.Workspace

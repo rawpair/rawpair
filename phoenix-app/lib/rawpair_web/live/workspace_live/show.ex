@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb.WorkspaceLive.Show do
   use RawPairWeb, :live_view
 

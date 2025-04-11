@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :rawpair
 

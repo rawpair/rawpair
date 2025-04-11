@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 # ---- Build stage ----
 FROM elixir:1.18-alpine AS build
 

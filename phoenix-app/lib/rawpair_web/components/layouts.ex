@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb.Layouts do
   @moduledoc """
   This module holds different layouts used by your application.

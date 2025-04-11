@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPair.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring

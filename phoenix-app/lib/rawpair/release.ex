@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule Rawpair.Release do
   @moduledoc """
   Used for executing DB release tasks when run in production without Mix

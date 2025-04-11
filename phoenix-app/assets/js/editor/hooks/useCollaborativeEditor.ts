@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+
 import { useEffect, useRef } from 'react'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as Y from 'yjs'

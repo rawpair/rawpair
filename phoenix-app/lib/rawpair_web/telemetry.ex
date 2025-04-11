@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb.Telemetry do
   use Supervisor
   import Telemetry.Metrics

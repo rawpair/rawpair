@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPair.Workspaces.Workspace do
   use Ecto.Schema
   import Ecto.Changeset

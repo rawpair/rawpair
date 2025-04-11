@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+
 import * as React from 'react'
 import { useCallback, useRef, useState, useEffect } from "react"
 import { useCollaborativeEditor } from './hooks/useCollaborativeEditor'

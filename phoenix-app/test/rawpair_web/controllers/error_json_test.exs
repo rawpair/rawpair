@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb.ErrorJSONTest do
   use RawPairWeb.ConnCase, async: true
 

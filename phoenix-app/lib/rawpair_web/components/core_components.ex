@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.

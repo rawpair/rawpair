@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 FROM clojure:temurin-21-tools-deps-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

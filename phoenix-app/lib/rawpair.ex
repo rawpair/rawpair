@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPair do
   @moduledoc """
   RawPair keeps the contexts that define your domain

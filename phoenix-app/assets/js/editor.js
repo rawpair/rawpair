@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+
 import * as React from 'react'
 import ReactDOM from 'react-dom/client'
 import Editor from './editor/Editor'

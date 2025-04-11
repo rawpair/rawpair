@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb.PageHTML do
   @moduledoc """
   This module contains pages rendered by PageController.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 FROM debian:trixie-slim
 
 # Base setup

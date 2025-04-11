@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPair.Chat do
   use GenServer
   alias Phoenix.PubSub

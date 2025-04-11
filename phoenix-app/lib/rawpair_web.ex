@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 defmodule RawPairWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such

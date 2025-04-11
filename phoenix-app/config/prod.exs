@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import Config
 
 # Note we also include the path to a cache manifest
