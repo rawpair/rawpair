@@ -35,7 +35,7 @@ Rawpair is built on a modern, production-grade foundation:
 
 ## System Requirements
 
-To run Rawpair smoothly in a self-hosted environment, you’ll need:
+To run Rawpair smoothly in a self-hosted environment, you'll need:
 
 - 64-bit Linux host (Debian/Ubuntu recommended), works also on a Raspberry Pi
 - Docker (version 20.10+)
@@ -59,6 +59,24 @@ asdf plugin add elixir
 asdf install elixir 1.18.3
 asdf set -u elixir 1.18.3
 ```
+
+## An important note on Docker images
+
+RawPair provides Docker images to make development environments easier to spin up and work with—especially for collaborative or short-lived sessions. These images prioritize convenience over minimalism: they include a full toolchain, reasonable defaults, and everything needed to get started without extra setup. They're not security-hardened or optimized for production use, and that's by design.
+
+To work properly with RawPair, containers **must** include the following packages:
+
+- `bash` – for shell consistency
+- `tmux` – to manage terminal sessions
+- `supervisor` – to coordinate background services
+- `vector` – to stream logs to the host
+- `ttyd` – to expose the terminal over HTTP
+
+These are essential for enabling terminal access, log streaming, and reliable session orchestration. You're welcome to customize the images, but omitting these components will likely break core functionality. In short: build your own, but build smart.
+
+Additionally, three configuration files are required for proper orchestration: `supervisord.conf`, `ttyd-wrapper.sh`, and `vector.toml`. These are provided in the `docker/` folder of the repository and should be copied into your image during the build process. They set up the necessary services and log routing for the container to behave as expected inside the RawPair environment.
+
+You're welcome to customize the images, but omitting these components will likely break core functionality. In short: build your own, but build smart.
 
 ## Quick Start (Development)
 
