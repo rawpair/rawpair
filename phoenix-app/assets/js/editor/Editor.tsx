@@ -1,21 +1,44 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import * as React from 'react'
+import { clsx } from 'clsx';
 import { useCallback, useRef, useState, useEffect } from "react"
+import { NodeApi, NodeRendererProps, Tree } from 'react-arborist';
 import { useCollaborativeEditor } from './hooks/useCollaborativeEditor'
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
 import { getCSRFToken } from '@/lib/utils'
+import { FileTreeItem } from './types';
+import { flatFileListToTreeItems } from './lib/tree-parse';
 
 type Props = {
   slug: string;
   language: string;
 }
 
+function Node({ node, style, dragHandle }: NodeRendererProps<FileTreeItem>) {
+  const handleClick = useCallback(() => {
+    if (node.isInternal) {
+      node.toggle()
+    }
+  }, [node]);
+
+  return (
+    <div 
+      style={style} 
+      className={clsx(node.state.isSelected && 'bg-white text-black')} 
+      ref={dragHandle} 
+      onClick={handleClick}
+    >
+      {node.isLeaf ? "📄" : "🗀"}
+      {node.data.name}
+    </div>
+  );
+}
+
 export default function Editor({slug}: Props) {
   const [activeFile, setActiveFile] = useState<string>()
-  const [files, setFiles] = useState<string[]>([]);
+  const [files, setFiles] = useState<FileTreeItem[]>([]);
 
   const containerRef = useRef(null)
   const editor = useCollaborativeEditor(containerRef, slug)
@@ -57,7 +80,7 @@ export default function Editor({slug}: Props) {
     const interval = setInterval(() => {
       fetchFiles(slug).then((data) => {
         if (data) {
-          setFiles(data.files.sort())
+          setFiles(flatFileListToTreeItems(data.files))
         }
       })
     }, 5000);
@@ -68,24 +91,16 @@ export default function Editor({slug}: Props) {
   useEffect(() => {
     fetchFiles(slug).then((data) => {
       if (data) {
-        setFiles(data.files.sort())
+        setFiles(flatFileListToTreeItems(data.files))
       }
     })
   }, [fetchFiles, slug]);
-
-  useEffect(() => {
-    if (!activeFile && files.length > 0) {
-      setActiveFile(files[0])
-    }
-  }, [setActiveFile, files, activeFile]);
 
   useEffect(() => {
     if (!activeFile) return
 
     fetchFileContents(slug, activeFile).then((data) => {
       if (data) {
-        console.log(data);
-
         if (editor.current) {
           const model = editor.current.getModel()
 
@@ -103,28 +118,37 @@ export default function Editor({slug}: Props) {
     saveFileContents(slug, activeFile || '', editor.current?.getValue() || '')
   }, [saveFileContents, slug, activeFile]);
 
+  const handleSelectFileTreeItem = useCallback((selection: NodeApi<FileTreeItem>[]) => {
+    if (selection.length === 1 && selection[0].children === null) {
+      setActiveFile(selection[0].id);
+    }
+  }, []);
+
   return (
     <div className="h-full w-full flex flex-col bg-zinc-900 text-white">
       <div className="flex">
-        <Button onClick={handleSave}>Save</Button>
-        <Tabs value={activeFile} onValueChange={setActiveFile} className="flex-1">
-          <TabsList className="flex space-x-1 p-2 bg-zinc-800 border-b border-zinc-700">
-            {files.map((filename) => (
-              <TabsTrigger
-                key={filename}
-                value={filename}
-                className="text-sm px-3 py-1 rounded-t bg-zinc-700 text-white data-[state=active]:bg-zinc-900"
-              >
-                {filename}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
+        <Tree 
+          data={files} 
+          className="basis-4" 
+          openByDefault={false} 
+          disableDrop 
+          disableDrag 
+          disableEdit
+          disableMultiSelection
+          onSelect={handleSelectFileTreeItem}
+          selection={activeFile}
+        >{Node}</Tree>
+        <div className="flex flex-col flex-1">
+          <div className="flex">
+            <Button onClick={handleSave}>Save</Button>
+          </div>
+          <Card className="flex-1 bg-black rounded-none">
+            <div ref={containerRef} className="w-full h-full bg-black" />
+          </Card>
+        </div>
 
-      <Card className="flex-1 bg-black rounded-none">
-        <div ref={containerRef} className="w-full h-full bg-black" />
-      </Card>
+        
+      </div>
     </div>
   )
 }
