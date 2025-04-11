@@ -3,6 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm_plex_mono/IBMPlexMono-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@theme {
+  --font-ibm-plex-mono: 'IBM Plex Mono', monospace;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

@@ -2,13 +2,16 @@
 
 <header class="px-4 sm:px-6 lg:px-8">
   <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2">
       <a href="/">
         <img src={~p"/images/logo.svg"} width="36" />
       </a>
-      <p class="bg-brand/5 text-brand rounded-full px-2 font-medium leading-6">
+      <span class="font-ibm-plex-mono font-semibold">RawPair
+        <span class="font-medium" style="font-size: 10px;">
         v{Application.spec(:rawpair, :vsn)}
-      </p>
+        </span>
+      </span>
+      
     </div>
     <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
       <a href={~p"/workspaces"} class="hover:text-zinc-700 hover:underline">Workspaces</a>
