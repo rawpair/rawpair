@@ -6,8 +6,9 @@ defmodule RawPairWeb.WorkspaceLive.Show do
   alias RawPair.Workspaces
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(_params, session, socket) do
+    username = session["username"]
+    {:ok, assign(socket, username: username)}
   end
 
   @impl true

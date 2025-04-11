@@ -7,9 +7,17 @@ defmodule RawPairWeb.WorkspaceLive.Index do
   alias RawPair.Workspaces.Workspace
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, stream(socket, :workspaces, Workspaces.list_workspaces())}
+  def mount(_params, session, socket) do
+    username = session["username"]
+
+    socket =
+      socket
+      |> assign(:username, username)
+      |> stream(:workspaces, Workspaces.list_workspaces())
+
+    {:ok, socket}
   end
+
 
   @impl true
   def handle_params(params, _url, socket) do

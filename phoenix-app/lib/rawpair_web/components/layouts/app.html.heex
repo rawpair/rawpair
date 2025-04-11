@@ -11,14 +11,21 @@
       </p>
     </div>
     <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-      <a href={~p"/workspaces"} class="hover:text-zinc-700">Workspaces</a>
-      <a href={~p"/dashboard"} class="hover:text-zinc-700">Dashboard</a>
+      <a href={~p"/workspaces"} class="hover:text-zinc-700 hover:underline">Workspaces</a>
+      <a href={~p"/dashboard"} class="hover:text-zinc-700 hover:underline">Dashboard</a>
       <a
         href="https://rawpair.dev/docs/user-guide"
-        class="rounded-lg bg-zinc-100 px-2 py-1 hover:bg-zinc-200/80"
+        class="hover:text-zinc-700 hover:underline"
       >
         User Guide <span aria-hidden="true">&rarr;</span>
       </a>
+      <%= if @username do %>
+        <div>Welcome, <%= @username %></div>
+      <% end %>
+
+      <.link href={~p"/logout"} method="delete" class="text-sm text-zinc-600 hover:underline">
+        Log out
+      </.link>
     </div>
   </div>
 </header>

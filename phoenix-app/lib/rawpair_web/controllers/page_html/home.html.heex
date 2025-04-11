@@ -3,19 +3,41 @@
   <h1 class="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
     Welcome to RawPair Alpha
   </h1>
+
   <p class="mt-6 text-lg leading-8 text-zinc-700">
-    This is a fragile, experimental build held together with duct tape and unreasonable optimism.
-    Features may vanish, break, or insult your intelligence without warning.
+    This is a fragile, experimental build. Features may change or stop working at any time.
   </p>
   <p class="mt-4 text-md text-zinc-500">
-    If you're brave enough, head over to the only part that sort of works:
+    If you're ready to explore, start here:
   </p>
-  <div class="mt-6">
-    <a
-      href="/workspaces"
-      class="inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700"
-    >
-      Enter Workspaces &rarr;
-    </a>
-  </div>
+
+  <.flash_group flash={@flash} />
+
+  <form action={~p"/enter"} method="post" class="mt-6 space-y-4">
+    <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+    <div>
+      <label for="username" class="block text-sm font-medium text-zinc-700">
+        Username
+      </label>
+      <input
+        type="text"
+        id="username"
+        name="username"
+        placeholder="Enter your username"
+        required
+        minlength="3"
+        maxlength="20"
+        class="mt-1 w-full max-w-xs mx-auto rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900"
+      />
+    </div>
+    <div>
+      <button
+        type="submit"
+        class="inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700"
+      >
+        Enter Workspaces &rarr;
+      </button>
+    </div>
+  </form>
+
 </div>

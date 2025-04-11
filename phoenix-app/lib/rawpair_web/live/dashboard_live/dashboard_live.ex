@@ -6,9 +6,11 @@ defmodule RawPairWeb.DashboardLive do
   alias RawPair.Monitoring
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    username = session["username"]
+
     if connected?(socket), do: :timer.send_interval(5000, :refresh)
-    {:ok, assign(socket, containers: Monitoring.list_rawpair_containers())}
+    {:ok, assign(socket, containers: Monitoring.list_rawpair_containers(), username: username)}
   end
 
   @impl true

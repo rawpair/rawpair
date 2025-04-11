@@ -5,9 +5,9 @@ defmodule RawPairWeb.RoomLive.Show do
   alias RawPair.Chat
 
   @impl true
-  def mount(%{"slug" => slug} = params, _session, socket) do
+  def mount(%{"slug" => slug} = params, session, socket) do
+    username = session["username"]
     workspace = Workspaces.get_workspace_by_slug!(slug)
-    username = Map.get(params, "user", random_username())
     topic = "room:#{slug}"
     messages = Chat.get_history(slug) |> Enum.reverse()
     Phoenix.PubSub.subscribe(RawPair.PubSub, topic)
@@ -22,6 +22,7 @@ defmodule RawPairWeb.RoomLive.Show do
      |> assign(:topic, topic)
      |> assign(:terminal_base_url, terminal_base_url)
      |> assign(:messages, messages)
+     |> assign(:username, username)
      |> assign(:workspace, workspace)}
   end
 
@@ -39,9 +40,5 @@ defmodule RawPairWeb.RoomLive.Show do
       |> Enum.take(-100)
 
     {:noreply, assign(socket, :messages, messages)}
-  end
-
-  defp random_username do
-    "guest_" <> :crypto.strong_rand_bytes(2) |> Base.url_encode64 |> binary_part(0, 4)
   end
 end

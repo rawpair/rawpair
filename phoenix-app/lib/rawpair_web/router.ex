@@ -20,6 +20,8 @@ defmodule RawPairWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    post "/enter", PageController, :enter
+    delete "/logout", PageController, :logout
 
     live "/dashboard", DashboardLive, :index
 
