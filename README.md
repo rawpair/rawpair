@@ -30,59 +30,8 @@ asdf plugin add elixir
 asdf install elixir 1.18.3
 asdf set -u elixir 1.18.3
 
-sudo ufw allow from 127.0.0.1 to any port 5432
-sudo ufw deny 5432
 
-```
 
-```bash
-/etc/systemd/system/rawpair.service
-
-[Unit]
-Description=RawPair Phoenix App
-After=network.target
-
-[Service]
-User=andrea
-WorkingDirectory=/home/andrea/rawpair/phoenix-app/_build/prod/rel/rawpair
-ExecStart=/home/andrea/rawpair/phoenix-app/start.sh
-ExecStop=/home/andrea/rawpair/phoenix-app/_build/prod/rel/rawpair/bin/rawpair stop
-Restart=always
-Environment=PHX_SERVER=true
-Environment=MIX_ENV=prod
-
-[Install]
-WantedBy=multi-user.target
-
-```bash
-sudo systemctl daemon-reexec
-sudo systemctl daemon-reload
-sudo systemctl enable --now rawpair
-```
-
-```bash
-/etc/systemd/system/cloudflared-rawpair.service
-
-[Unit]
-Description=Cloudflare Tunnel for RawPair
-After=network.target
-
-[Service]
-Type=simple
-User=andrea
-ExecStart=/usr/local/bin/cloudflared tunnel run rawpair
-Restart=always
-RestartSec=5
-Environment=HOME=/home/andrea
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo systemctl daemon-reexec
-sudo systemctl daemon-reload
-sudo systemctl enable --now cloudflared-rawpair
 ```
 
 ## Quick Start (Development)

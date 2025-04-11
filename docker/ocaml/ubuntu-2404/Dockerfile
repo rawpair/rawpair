@@ -79,7 +79,7 @@ RUN echo 'trap "" EXIT' >> /home/devuser/.bashrc && \
     chmod 0444 /home/devuser/.bashrc
 
 # Environment
-ENV TERM xterm \
+ENV TERM=xterm \
     LOG_USER_ID=devuser \
     LOG_WORKSPACE_ID=default \
     LOG_SESSION_ID=dev-session
@@ -89,10 +89,9 @@ USER devuser
 ENV HOME=/home/devuser
 ENV OPAMYES=1
 ENV OPAMROOT=/home/devuser/.opam
-ENV PATH="/home/devuser/.opam/default/bin:$PATH"
+ENV PATH="/home/devuser/.opam/4.14.1/bin:$PATH"
 
-RUN opam init --disable-sandboxing -y && \
-    opam switch create default 4.14.1 -y
+RUN opam init --disable-sandboxing --compiler=4.14.1 -y
 
 RUN bash -c "source /home/devuser/.opam/opam-init/init.sh > /dev/null 2>&1 && \
              opam install dune merlin ocaml-lsp-server menhir -y"
