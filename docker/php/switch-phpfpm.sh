@@ -14,8 +14,13 @@ echo "[*] Switching PHP-FPM to $NEW_VER..."
 
 # Stop all PHP-FPMs
 for ver in 8.0 8.1 8.2 8.3; do
-    echo "[*] Stopping php$ver-fpm..."
-    $SUPERVISORCTL stop php$ver-fpm || true
+    echo -n "[*] Stopping php$ver-fpm... "
+    if $SUPERVISORCTL status php$ver-fpm 2>/dev/null | grep -q RUNNING; then
+    $SUPERVISORCTL stop php$ver-fpm
+    echo "stopped."
+    else
+    echo "not running."
+    fi
 done
 
 # Start selected version
