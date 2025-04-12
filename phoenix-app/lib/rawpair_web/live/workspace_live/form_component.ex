@@ -15,7 +15,8 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
     {"GNU Cobol (3.1.2) [Debian Bookworm]", "gnucobol:bookworm"},
     {"GNU Cobol (3.2.0) [Debian Trixie]", "gnucobol:trixie"},
     {"OCaml 4.14.1 [Ubuntu 24.04]", "ocaml:ubuntu-2404"},
-    {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "sbcl:trixie"},
+    {"PHP-FPM 8.0/8.1/8.2/8.3 + Nginx [Debian Trixie]", "php:trixie"},
+    {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "sbcl:trixie"}
   ]
 
   @impl true
@@ -58,7 +59,6 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
     </div>
     """
   end
-
 
   @impl true
   def update(%{workspace: workspace} = assigns, socket) do

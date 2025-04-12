@@ -4,6 +4,14 @@
 
 set -e
 
+# Optional container bootstrap
+if [ -x /usr/local/bin/startup-check.sh ]; then
+  echo "[ttyd-wrapper] Running startup-check.sh..."
+  /usr/local/bin/startup-check.sh || echo "[!] startup-check.sh failed but continuing"
+else
+  echo "[ttyd-wrapper] No startup-check.sh found. Skipping bootstrap."
+fi
+
 # Start or reuse the dev tmux session with a looping shell
 tmux has-session -t dev 2>/dev/null || \
   tmux new-session -d -s dev 'while true; do bash; done'
