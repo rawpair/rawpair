@@ -488,7 +488,7 @@ defmodule RawPairWeb.CoreComponents do
         <tbody
           id={@id}
           phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-border text-sm leading-6"
+          class="relative divide-y divide-border border-t border-border text-sm leading-6"
         >
           <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-border">
             <td
@@ -538,7 +538,7 @@ defmodule RawPairWeb.CoreComponents do
   def list(assigns) do
     ~H"""
     <div class="mt-14">
-      <dl class="-my-4 divide-y divide-zinc-100">
+      <dl class="-my-4 divide-y divide-border">
         <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
           <dt class="w-1/4 flex-none text-zinc-500">{item.title}</dt>
           <dd class="text-zinc-700">{render_slot(item)}</dd>
