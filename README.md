@@ -94,7 +94,7 @@ cd assets
 npm i
 cd ..
 mkdir -p priv/static/assets
-mix phx.server
+./dev.sh
 ```
 
 Then open [http://localhost:4000](http://localhost:4000) to begin.

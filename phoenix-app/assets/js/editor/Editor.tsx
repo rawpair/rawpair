@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import { clsx } from 'clsx';
-import { useCallback, useRef, useState, useEffect } from "react"
+import { useCallback, useRef, useState, useEffect, useMemo } from "react"
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { NodeApi, NodeRendererProps, Tree } from 'react-arborist';
 import { useCollaborativeEditor } from './hooks/useCollaborativeEditor'
 import { Card } from "@/components/ui/card"
@@ -10,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { getCSRFToken } from '@/lib/utils'
 import { FileTreeItem } from './types';
 import { flatFileListToTreeItems } from './lib/tree-parse';
+import LanguageSelector from './components/LanguageSelector';
+import { detectLanguageFromFilename } from './lib/file-extension-to-language';
 
 type Props = {
   slug: string;
@@ -39,6 +42,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<FileTreeItem>) {
 export default function Editor({slug}: Props) {
   const [activeFile, setActiveFile] = useState<string>()
   const [files, setFiles] = useState<FileTreeItem[]>([]);
+  const [language, setLanguage] = useState<string>('plaintext')
 
   const containerRef = useRef(null)
   const editor = useCollaborativeEditor(containerRef, slug)
@@ -109,8 +113,18 @@ export default function Editor({slug}: Props) {
           }
         }
       }
-    }    )
+    })
   }, [fetchFileContents, activeFile]);
+
+  const onChangeLanguage = useCallback((language: string) => {
+    if (editor.current) {
+      const model = editor.current.getModel()
+
+      if (model) {
+        monaco.editor.setModelLanguage(model, language);
+      }
+    }
+  }, []);
 
   const handleSave = useCallback(() => {
     if (!activeFile || !editor.current) return
@@ -121,8 +135,17 @@ export default function Editor({slug}: Props) {
   const handleSelectFileTreeItem = useCallback((selection: NodeApi<FileTreeItem>[]) => {
     if (selection.length === 1 && selection[0].children === null) {
       setActiveFile(selection[0].id);
+
+      const matchedLanguage = detectLanguageFromFilename(selection[0].id);
+
+      console.log(selection[0].id, matchedLanguage)
+
+      if (matchedLanguage) {
+        setLanguage(matchedLanguage);
+        onChangeLanguage(matchedLanguage);
+      }
     }
-  }, []);
+  }, [onChangeLanguage]);
 
   return (
     <div className="h-full w-full flex flex-col bg-zinc-900 text-white">
@@ -140,14 +163,14 @@ export default function Editor({slug}: Props) {
         >{Node}</Tree>
         <div className="flex flex-col flex-1">
           <div className="flex">
+            <LanguageSelector value={language} onChange={onChangeLanguage} />
+
             <Button onClick={handleSave}>Save</Button>
           </div>
           <Card className="flex-1 bg-black rounded-none">
             <div ref={containerRef} className="w-full h-full bg-black" />
           </Card>
         </div>
-
-        
       </div>
     </div>
   )
