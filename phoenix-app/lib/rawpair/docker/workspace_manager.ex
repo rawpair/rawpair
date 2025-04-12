@@ -60,8 +60,8 @@ defmodule RawPair.Docker.WorkspaceManager do
       "--label", "rawpair.workspace_slug=#{workspace.slug}",
       "--mount", "source=#{volume_name},target=#{@app_dir}",
       "--network", @docker_network,
+      "-p", "10000",
       image,
-      # "ttyd", "--writable", "-p", "7681", "tmux", "new", "-A", "-s", "dev", "bash"
     ]
 
     :ok = remove_existing_container(container_name)
