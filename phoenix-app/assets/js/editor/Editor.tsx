@@ -138,8 +138,6 @@ export default function Editor({slug}: Props) {
 
       const matchedLanguage = detectLanguageFromFilename(selection[0].id);
 
-      console.log(selection[0].id, matchedLanguage)
-
       if (matchedLanguage) {
         setLanguage(matchedLanguage);
         onChangeLanguage(matchedLanguage);
