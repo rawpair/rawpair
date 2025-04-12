@@ -8,7 +8,7 @@ import { NodeApi, NodeRendererProps, Tree } from 'react-arborist';
 import { useCollaborativeEditor } from './hooks/useCollaborativeEditor'
 import { Card } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
-import { getCSRFToken } from '@/lib/utils'
+import { cn, getCSRFToken } from '@/lib/utils'
 import { FileTreeItem } from './types';
 import { flatFileListToTreeItems } from './lib/tree-parse';
 import LanguageSelector from './components/LanguageSelector';
@@ -146,7 +146,7 @@ export default function Editor({slug}: Props) {
   }, [onChangeLanguage]);
 
   return (
-    <div className="h-full w-full flex flex-col bg-zinc-900 text-white">
+    <div className="h-full w-full flex flex-col">
       <div className="flex">
         <Tree 
           data={files} 
@@ -160,10 +160,10 @@ export default function Editor({slug}: Props) {
           selection={activeFile}
         >{Node}</Tree>
         <div className="flex flex-col flex-1">
-          <div className="flex">
-            <LanguageSelector value={language} onChange={onChangeLanguage} />
+          <div className={"flex gap-4 w-full py-2"}>
+            <LanguageSelector className="w-[180px]" value={language} onChange={onChangeLanguage} />
 
-            <Button onClick={handleSave}>Save</Button>
+            <Button variant="default" onClick={handleSave}>Save</Button>
           </div>
           <Card className="flex-1 bg-black rounded-none">
             <div ref={containerRef} className="w-full h-full bg-black" />

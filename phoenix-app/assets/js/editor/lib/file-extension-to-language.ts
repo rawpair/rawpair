@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MPL-2.0
+
 export const fileExtensionToLanguageMapping = Object.freeze({
     ".abap": "abap",
     ".bat": "bat",

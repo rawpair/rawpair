@@ -7,7 +7,7 @@ const path = require("path")
 
 module.exports = {
   content: [
-    "./js/**/*.js",
+    './js/**/*.{js,ts,jsx,tsx}',   // React/JSX/TSX components
     "../lib/rawpair_web.ex",
     "../lib/rawpair_web/**/*.*ex"
   ],
