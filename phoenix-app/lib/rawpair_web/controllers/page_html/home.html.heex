@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
 <div class="mt-24 text-center max-w-2xl mx-auto">
-  <h1 class="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
+  <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">
     Welcome to RawPair Alpha
   </h1>
 
-  <p class="mt-6 text-lg leading-8 text-zinc-700">
+  <p class="mt-6 text-lg leading-8">
     This is a fragile, experimental build. Features may change or stop working at any time.
   </p>
-  <p class="mt-4 text-md text-zinc-500">
+  <p class="mt-4 text-md">
     If you're ready to explore, start here:
   </p>
 
@@ -16,7 +16,7 @@
   <form action={~p"/enter"} method="post" class="mt-6 space-y-4">
     <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
     <div>
-      <label for="username" class="block text-sm font-medium text-zinc-700">
+      <label for="username" class="block text-sm font-medium">
         Username
       </label>
       <input
@@ -33,7 +33,7 @@
     <div>
       <button
         type="submit"
-        class="inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700"
+        class="inline-block rounded-md px-4 py-2 text-sm font-semibold shadow-sm bg-primary text-primary-foreground shadow hover:bg-primary/90"
       >
         Enter Workspaces &rarr;
       </button>

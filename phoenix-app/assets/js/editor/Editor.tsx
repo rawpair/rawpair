@@ -146,27 +146,29 @@ export default function Editor({slug}: Props) {
   }, [onChangeLanguage]);
 
   return (
-    <div className="h-full w-full flex flex-col">
+    <div className="h-full w-full flex flex-col bg-background text-foreground">
       <div className="flex">
-        <Tree 
-          data={files} 
-          className="basis-4" 
-          openByDefault={false} 
-          disableDrop 
-          disableDrag 
-          disableEdit
-          disableMultiSelection
-          onSelect={handleSelectFileTreeItem}
-          selection={activeFile}
-        >{Node}</Tree>
+        <div className="basis-4 p-2">
+          <Tree 
+            data={files} 
+            className="" 
+            openByDefault={false} 
+            disableDrop 
+            disableDrag 
+            disableEdit
+            disableMultiSelection
+            onSelect={handleSelectFileTreeItem}
+            selection={activeFile}
+          >{Node}</Tree>
+        </div>
         <div className="flex flex-col flex-1">
-          <div className={"flex gap-4 w-full py-2"}>
+          <div className={"flex gap-4 w-full py-2 px-1"}>
             <LanguageSelector className="w-[180px]" value={language} onChange={onChangeLanguage} />
 
-            <Button variant="default" onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>Save</Button>
           </div>
-          <Card className="flex-1 bg-black rounded-none">
-            <div ref={containerRef} className="w-full h-full bg-black" />
+          <Card className="flex-1 rounded-none">
+            <div ref={containerRef} className="w-full h-full" />
           </Card>
         </div>
       </div>

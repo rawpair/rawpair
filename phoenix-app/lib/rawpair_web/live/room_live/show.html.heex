@@ -22,15 +22,15 @@
   </div>
 
   <!-- Chat UI -->
-  <div class="col-span-1 space-y-4 flex flex-col pr-1">
-    <div class="flex-1 w-full overflow-y-auto border px-2 py-1 bg-white">
+  <div class="col-span-1 space-y-4 flex flex-col p-2 bg-background">
+    <div class="flex-1 w-full overflow-y-auto border-border px-2 py-1">
       <%= for msg <- @messages do %>
         <p><strong><%= msg.user %>:</strong> <%= msg.content %></p>
       <% end %>
     </div>
-    <form phx-submit="send_message" class="flex">
-      <input name="message" type="text" placeholder="Say something…" class="flex-1 p-2 rounded" />
-      <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Send</button>
+    <form phx-submit="send_message" class="flex gap-2">
+      <input name="message" type="text" placeholder="Say something…" class="flex-1 p-2 rounded-md border outline-none" />
+      <button type="submit" class="px-4 py-2 rounded-md bg-primary text-primary-foreground shadow hover:bg-primary/90">Send</button>
     </form>
   </div>
 </div>

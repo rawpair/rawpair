@@ -1,10 +1,10 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
 
-<header class="px-4 sm:px-6 lg:px-8">
-  <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
+<header class="px-4 sm:px-6 lg:px-8 border-b border-border">
+  <div class="flex items-center justify-between py-3 text-sm">
     <div class="flex items-center gap-2">
       <a href="/">
-        <img src={~p"/images/logo.svg"} width="36" />
+        <RawPairWeb.Icons.logo class="w-8 h-7" />
       </a>
       <span class="font-ibm-plex-mono font-semibold">RawPair
         <span class="font-medium" style="font-size: 10px;">
@@ -13,20 +13,20 @@
       </span>
       
     </div>
-    <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-      <a href={~p"/workspaces"} class="hover:text-zinc-700 hover:underline">Workspaces</a>
-      <a href={~p"/dashboard"} class="hover:text-zinc-700 hover:underline">Dashboard</a>
-      <a
+    <div class="flex items-center gap-4 font-semibold leading-6">
+      <a href={~p"/workspaces"} class="hover:text-foreground/90 hover:underline">Workspaces</a>
+      <a href={~p"/dashboard"} class="hover:text-foreground/90 hover:underline">Dashboard</a>
+      <%!-- <a
         href="https://rawpair.dev/docs/user-guide"
-        class="hover:text-zinc-700 hover:underline"
+        class="hover:text-foreground/90 hover:underline"
       >
         User Guide <span aria-hidden="true">&rarr;</span>
-      </a>
+      </a> --%>
       <%= if @username do %>
-        <div>Welcome, <%= @username %></div>
+        <div>Welcome, <span class="text-primary"><%= @username %></span></div>
       <% end %>
 
-      <.link href={~p"/logout"} method="delete" class="text-sm text-zinc-600 hover:underline">
+      <.link href={~p"/logout"} method="delete" class="px-2 py-1 text-sm bg-secondary text-secondary-foreground hover:underline">
         Log out
       </.link>
     </div>

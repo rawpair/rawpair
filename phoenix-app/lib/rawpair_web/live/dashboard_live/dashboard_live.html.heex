@@ -15,10 +15,10 @@
       <tbody>
         <%= for c <- @containers do %>
           <tr class="border-t border-zinc-200">
-            <td class="px-4 py-2 font-mono text-zinc-500"><%= String.slice(c.id, 0, 12) %></td>
+            <td class="px-4 py-2 font-mono"><%= String.slice(c.id, 0, 12) %></td>
             <td class="px-4 py-2"><%= c.image %></td>
             <td class="px-4 py-2"><%= c.name %></td>
-            <td class="px-4 py-2 text-zinc-700"><%= c.status %></td>
+            <td class="px-4 py-2"><%= c.status %></td>
           </tr>
         <% end %>
       </tbody>
