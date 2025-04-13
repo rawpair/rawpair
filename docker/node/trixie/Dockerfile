@@ -4,8 +4,6 @@ FROM debian:trixie-slim
 
 # Base setup
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gnucobol \
-    bash \
     curl \
     libjson-c5 \
     libwebsockets19t64 \
@@ -19,6 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     file \
     supervisor \
+    bash \
+    build-essential \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd (arch-aware)
@@ -45,6 +45,15 @@ RUN chown devuser:devuser /home/devuser/app
 
 RUN mkdir -p /var/log /var/lib/vector /var/log/vector /var/run && chown -R devuser:devuser /var/log /var/lib/vector /var/log/vector /var/run
 
+ENV NVM_DIR=/home/devuser/.nvm
+ENV NODE_VERSION=22
+
+RUN mkdir -p $NVM_DIR
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
+    . "$NVM_DIR/nvm.sh" && \
+    nvm install $NODE_VERSION
+
 # Vector config
 COPY --chown=devuser:devuser vector.toml /etc/vector/vector.toml
 
@@ -58,6 +67,8 @@ RUN chmod +x /usr/local/bin/ttyd-wrapper.sh
 # .bashrc tweaks to trap exits
 RUN echo 'trap "" EXIT' >> /home/devuser/.bashrc && \
     echo 'alias exit="echo Nope."' >> /home/devuser/.bashrc && \
+    echo 'export NVM_DIR="$HOME/.nvm"' >> /home/devuser/.bashrc && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /home/devuser/.bashrc && \
     chown devuser:devuser /home/devuser/.bashrc && \
     chmod 0444 /home/devuser/.bashrc
 
@@ -68,6 +79,6 @@ ENV TERM=xterm \
     LOG_SESSION_ID=dev-session
 
 USER devuser
-EXPOSE 7681
+EXPOSE 7681 10000
 
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/rawpair.conf"]

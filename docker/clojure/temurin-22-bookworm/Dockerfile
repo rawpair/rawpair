@@ -60,7 +60,7 @@ RUN echo 'trap "" EXIT' >> /home/devuser/.bashrc && \
     chmod 0444 /home/devuser/.bashrc
 
 # Environment
-ENV TERM xterm \
+ENV TERM=xterm \
     LOG_USER_ID=devuser \
     LOG_WORKSPACE_ID=default \
     LOG_SESSION_ID=dev-session
