@@ -1,1 +1,1 @@
-call "%~dp0\rawpair" eval RawPair.Release.migrate
+call "%~dp0\rawpair" eval Rawpair.Release.migrate

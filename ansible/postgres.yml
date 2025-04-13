@@ -1,0 +1,96 @@
+- name: PostgreSQL Setup on VPS
+  hosts: vps
+  become: yes
+  vars:
+    postgres_user: rawpair
+    postgres_password: lolsecure
+    postgres_db: rawpair
+    backup_dir: /opt/rawpair/backups
+    pg_version: "16"
+
+  tasks:
+
+    - name: Install PostgreSQL
+      apt:
+        name: "postgresql-{{ pg_version }}"
+        update_cache: yes
+
+    - name: Ensure Postgres is listening on localhost
+      lineinfile:
+        path: "/etc/postgresql/{{ pg_version }}/main/postgresql.conf"
+        regexp: '^#?listen_addresses'
+        line: "listen_addresses = 'localhost'"
+
+    - name: Set port to 5432 (just in case)
+      lineinfile:
+        path: "/etc/postgresql/{{ pg_version }}/main/postgresql.conf"
+        regexp: '^#?port'
+        line: "port = 5432"
+
+    - name: Allow local TCP connections in pg_hba.conf
+      lineinfile:
+        path: "/etc/postgresql/{{ pg_version }}/main/pg_hba.conf"
+        insertafter: EOF
+        line: "host    all             all             127.0.0.1/32            md5"
+
+    - name: Restart PostgreSQL
+      systemd:
+        name: postgresql
+        state: restarted
+        enabled: yes
+
+    - name: Ensure database user exists
+      postgresql_user:
+        name: "{{ postgres_user }}"
+        password: "{{ postgres_password }}"
+        encrypted: yes
+
+    - name: Ensure database exists
+      postgresql_db:
+        name: "{{ postgres_db }}"
+        owner: "{{ postgres_user }}"
+
+    - name: Create backup directory
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0755'
+
+    - name: Install gzip for backups
+      apt:
+        name: gzip
+        state: present
+
+    - name: Create daily pg_dump backup script
+      copy:
+        dest: /etc/cron.daily/rawpair-pg-backup
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          BACKUP_DIR="{{ backup_dir }}"
+          DATE=$(date +%F)
+          FILENAME="$BACKUP_DIR/backup_${DATE}.sql.gz"
+          sudo -u postgres /usr/bin/pg_dump -U {{ postgres_user }} -d {{ postgres_db }} | gzip > "$FILENAME"
+          find "$BACKUP_DIR" -type f -mtime +7 -name '*.sql.gz' -delete
+          echo "$(date): Backup created at $FILENAME" >> "$BACKUP_DIR/backup.log"
+
+    - name: Setup logrotate for PostgreSQL
+      copy:
+        dest: /etc/logrotate.d/postgresql
+        content: |
+          /var/log/postgresql/*.log {
+              daily
+              missingok
+              rotate 7
+              compress
+              delaycompress
+              notifempty
+              create 640 postgres adm
+              sharedscripts
+              postrotate
+                  /usr/bin/systemctl reload postgresql > /dev/null
+              endscript
+          }
+

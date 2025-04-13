@@ -6,18 +6,53 @@ The recommendation is to rely on systemd for process management.
 
 ### Supporting infrastructure
 
-Secure Postgres:
+The recommendation is not to rely on containerized postgres in production.
 
-```bash
-sudo ufw allow from 127.0.0.1 to any port 5432
-sudo ufw deny 5432
+#### Launch supportinc containers
+
+Run `docker compose -f docker-compose.no-postgres.yml up -d` for supporting infrastructure, **without** postgres.
+
+Run `docker compose -f docker-compose.yml up -d` for supporting infrastructure, **including** postgres.
+
+##### systemd service
+
+Create new file `/etc/systemd/system/rawpair-infra.service`
+
+```ini
+[Unit]
+Description=RawPair Supporting Infrastructure
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/<your-user>/rawpair
+ExecStart=/usr/bin/docker compose -f docker-compose.no-postgres.yml up -d
+ExecStop=/usr/bin/docker compose -f docker-compose.no-postgres.yml down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-Run `docker compose up -d`
+```bash
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable --now rawpair-infra
+```
 
 ### Phoenix App
 
 Run `deploy.sh` within `phoenix-app`.
+
+### Postgres
+
+Postgres can be quite fragile, all it takes is an unclean reboot (happens more frequently than one might think on a cheap VPS) and the data might get corrupted.
+
+The recommendation is to use a fully managed postgres database. If that is not an option avoid at least containerized postgres.
+
+You can use the [included postgres ansible playbook](./ansible/README.md) as a starting point.
 
 #### .env file
 
@@ -35,8 +70,8 @@ After=network.target
 [Service]
 User=<your-user>
 WorkingDirectory=/home/<your-user>/rawpair/phoenix-app/_build/prod/rel/rawpair
-ExecStart=/home/<your-user>/rawpair/phoenix-app/start.sh
-ExecStop=/home/<your-user>/rawpair/phoenix-app/_build/prod/rel/rawpair/bin/rawpair stop
+ExecStart=/bin/bash /home/<your-user>/rawpair/phoenix-app/start.sh
+ExecStop=/bin/bash /home/<your-user>/rawpair/phoenix-app/stop.sh
 Restart=always
 Environment=PHX_SERVER=true
 Environment=MIX_ENV=prod
@@ -52,6 +87,16 @@ sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl enable --now rawpair
 ```
+
+### Firewall
+
+Secure Postgres:
+
+```bash
+sudo ufw allow from 127.0.0.1 to any port 5432
+sudo ufw deny 5432
+```
+
 
 ## Enable CloudFlare tunneling (Optional but strongly recommended)
 
