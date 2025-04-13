@@ -41,6 +41,22 @@ RawPair is built on a modern, production-grade foundation:
 
 ---
 
+## Supported Tech Stacks
+
+| Stack                      | Notes                                                                                       |
+|---------------------------|----------------------------------------------------------------------------------------------|
+| **Ada**                   | Includes GNU GNAT                                                                            |
+| **COBOL**                 | Includes GNU COBOL                                                                           |
+| **Clojure**               | Runs on Temurin (OpenJDK); versions v21, v22, v23, v24 available                             |
+| **Node.js**              | Managed via NVM; multiple versions supported                                                  |
+| **OCaml**                | Includes OPAM, OCaml 4.14.1, Dune, Menhir                                                     |
+| **PHP**                  | Includes Nginx and FPM/CLI; PHP 8.0–8.3 switchable via shell scripts                          |
+| **Steel Bank Common Lisp** | Includes SBCL and Quicklisp                                                                  |
+
+Can't see your favourite stack? Submit a PR or create an issue.
+
+---
+
 ## System Requirements
 
 To run RawPair smoothly in a self-hosted environment, you'll need:
