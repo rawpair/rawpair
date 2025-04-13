@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MPL-2.0
+- name: Cloudflare Tunnel Setup for RawPair
+  hosts: rawpair
+  become: yes
+  vars:
+    user: your-user
+    tunnel_name: rawpair
+    domain: your-domain.com
+
+  tasks:
+    - name: Add Cloudflare apt repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/ focal main"
+        state: present
+
+    - name: Import Cloudflare GPG key
+      get_url:
+        url: https://pkg.cloudflare.com/cloudflare-main.gpg
+        dest: /usr/share/keyrings/cloudflare-main.gpg
+
+    - name: Install cloudflared
+      apt:
+        name: cloudflared
+        state: present
+        update_cache: yes
+
+    - name: Create systemd service for cloudflared tunnel
+      copy:
+        dest: /etc/systemd/system/cloudflared-rawpair.service
+        content: |
+          [Unit]
+          Description=Cloudflare Tunnel for RawPair
+          After=network.target
+
+          [Service]
+          Type=simple
+          User={{ user }}
+          ExecStart=/usr/bin/cloudflared tunnel run {{ tunnel_name }}
+          Restart=always
+          RestartSec=5
+          Environment=HOME=/home/{{ user }}
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload and enable cloudflared tunnel service
+      systemd:
+        daemon_reload: yes
+        name: cloudflared-rawpair
+        enabled: yes
+        state: started

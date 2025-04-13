@@ -1,6 +1,5 @@
-#!/bin/bash
-
 # SPDX-License-Identifier: MPL-2.0
+#!/bin/bash
 
 set -e
 
