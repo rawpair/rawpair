@@ -6,6 +6,15 @@ defmodule RawPairWeb.FileController do
   alias RawPair.Workspaces
   alias RawPair.Docker.WorkspaceManager
 
+  @allowed_mime_types [
+    "text/plain",
+    "text/x-c",
+    "text/x-ruby",
+    "application/json",
+    "application/javascript",
+    "application/x-typescript"
+  ]
+
   def index(conn, %{"slug" => slug}) do
     case WorkspaceManager.list_files(slug) do
       {:ok, files} ->
@@ -44,11 +53,14 @@ defmodule RawPairWeb.FileController do
           else
             # Second: check MIME type
             mime_cmd = ["exec", container, "file", "--brief", "--mime-type", safe_path]
+
             case System.cmd("docker", mime_cmd, stderr_to_stdout: true) do
               {mime, 0} ->
                 mime = String.trim(mime)
-                if String.starts_with?(mime, "text/") do
+
+                if mime in @allowed_mime_types do
                   cat_cmd = ["exec", container, "cat", safe_path]
+
                   case System.cmd("docker", cat_cmd, stderr_to_stdout: true) do
                     {contents, 0} ->
                       json(conn, %{contents: contents})
@@ -61,13 +73,13 @@ defmodule RawPairWeb.FileController do
                 else
                   conn
                   |> put_status(:unsupported_media_type)
-                  |> json(%{error: "Only text files are supported"})
+                  |> json(%{error: "Only text files are supported. Detected file type: #{mime}", detected: mime})
                 end
 
               _ ->
                 conn
                 |> put_status(:unsupported_media_type)
-                |> json(%{error: "Only text files are supported"})
+                |> json(%{error: "Unable to detect mime type of file"})
             end
           end
 
