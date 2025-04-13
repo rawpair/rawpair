@@ -150,6 +150,6 @@ sudo systemctl enable --now cloudflared-rawpair
 
 ## Ansible playbooks
 
-The [included Ansible playbooks](./ansible/README.md) allow you to reliably set up the RawPair infrastructure, including Docker, Phoenix, UFW rules, and Cloudflare Tunnels.
+The [./ansible/README.md](included Ansible playbooks) allow you to reliably set up the RawPair infrastructure, including Docker, Phoenix, UFW rules, and Cloudflare Tunnels.
 
 Sensitive values such as `SECRET_KEY_BASE` and `DATABASE_URL` should not be stored directly in playbooks. Instead, use [Ansible Vault](https://docs.ansible.com/ansible/latest/vault_guide/index.html) to encrypt these secrets. You can reference them using vars_files within the playbook. This enables the creation of secure `.env` files at deploy time without exposing sensitive information in plaintext.

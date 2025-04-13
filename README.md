@@ -114,7 +114,7 @@ cd phoenix-app
 ./start.sh
 ```
 
-Refer to [./DEPLOYMENT.md](deployment instructions/guidelines)
+Refer to [deployment instructions/guidelines](./DEPLOYMENT.md) and [Ansible playbooks](./ansible/README.md)
 
 **Important**: You should generate your own `SECRET_KEY_BASE`
 
