@@ -5,16 +5,30 @@
   vars:
     user: your-user
     rawpair_dir: "/home/{{ user }}/rawpair"
+    database_url: "postgres://postgres:postgres@localhost/rawpair_dev"
+    secret_key_base: "SV/7XaCy1K3ZxDqgRZluV0IfgHaSmD5oC1mVCH5vEd2ZWFmJERcSwadMOfvl1o5H"
+    phx_host: "localhost"
+    port: 4000
+    rawpair_host: "localhost"
+    rawpair_port: 4000
+    terminal_host: "localhost"
+    terminal_port: 8080
+    grafana_host: "localhost"
+    grafana_port: 3000
 
   tasks:
     - name: Ensure required packages are installed
       apt:
         name:
           - ufw
-          - docker.io
-          - docker-compose
         state: present
         update_cache: yes
+
+    - name: Create .env file from template
+      template:
+        src: env.j2
+        dest: "{{ rawpair_dir }}/phoenix-app/.env"
+        mode: '0600'
 
     - name: Create systemd service for rawpair-infra (no-postgres)
       copy:
@@ -70,15 +84,4 @@
         enabled: yes
         state: started
 
-    - name: Secure Postgres port with UFW
-      ufw:
-        rule: allow
-        proto: tcp
-        from_ip: 127.0.0.1
-        port: 5432
-
-    - name: Deny external Postgres access
-      ufw:
-        rule: deny
-        proto: tcp
-        port: 5432
+    

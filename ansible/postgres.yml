@@ -94,4 +94,17 @@
                   /usr/bin/systemctl reload postgresql > /dev/null
               endscript
           }
+    
+    - name: Secure Postgres port with UFW
+      ufw:
+        rule: allow
+        proto: tcp
+        from_ip: 127.0.0.1
+        port: 5432
+
+    - name: Deny external Postgres access
+      ufw:
+        rule: deny
+        proto: tcp
+        port: 5432
 
