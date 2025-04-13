@@ -1,4 +1,15 @@
 # SPDX-License-Identifier: MPL-2.0
+#
+# IMPORTANT: This playbook assumes that the Cloudflare tunnel has already
+# been authenticated and created manually using:
+#
+#   cloudflared login
+#   cloudflared tunnel create rawpair
+#
+# This will generate ~/.cloudflared/cert.pem and register the tunnel with your
+# Cloudflare account. You can then proceed to use this playbook to automate
+# the installation and setup of the systemd tunnel service.
+
 - name: Cloudflare Tunnel Setup for RawPair
   hosts: rawpair
   become: yes
@@ -10,7 +21,7 @@
   tasks:
     - name: Add Cloudflare apt repository
       apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/ focal main"
+        repo: "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/ noble main"
         state: present
 
     - name: Import Cloudflare GPG key
@@ -24,9 +35,19 @@
         state: present
         update_cache: yes
 
+    - name: Ensure cert.pem exists
+      stat:
+        path: "/home/{{ user }}/.cloudflared/cert.pem"
+      register: cert_status
+
+    - name: Abort if cert.pem is missing
+      fail:
+        msg: "Missing cert.pem. You must run 'cloudflared login' and 'cloudflared tunnel create {{ tunnel_name }}' manually first."
+      when: not cert_status.stat.exists
+
     - name: Create systemd service for cloudflared tunnel
       copy:
-        dest: /etc/systemd/system/cloudflared-rawpair.service
+        dest: /etc/systemd/system/cloudflared-{{ tunnel_name }}.service
         content: |
           [Unit]
           Description=Cloudflare Tunnel for RawPair
@@ -46,6 +67,6 @@
     - name: Reload and enable cloudflared tunnel service
       systemd:
         daemon_reload: yes
-        name: cloudflared-rawpair
+        name: cloudflared-{{ tunnel_name }}
         enabled: yes
         state: started
