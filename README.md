@@ -1,5 +1,9 @@
 # RawPair
 
+[![Status: Pre-alpha](https://img.shields.io/badge/status-pre--alpha-orange)]()
+[![License: MPL-2.0](https://img.shields.io/github/license/rawpair/rawpair)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/rawpair/rawpair?style=social)](https://github.com/beyond-tabs/rawpair/stargazers)
+
 **RawPair** is a self-hosted, real-time collaborative development environment.
 It enables you to spin up isolated containers with a shared terminal and code editor for effective pair (or mob) programming.
 
