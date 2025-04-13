@@ -80,25 +80,25 @@ export default function Editor({slug}: Props) {
     
   }, []);
 
+  const loadFiles = useCallback(() => {
+    fetchFiles(slug).then((data) => {
+      if (data) {
+        setFiles(flatFileListToTreeItems(data.files.filter(filePath => filePath.trim())))
+      }
+    })
+  }, [fetchFiles]);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchFiles(slug).then((data) => {
-        if (data) {
-          setFiles(flatFileListToTreeItems(data.files))
-        }
-      })
+      loadFiles()
     }, 5000);
 
     return () => clearInterval(interval)
-  }, [slug]);
+  }, [loadFiles, slug]);
 
   useEffect(() => {
-    fetchFiles(slug).then((data) => {
-      if (data) {
-        setFiles(flatFileListToTreeItems(data.files))
-      }
-    })
-  }, [fetchFiles, slug]);
+    loadFiles()
+  }, [loadFiles, slug]);
 
   useEffect(() => {
     if (!activeFile) return
