@@ -9,9 +9,28 @@ defmodule RawPairWeb.FileController do
   @allowed_mime_types [
     "text/plain",
     "text/x-c",
+    "text/x-c++",
+    "text/css",
+    "text/x-common-lisp",
+    "text/x-elixir",
+    "text/x-erlang",
+    "text/x-go",
+    "text/x-haskell",
+    "text/html",
+    "text/x-java-source",
+    "text/x-lua",
+    "text/x-ocaml",
+    "text/x-pascal",
+    "text/x-php",
+    "text/x-python",
     "text/x-ruby",
+    "text/x-rustsrc",
+    "text/x-scala",
+    "text/x-scheme",
+    "text/x-shellscript",
     "application/json",
     "application/javascript",
+    "application/xml",
     "application/x-typescript"
   ]
 
