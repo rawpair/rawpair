@@ -63,11 +63,21 @@ RUN mkdir -p /run/nginx && \
 
 WORKDIR /home/devuser/app
 RUN chown devuser:devuser /home/devuser/app
-RUN mkdir -p /var/log /var/lib/vector /var/log/vector /var/run /var/log/nginx && \
-    chown -R devuser:devuser /var/log /var/lib/vector /var/log/vector /var/run /var/log/nginx
 
-RUN mkdir -p /home/devuser/run && \
-    chown -R devuser:devuser /home/devuser/run
+RUN mkdir -p \
+        /var/log \
+        /var/lib/vector \
+        /var/log/vector \
+        /var/run \
+        /var/run /var/log/nginx \
+        /home/devuser/run && \
+    chown -R devuser:devuser \
+        /var/log \
+        /var/lib/vector \
+        /var/log/vector \
+        /var/run \
+        /var/run /var/log/nginx \
+        /home/devuser/run
 
 RUN mkdir -p /run/nginx && chown -R devuser:devuser /run/nginx
 

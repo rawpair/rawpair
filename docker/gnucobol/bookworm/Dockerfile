@@ -43,7 +43,18 @@ RUN useradd -ms /bin/bash devuser
 WORKDIR /home/devuser/app
 RUN chown devuser:devuser /home/devuser/app
 
-RUN mkdir -p /var/log /var/lib/vector /var/log/vector /var/run && chown -R devuser:devuser /var/log /var/lib/vector /var/log/vector /var/run
+RUN mkdir -p \
+        /var/log \
+        /var/lib/vector \
+        /var/log/vector \
+        /var/run \
+        /home/devuser/run && \
+    chown -R devuser:devuser \
+        /var/log \
+        /var/lib/vector \
+        /var/log/vector \
+        /var/run \
+        /home/devuser/run
 
 # Vector config
 COPY --chown=devuser:devuser vector.toml /etc/vector/vector.toml
