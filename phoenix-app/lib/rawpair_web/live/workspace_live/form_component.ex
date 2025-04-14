@@ -17,6 +17,7 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
     {"Node.js (nvm with LTS pre-installed) [Debian Trixie]", "node:trixie"},
     {"OCaml 4.14.1 [Ubuntu 24.04]", "ocaml:ubuntu-2404"},
     {"PHP-FPM 8.0/8.1/8.2/8.3 + Nginx [Debian Trixie]", "php:trixie"},
+    {"Python 3.12 with AI/ML tools [CUDA 12.8.1 - Ubuntu 24.04]", "python:nvidia-ubuntu24.04"},
     {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "sbcl:trixie"}
   ]
 

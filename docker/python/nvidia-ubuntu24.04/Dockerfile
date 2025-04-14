@@ -1,24 +1,30 @@
 # SPDX-License-Identifier: MPL-2.0
 
-FROM debian:trixie-slim
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
 
-# Base setup
+# Non-interactive installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    build-essential \
+    git \
     curl \
-    libjson-c5 \
-    libwebsockets19t64 \
-    ca-certificates \
-    libssl3 \
-    procps \
+    wget \
+    pkg-config \
+    supervisor \
     tmux \
+    nano \
     vim \
     emacs \
-    nano \
-    git \
-    file \
-    supervisor \
     bash \
-    build-essential \
+    file \
+    procps \
+    libwebsockets-dev \
+    libjson-c-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd (arch-aware)
@@ -38,6 +44,24 @@ RUN set -eux; \
 # Install Vector
 RUN curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | bash -s -- -y --prefix /usr/local
 
+# Install pipx (bypass PEP 668 restrictions)
+RUN python3 -m pip install --no-cache-dir pipx --break-system-packages && \
+    pipx ensurepath
+
+# Install core ML/AI Python packages
+RUN pip3 install --no-cache-dir --break-system-packages \
+    numpy scipy pandas scikit-learn matplotlib seaborn plotly \
+    jupyterlab notebook ipython \
+    torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118 \
+    tensorflow keras tf-keras \
+    xgboost lightgbm catboost \
+    transformers datasets accelerate tokenizers \
+    sentence-transformers faiss-cpu \
+    optuna mlflow hydra-core pydantic \
+    fastapi uvicorn gradio streamlit \
+    joblib dill cloudpickle \
+    black isort ruff flake8 mypy pylint pytest pytest-cov tox rich httpie
+
 # Create dev user and working directory
 RUN useradd -ms /bin/bash devuser
 WORKDIR /home/devuser/app
@@ -56,20 +80,11 @@ RUN mkdir -p \
         /var/run \
         /home/devuser/run
 
-ENV NVM_DIR=/home/devuser/.nvm
-ENV NODE_VERSION=22
-
-RUN mkdir -p $NVM_DIR
-
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    . "$NVM_DIR/nvm.sh" && \
-    nvm install $NODE_VERSION
-
 # Vector config
 COPY --chown=devuser:devuser vector.toml /etc/vector/vector.toml
 
 # Supervisord config
-COPY --chown=devuser:devuser supervisord.conf /etc/supervisor/conf.d/rawpair.conf
+COPY --chown=devuser:devuser supervisord.conf /home/devuser/supervisord.conf
 
 # TTYD wrapper script
 COPY ttyd-wrapper.sh /usr/local/bin/ttyd-wrapper.sh
@@ -78,8 +93,7 @@ RUN chmod +x /usr/local/bin/ttyd-wrapper.sh
 # .bashrc tweaks to trap exits
 RUN echo 'trap "" EXIT' >> /home/devuser/.bashrc && \
     echo 'alias exit="echo Nope."' >> /home/devuser/.bashrc && \
-    echo 'export NVM_DIR="$HOME/.nvm"' >> /home/devuser/.bashrc && \
-    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /home/devuser/.bashrc && \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/devuser/.bashrc && \
     chown devuser:devuser /home/devuser/.bashrc && \
     chmod 0444 /home/devuser/.bashrc
 
@@ -89,6 +103,9 @@ ENV TERM=xterm \
     LOG_SESSION_ID=dev-session
 
 USER devuser
+
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
 EXPOSE 7681 10000
 
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/rawpair.conf"]
+CMD ["supervisord", "-c", "/home/devuser/supervisord.conf"]

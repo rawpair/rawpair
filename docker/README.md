@@ -16,3 +16,7 @@ Or run `./build-images.sh`.
 You can filter by language, i.e. `./build-images.sh --filter=ada`
 
 You can perform a dry run, i.e. `./build-images.sh --filter=ada --dry-run`
+
+### Pruning builder cache
+
+`docker builder prune --all --force`
