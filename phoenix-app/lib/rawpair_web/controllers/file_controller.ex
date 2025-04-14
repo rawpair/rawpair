@@ -143,7 +143,11 @@ defmodule RawPairWeb.FileController do
     File.rm(tmp)
 
     case status do
-      0 -> :ok
+      0 ->
+        # Force ownership fix
+        {_, chown_status} = System.cmd("docker", ["exec", "--user", "root", container, "chown", "devuser:devuser", path])
+        if chown_status == 0, do: :ok, else: {:error, "chown failed with #{chown_status}"}
+
       _ -> {:error, "docker cp failed with #{status}"}
     end
   end
