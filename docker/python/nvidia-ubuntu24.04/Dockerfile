@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv \
     build-essential \
+    cmake \
+    ninja-build \
+    clang \
     git \
     curl \
     wget \
@@ -48,19 +51,53 @@ RUN curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | bash -s -- -y 
 RUN python3 -m pip install --no-cache-dir pipx --break-system-packages && \
     pipx ensurepath
 
-# Install core ML/AI Python packages
+# Numerical & data science core
 RUN pip3 install --no-cache-dir --break-system-packages \
-    numpy scipy pandas scikit-learn matplotlib seaborn plotly \
-    jupyterlab notebook ipython \
-    torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118 \
-    tensorflow keras tf-keras \
-    xgboost lightgbm catboost \
+    numpy scipy pandas scikit-learn matplotlib seaborn plotly
+
+# Interactive environments
+RUN pip3 install --no-cache-dir --break-system-packages \
+    jupyterlab notebook ipython
+
+# Deep learning frameworks
+RUN pip3 install --no-cache-dir --break-system-packages \
+    torch torchvision torchaudio \
+    tensorflow keras tf-keras
+
+# Gradient boosting / tabular models
+RUN pip3 install --no-cache-dir --break-system-packages \
+    xgboost lightgbm catboost
+
+# Transformers and NLP tooling
+RUN pip3 install --no-cache-dir --break-system-packages \
     transformers datasets accelerate tokenizers \
-    sentence-transformers faiss-cpu \
-    optuna mlflow hydra-core pydantic \
-    fastapi uvicorn gradio streamlit \
-    joblib dill cloudpickle \
-    black isort ruff flake8 mypy pylint pytest pytest-cov tox rich httpie
+    sentence-transformers faiss-cpu
+
+# Experiment management & config
+RUN pip3 install --no-cache-dir --break-system-packages \
+    optuna mlflow hydra-core pydantic
+
+# Web service & UI prototyping
+RUN pip3 install --no-cache-dir --break-system-packages \
+    fastapi uvicorn gradio streamlit
+
+# Serialization & execution helpers
+RUN pip3 install --no-cache-dir --break-system-packages \
+    joblib dill cloudpickle
+
+# Formatting, linting, type checking
+RUN pip3 install --no-cache-dir --break-system-packages \
+    black isort ruff flake8 mypy pylint
+
+# Testing
+RUN pip3 install --no-cache-dir --break-system-packages \
+     pytest pytest-cov tox
+
+# Rich output & CLI toys
+RUN pip3 install --no-cache-dir --break-system-packages \
+    rich httpie
+
+RUN pipx install poetry
 
 # Create dev user and working directory
 RUN useradd -ms /bin/bash devuser
@@ -104,8 +141,6 @@ ENV TERM=xterm \
 
 USER devuser
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-EXPOSE 7681 10000
+EXPOSE 6006 7681 10000
 
 CMD ["supervisord", "-c", "/home/devuser/supervisord.conf"]
