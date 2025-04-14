@@ -23,6 +23,7 @@ defmodule RawPairWeb.FileController do
     "text/x-pascal",
     "text/x-php",
     "text/x-python",
+    "text/x-script.python",
     "text/x-ruby",
     "text/x-rustsrc",
     "text/x-scala",
