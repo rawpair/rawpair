@@ -3,6 +3,8 @@
 Development container for Python with full GPU-accelerated ML/AI tooling.
 Based on `nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04`.
 
+![python-terminal](https://github.com/user-attachments/assets/562dc149-ee3b-4f01-aa66-5981de01e661)
+
 **Generated images weigh over 20GB and take several minutes to build**.
 
 ### Key Features
