@@ -60,9 +60,9 @@ defmodule RawPair.Docker.WorkspaceManager do
       "--label", "rawpair.workspace_slug=#{workspace.slug}",
       "--mount", "source=#{volume_name},target=#{@app_dir}",
       "--network", @docker_network,
-      "--cpus=1.0",
-      "--memory=1g",
-      "--memory-swap=2g",
+      "--cpus=2.5",
+      "--memory=2.5g",
+      "--memory-swap=4g",
       "-p", "10000",
       image,
     ]
