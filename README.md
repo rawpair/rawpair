@@ -103,6 +103,10 @@ Additionally, three configuration files are required for proper orchestration: `
 
 You're welcome to customize the images, but omitting these components will likely break core functionality. In short: build your own, but build smart.
 
+### A note on named volumes
+
+Any files saved in `/home/devuser/app` will persist in the associated named volume. Everything else will be discarded when the container stops.
+
 ## Quick Start (Development)
 
 ```bash
