@@ -37,7 +37,7 @@ while IFS= read -r dockerfile; do
   fi
 
   image_name=$(echo "$rel_path" | tr '/' ':')
-  cmd="echo 'Building $image_name'; docker build -f '$dockerfile' -t '$image_name' ."
+  cmd="echo 'Building $image_name'; docker build -f '$dockerfile' -t 'rawpair/$image_name' ."
   BUILD_CMDS+=("$cmd")
 done < <(find . -name Dockerfile)
 

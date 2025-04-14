@@ -5,20 +5,21 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
 
   alias RawPair.Workspaces
 
+  # This really should be exposed by Phoenix based on actual availability of images
   @docker_images [
-    {"Ada FSF GNAT [Debian Bookworm]", "ada:bookworm"},
-    {"Ada FSF GNAT [Debian Trixie]", "ada:trixie"},
-    {"Clojure (temurin-21-tools-deps-bookworm)", "clojure:temurin-21-bookworm"},
-    {"Clojure (temurin-22-tools-deps-bookworm)", "clojure:temurin-22-bookworm"},
-    {"Clojure (temurin-23-tools-deps-bookworm)", "clojure:temurin-23-bookworm"},
-    {"Clojure (temurin-24-tools-deps-bookworm)", "clojure:temurin-24-bookworm"},
-    {"GNU Cobol (3.1.2) [Debian Bookworm]", "gnucobol:bookworm"},
-    {"GNU Cobol (3.2.0) [Debian Trixie]", "gnucobol:trixie"},
-    {"Node.js (nvm with LTS pre-installed) [Debian Trixie]", "node:trixie"},
-    {"OCaml 4.14.1 [Ubuntu 24.04]", "ocaml:ubuntu-2404"},
-    {"PHP-FPM 8.0/8.1/8.2/8.3 + Nginx [Debian Trixie]", "php:trixie"},
-    {"Python 3.12 with AI/ML tools [CUDA 12.8.1 - Ubuntu 24.04]", "python:nvidia-ubuntu24.04"},
-    {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "sbcl:trixie"}
+    {"Ada FSF GNAT [Debian Bookworm]", "rawpair/ada:bookworm"},
+    {"Ada FSF GNAT [Debian Trixie]", "rawpair/ada:trixie"},
+    {"Clojure (temurin-21-tools-deps-bookworm)", "rawpair/clojure:temurin-21-bookworm"},
+    {"Clojure (temurin-22-tools-deps-bookworm)", "rawpair/clojure:temurin-22-bookworm"},
+    {"Clojure (temurin-23-tools-deps-bookworm)", "rawpair/clojure:temurin-23-bookworm"},
+    {"Clojure (temurin-24-tools-deps-bookworm)", "rawpair/clojure:temurin-24-bookworm"},
+    {"GNU Cobol (3.1.2) [Debian Bookworm]", "rawpair/gnucobol:bookworm"},
+    {"GNU Cobol (3.2.0) [Debian Trixie]", "rawpair/gnucobol:trixie"},
+    {"Node.js (nvm with LTS pre-installed) [Debian Trixie]", "rawpair/node:trixie"},
+    {"OCaml 4.14.1 [Ubuntu 24.04]", "rawpair/ocaml:ubuntu-2404"},
+    {"PHP-FPM 8.0/8.1/8.2/8.3 + Nginx [Debian Trixie]", "rawpair/php:trixie"},
+    {"Python 3.12 with AI/ML tools [CUDA 12.8.1 - Ubuntu 24.04]", "rawpair/python:nvidia-ubuntu24.04"},
+    {"Steel Bank Common Lisp (2.5.2) [Debian Trixie]", "rawpair/sbcl:trixie"}
   ]
 
   @impl true
