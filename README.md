@@ -43,17 +43,18 @@ RawPair is built on a modern, production-grade foundation:
 
 ## Supported Tech Stacks
 
-| Stack                                                    | Notes                                                                                                 |
-|----------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| **[Ada](https://www.gnu.org/software/gnat/)**            | Includes GNU GNAT                                                                                     |
-| **[COBOL](https://gnucobol.sourceforge.io/)**            | Includes GNU COBOL                                                                                    |
-| **[Clojure](https://clojure.org/)**                      | Runs on Temurin (OpenJDK); versions v21, v22, v23, v24 available                                      |
-| **[Node.js](https://nodejs.org/)**                       | Managed via NVM; multiple versions supported                                                          |
-| **[OCaml](https://ocaml.org/)**                          | Includes OPAM, OCaml 4.14.1, Dune, Menhir                                                             |
-| **[PHP](https://www.php.net/)**                          | Includes Nginx and FPM/CLI; PHP 8.0–8.3 switchable via shell scripts                                  |
-| **[Python](https://www.python.org/)** with AI/ML tools   | Includes system Python 3.12, Poetry, pipx, and full ML/AI tooling; optional GPU support via CUDA 12.8 |
-| **[Smalltalk](https://www.gnu.org/software/smalltalk/)** | Includes GNU Smalltalk                                                                                |
-| **[Steel Bank Common Lisp](https://www.sbcl.org/)**      | Includes SBCL and Quicklisp                                                                           |
+| Stack                                                    | Docker Repository                                                                     | Notes                                          |
+|----------------------------------------------------------|---------------------------------------------------------------------------------------|------------------------------------------------|
+| **[Ada](https://www.gnu.org/software/gnat/)**            | [rawpair/ada](https://hub.docker.com/repository/docker/rawpair/ada)                   | Includes GNU GNAT                              |
+| **[Clojure](https://clojure.org/)**                      | [rawpair/clojure](https://hub.docker.com/repository/docker/rawpair/clojure)           | Runs on Temurin (OpenJDK)                      |
+| **[COBOL](https://gnucobol.sourceforge.io/)**            | [rawpair/gnucobol](https://hub.docker.com/repository/docker/rawpair/gnucobol)         | Includes GNU COBOL                             |
+| **[Haskell](https://www.haskell.org/)**                  | [rawpair/haskell](https://hub.docker.com/repository/docker/rawpair/haskell)           | Includes GHC                                   |
+| **[Node.js](https://nodejs.org/)**                       | [rawpair/node](https://hub.docker.com/repository/docker/rawpair/node)                 | Managed via NVM                                |
+| **[OCaml](https://ocaml.org/)**                          | [rawpair/ocaml](https://hub.docker.com/repository/docker/rawpair/ocaml)               | Includes OPAM, OCaml 4.14.1, Dune, Menhir      |
+| **[PHP](https://www.php.net/)**                          | [rawpair-php](https://hub.docker.com/repository/docker/rawpair/php/general)           | Includes FPM/CLI; PHP 8.0–8.3                  |
+| **[Python](https://www.python.org/)**                    | [rawpair/python](https://hub.docker.com/repository/docker/rawpair/python/general)     | 2 base images available: Trixie; NVIDIA CUDA   |
+| **[Smalltalk](https://www.gnu.org/software/smalltalk/)** | [rawpair/gnusmalltalk](https://hub.docker.com/repository/docker/rawpair/gnusmalltalk) | Includes GNU Smalltalk                         |
+| **[Steel Bank Common Lisp](https://www.sbcl.org/)**      | [rawpair/sbcl](https://hub.docker.com/repository/docker/rawpair/sbcl/general)         | Includes SBCL and Quicklisp                    |
 
 Can't see your favourite stack? Submit a PR or create an issue.
 
