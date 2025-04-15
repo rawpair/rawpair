@@ -6,6 +6,12 @@ set -e
 FILTER=""
 DRY_RUN=0
 JOBS=${JOBS:-2}
+ARCH_TAG=""
+
+ARCH=$(uname -m)
+if [[ "$ARCH" == "aarch64" ]]; then
+  ARCH_TAG="-arm64"
+fi
 
 # Parse args
 for arg in "$@"; do
@@ -25,6 +31,7 @@ done
 
 echo "Building RawPair Docker images${FILTER:+ for '$FILTER'} with $JOBS parallel jobs..."
 [ "$DRY_RUN" -eq 1 ] && echo "(dry-run mode enabled, no builds will be executed)"
+[ -n "$ARCH_TAG" ] && echo "(detected architecture: $ARCH → tag suffix: $ARCH_TAG)"
 
 # Prepare build commands
 BUILD_CMDS=()
@@ -37,7 +44,8 @@ while IFS= read -r dockerfile; do
   fi
 
   image_name=$(echo "$rel_path" | tr '/' ':')
-  cmd="echo 'Building $image_name'; docker build -f '$dockerfile' -t 'rawpair/$image_name' ."
+  tag_name="rawpair/$image_name$ARCH_TAG"
+  cmd="echo 'Building $tag_name'; docker build -f '$dockerfile' -t '$tag_name' ."
   BUILD_CMDS+=("$cmd")
 done < <(find . -name Dockerfile)
 
