@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: MPL-2.0
 
 - name: Install Docker Engine from Docker's official repository
-  hosts: rawpair
+  hosts: vps
   become: yes
   vars:
     user: your-user
+    os: debian
 
   tasks:
     - name: Remove system Docker packages (if any)
@@ -30,15 +31,26 @@
         state: present
         update_cache: yes
 
-    - name: Add Docker GPG key
-      get_url:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        dest: /etc/apt/keyrings/docker.gpg
+    - name: Ensure /etc/apt/keyrings exists
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download and dearmor Docker GPG key
+      shell: |
+        curl -fsSL https://download.docker.com/linux/{{ os }}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Set permissions on Docker GPG key
+      file:
+        path: /etc/apt/keyrings/docker.gpg
         mode: '0644'
 
     - name: Add Docker APT repository
       apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release | lower }} stable"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ os }} {{ ansible_distribution_release | lower }} stable"
         state: present
         filename: docker
 

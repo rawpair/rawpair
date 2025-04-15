@@ -11,25 +11,15 @@
 # the installation and setup of the systemd tunnel service.
 
 - name: Cloudflare Tunnel Setup for RawPair
-  hosts: rawpair
+  hosts: vps
   become: yes
   vars:
     user: your-user
     tunnel_name: rawpair
-    domain: your-domain.com
+    os: bookworm
 
   tasks:
-    - name: Add Cloudflare apt repository
-      apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/ noble main"
-        state: present
-
-    - name: Import Cloudflare GPG key
-      get_url:
-        url: https://pkg.cloudflare.com/cloudflare-main.gpg
-        dest: /usr/share/keyrings/cloudflare-main.gpg
-
-    - name: Install cloudflared
+    - name: cloudflared is installed
       apt:
         name: cloudflared
         state: present

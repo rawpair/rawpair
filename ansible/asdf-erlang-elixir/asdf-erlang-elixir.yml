@@ -1,0 +1,92 @@
+# SPDX-License-Identifier: MPL-2.0
+
+- name: Install asdf from binary with latest Erlang and Elixir
+  hosts: vps
+  vars:
+    user: your-user
+    asdf_version: "v0.16.7"
+    asdf_install_dir: "/home/{{ user }}/.asdf"
+    os: linux
+    arch: amd64
+    asdf_bin_url: "https://github.com/asdf-vm/asdf/releases/download/{{ asdf_version }}/asdf-{{ asdf_version }}-{{ os }}-{{ arch }}.tar.gz"
+
+  tasks:
+    - name: Install required system packages
+      become: yes
+      become_method: sudo
+      apt:
+        name:
+          - curl
+          - tar
+          - unzip
+          - build-essential
+          - autoconf
+          - libssl-dev
+          - libncurses5-dev
+          - libwxgtk3.2-dev
+          - libgl1-mesa-dev
+          - libglu1-mesa-dev
+          - libpng-dev
+          - libssh-dev
+          - unixodbc-dev
+          - xsltproc
+          - fop
+          - libxml2-utils
+          - libncurses-dev
+          - openjdk-17-jdk
+        update_cache: yes
+          
+    - name: Create .asdf directory
+      file:
+        path: "{{ asdf_install_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Download asdf binary
+      get_url:
+        url: "{{ asdf_bin_url }}"
+        dest: "/home/{{ user }}/asdf.tar.gz"
+        mode: '0644'
+
+    - name: Extract asdf binary
+      unarchive:
+        src: "/home/{{ user }}/asdf.tar.gz"
+        dest: "{{ asdf_install_dir }}"
+        remote_src: yes
+
+    - name: Add asdf to .bashrc
+      lineinfile:
+        path: "/home/{{ user }}/.bashrc"
+        line: 'export PATH="{{ asdf_install_dir }}:$PATH"'
+        state: present
+
+    - name: Add asdf shims to .bashrc
+      lineinfile:
+        path: "/home/{{ user }}/.bashrc"
+        line: 'export PATH="{{ asdf_install_dir }}/shims:$PATH"'
+        state: present
+
+    - name: Install Erlang plugin
+      shell: "{{ asdf_install_dir }}/asdf plugin add erlang || true"
+      environment:
+        HOME: "/home/{{ user }}"
+
+    - name: Install latest Erlang
+      shell: "{{ asdf_install_dir }}/asdf install erlang 27.3.2 && {{ asdf_install_dir }}/asdf set -u erlang 27.3.2"
+      environment:
+        HOME: "/home/{{ user }}"
+
+    - name: Install Elixir plugin
+      shell: "{{ asdf_install_dir }}/asdf plugin add elixir || true"
+      environment:
+        HOME: "/home/{{ user }}"
+
+    - name: Install latest Elixir
+      shell: "{{ asdf_install_dir }}/asdf install elixir 1.18.3 && {{ asdf_install_dir }}/asdf set -u elixir 1.18.3"
+      environment:
+        HOME: "/home/{{ user }}"
+
+    - name: Remove asdf tar archive
+      file:
+        path: /home/{{ user }}/asdf.tar.gz
+        state: absent

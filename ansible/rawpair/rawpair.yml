@@ -1,23 +1,23 @@
 # SPDX-License-Identifier: MPL-2.0
 - name: RawPair Ubuntu Deployment
-  hosts: rawpair
-  become: yes
+  hosts: vps
   vars:
     user: your-user
     rawpair_dir: "/home/{{ user }}/rawpair"
-    database_url: "postgres://postgres:postgres@localhost/rawpair_dev"
-    secret_key_base: "SV/7XaCy1K3ZxDqgRZluV0IfgHaSmD5oC1mVCH5vEd2ZWFmJERcSwadMOfvl1o5H"
-    phx_host: "localhost"
-    port: 4000
+    database_url: "postgres://postgres:postgres@localhost/rawpair"
+    secret_key_base: "<run mix phx.gen.secret>" # run mix phx.gen.secret
+    rawpair_protocol: https
     rawpair_host: "localhost"
     rawpair_port: 4000
     terminal_host: "localhost"
-    terminal_port: 8080
+    terminal_port: 443
     grafana_host: "localhost"
     grafana_port: 3000
 
   tasks:
     - name: Ensure required packages are installed
+      become: yes
+      become_method: sudo
       apt:
         name:
           - ufw
@@ -30,7 +30,9 @@
         dest: "{{ rawpair_dir }}/phoenix-app/.env"
         mode: '0600'
 
-    - name: Create systemd service for rawpair-infra (no-postgres)
+    - name: Create systemd service for rawpair-infra
+      become: yes
+      become_method: sudo
       copy:
         dest: /etc/systemd/system/rawpair-infra.service
         content: |
@@ -51,6 +53,8 @@
           WantedBy=multi-user.target
 
     - name: Reload and enable infra service
+      become: yes
+      become_method: sudo
       systemd:
         daemon_reload: yes
         name: rawpair-infra
@@ -58,6 +62,8 @@
         state: started
 
     - name: Create systemd service for rawpair Phoenix app
+      become: yes
+      become_method: sudo
       copy:
         dest: /etc/systemd/system/rawpair.service
         content: |
@@ -67,7 +73,7 @@
 
           [Service]
           User={{ user }}
-          WorkingDirectory={{ rawpair_dir }}/phoenix-app/_build/prod/rel/rawpair
+          WorkingDirectory={{ rawpair_dir }}/phoenix-app/
           ExecStart=/bin/bash {{ rawpair_dir }}/phoenix-app/start.sh
           ExecStop=/bin/bash {{ rawpair_dir }}/phoenix-app/stop.sh
           Restart=always
@@ -78,6 +84,8 @@
           WantedBy=multi-user.target
 
     - name: Reload and enable Phoenix app service
+      become: yes
+      become_method: sudo
       systemd:
         daemon_reload: yes
         name: rawpair

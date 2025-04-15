@@ -41,12 +41,16 @@
         enabled: yes
 
     - name: Ensure database user exists
+      become: yes
+      become_user: postgres
       postgresql_user:
         name: "{{ postgres_user }}"
         password: "{{ postgres_password }}"
         encrypted: yes
 
     - name: Ensure database exists
+      become: yes
+      become_user: postgres
       postgresql_db:
         name: "{{ postgres_db }}"
         owner: "{{ postgres_user }}"
