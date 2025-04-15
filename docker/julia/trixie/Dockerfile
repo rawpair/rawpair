@@ -78,7 +78,7 @@ RUN chmod +x /usr/local/bin/ttyd-wrapper.sh
 RUN echo 'trap "" EXIT' >> /home/devuser/.bashrc && \
     echo 'alias exit="echo Nope."' >> /home/devuser/.bashrc && \
     chown devuser:devuser /home/devuser/.bashrc && \
-    chmod 0444 /home/devuser/.bashrc
+    chmod 0644 /home/devuser/.bashrc
 
 ENV TERM=xterm \
     LOG_USER_ID=devuser \
