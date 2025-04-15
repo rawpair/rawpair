@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libncurses-dev \
     libncurses6 \
     libtinfo6 \
+    pkg-config \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd (arch-aware)
@@ -86,7 +87,7 @@ ENV TERM=xterm \
 
 USER devuser
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_GHC_VERSION=latest BOOTSTRAP_HASKELL_CABAL_VERSION=latest BOOTSTRAP_HASKELL_INSTALL_STACK=1 BOOTSTRAP_HASKELL_INSTALL_HLS=1 BOOTSTRAP_HASKELL_ADJUST_BASHRC=P sh
 
 EXPOSE 7681 10000
 
