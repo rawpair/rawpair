@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
-FROM debian:trixie-slim
+FROM ubuntu:24.04
 
 # Base setup
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -33,6 +33,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     automake \
     libltdl-dev \
     make \
+    libc-bin \
+    locales \
+    libiconv-hook-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd (arch-aware)
