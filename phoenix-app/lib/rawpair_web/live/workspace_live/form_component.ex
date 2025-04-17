@@ -73,6 +73,21 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
           {"MySQL", :mysql},
           {"MariaDB", :mariadb}
         ]} />
+
+        <.input
+          field={@form[:devices]}
+          type="select"
+          label="Devices"
+          multiple
+          options={[
+            {"/dev/kvm", "/dev/kvm"},
+            {"/dev/snd", "/dev/snd"},
+            {"/dev/ttyUSB0", "/dev/ttyUSB0"}
+          ]}
+        />
+        <p class="text-sm text-gray-500 mt-1">These will be mounted into the container using <code>--device=</code>.</p>
+
+
         <:actions>
           <.button phx-disable-with="Saving...">Save Workspace</.button>
         </:actions>

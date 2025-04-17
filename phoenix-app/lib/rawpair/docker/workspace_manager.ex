@@ -53,6 +53,10 @@ defmodule RawPair.Docker.WorkspaceManager do
     port = workspace.workspace_port
     volume_name = "#{container_name}_volume"
 
+    device_flags =
+      workspace.devices
+      |> Enum.flat_map(fn device -> ["--device=#{device}"] end)
+
     cmd = [
       "docker", "run", "-d",
       "--name", container_name,
@@ -63,9 +67,7 @@ defmodule RawPair.Docker.WorkspaceManager do
       "--cpus=2.5",
       "--memory=2.5g",
       "--memory-swap=4g",
-      "-p", "10000",
-      image,
-    ]
+    ] ++ device_flags ++ [image]
 
     :ok = remove_existing_container(container_name)
 
