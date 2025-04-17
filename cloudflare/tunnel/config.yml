@@ -1,0 +1,14 @@
+tunnel: rawpair
+credentials-file: /home/<your-user>/.cloudflared/<tunnel-id>.json
+
+ingress:
+  - hostname: rawpair.<domain-name>
+    service: http://localhost:4000
+
+  - hostname: terminal.<domain-name>
+    service: http://localhost:8080
+
+  - hostname: grafana.<domain-name>
+    service: http://localhost:3000
+
+  - service: http_status:404
