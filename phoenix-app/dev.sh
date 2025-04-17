@@ -4,14 +4,16 @@
 
 set -e
 
-if [ ! -f .env ]; then
-  echo ".env file not found. Please create one before running the server."
+ENV_FILE="${1:-.env}"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "$ENV_FILE not found. Please create one or specify the correct path."
   exit 1
 fi
 
-echo "Loading environment from .env"
+echo "Loading environment from $ENV_FILE"
 set -a
-source .env
+source "$ENV_FILE"
 set +a
 
 echo "Starting RawPair (on $RAWPAIR_HOST)"
