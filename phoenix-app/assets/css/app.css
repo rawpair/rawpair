@@ -23,6 +23,8 @@
   --background: oklch(0.18 0.02 270); /* deep slate */
   --foreground: oklch(0.96 0.01 270); /* soft near-white text */
 
+  --modal-background: oklch(0.18 0.02 270 / 0.6);
+
   --card: oklch(0.22 0.015 270); /* dark slate card */
   --card-foreground: oklch(0.96 0.01 270);
 
@@ -141,4 +143,14 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+select {
+  font: inherit;
+  color: inherit;
+}
+
+option {
+  color: var(--color-foreground);
+  background-color: var(--color-background);
 }
