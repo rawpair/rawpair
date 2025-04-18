@@ -6,7 +6,7 @@ defmodule RawPair.MixProject do
   def project do
     [
       app: :rawpair,
-      version: "0.0.0-a001",
+      version: "0.0.0-a002",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,

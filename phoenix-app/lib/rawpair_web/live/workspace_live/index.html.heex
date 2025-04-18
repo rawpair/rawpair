@@ -19,6 +19,9 @@
       <:col :let={{_id, workspace}} label="Slug">{workspace.slug}</:col>
       <:col :let={{_id, workspace}} label="Description">{workspace.description}</:col>
       <:col :let={{_id, workspace}} label="Docker image">{workspace.docker_image}</:col>
+      <:col :let={{_id, workspace}} label="CPU Limit">{workspace.cpu_limit}</:col>
+      <:col :let={{_id, workspace}} label="Memory Limit">{workspace.mem_limit}</:col>
+      <:col :let={{_id, workspace}} label="Memory Swap">{workspace.mem_swap}</:col>
       <:col :let={{_id, workspace}} label="With DB?">{workspace.with_db}</:col>
       <:col :let={{_id, workspace}} label="Devices">
         <%= Enum.join(workspace.devices || [], ", ") %>
@@ -80,6 +83,9 @@
     title={@page_title}
     action={@live_action}
     workspace={@workspace}
+    default_cpu={@default_cpu}
+    default_mem={@default_mem}
+    default_swap={@default_swap}
     patch={~p"/workspaces"}
   />
 </.modal>
