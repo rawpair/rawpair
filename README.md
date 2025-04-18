@@ -1,10 +1,10 @@
-# RawPair
+# RawPair™
 
 [![Status: Pre-alpha](https://img.shields.io/badge/status-pre--alpha-orange)]()
 [![License: MPL-2.0](https://img.shields.io/github/license/rawpair/rawpair)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/rawpair/rawpair?style=social)](https://github.com/beyond-tabs/rawpair/stargazers)
 
-**RawPair** is a self-hosted, real-time collaborative development environment.
+**RawPair™** is a self-hosted, real-time collaborative development environment.
 It enables you to spin up isolated containers with a shared terminal and code editor for effective pair (or mob) programming.
 
 Built for fast, focused collaboration on your own infrastructure, RawPair also supports use cases like remote development, penetration testing, and red teaming, as long as it's done ethically and with proper authorization.
@@ -213,6 +213,9 @@ This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
 If you modify any source files covered by this license, you must make those files available under the same license, but you may combine them with proprietary code in separate files.
 
 See [`LICENSE`](LICENSE) for details.
+
+The RawPair™ name and logo are trademarks of Andrea Mancuso.  
+See [TRADEMARK.md](./TRADEMARK.md) for details.
 
 ---
 
