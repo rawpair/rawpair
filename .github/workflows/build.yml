@@ -28,7 +28,7 @@ jobs:
           node-version: '22'
 
       - name: Run deploy script
-        run: ./phoenix-app/deploy.sh
+        run: cd phoenix-app && ./deploy.sh
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
