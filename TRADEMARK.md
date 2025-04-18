@@ -8,7 +8,6 @@ The RawPair source code is licensed under the [Mozilla Public License 2.0 (MPL-2
 
 However, the RawPair™ name and associated marks are **not** covered by the MPL license. You may not use the RawPair™ name or logo:
 
-- As the name of a forked project
 - In modified versions that are distributed to others
 - In domain names, company names, or product names
 - In a way that misrepresents your project as the official RawPair
@@ -19,7 +18,7 @@ However, the RawPair™ name and associated marks are **not** covered by the MPL
 - Mention RawPair by name when referring to the upstream project
 
 ### You *can't*:
-- Call your fork or product "RawPair" without written permission
+- Call your product "RawPair" without written permission
 - Use the name or logo in promotional material for a competing service
 - Mislead users into thinking your project is affiliated with RawPair
 
