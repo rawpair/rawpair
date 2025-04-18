@@ -9,6 +9,23 @@ defmodule RawPair.Docker.WorkspaceManager do
 
   @app_dir "/home/devuser/app"
 
+  @default_cpu "2.5"
+  @default_mem "2.5g"
+  @default_swap "4g"
+
+  def effective_cpu(%Workspace{cpu_limit: nil}), do: @default_cpu
+  def effective_cpu(%Workspace{cpu_limit: val}), do: val
+
+  def effective_mem(%Workspace{mem_limit: nil}), do: @default_mem
+  def effective_mem(%Workspace{mem_limit: val}), do: val
+
+  def effective_swap(%Workspace{mem_swap: nil}), do: @default_swap
+  def effective_swap(%Workspace{mem_swap: val}), do: val
+
+  def default_cpu, do: @default_cpu
+  def default_mem, do: @default_mem
+  def default_swap, do: @default_swap
+
 
   def start_workspace(%Workspace{} = workspace) do
     # generate container name
@@ -64,9 +81,9 @@ defmodule RawPair.Docker.WorkspaceManager do
       "--label", "rawpair.workspace_slug=#{workspace.slug}",
       "--mount", "source=#{volume_name},target=#{@app_dir}",
       "--network", @docker_network,
-      "--cpus=2.5",
-      "--memory=2.5g",
-      "--memory-swap=4g",
+      "--cpus=#{effective_cpu(workspace)}",
+      "--memory=#{effective_mem(workspace)}",
+      "--memory-swap=#{effective_swap(workspace)}",
     ] ++ device_flags ++ [image]
 
     :ok = remove_existing_container(container_name)

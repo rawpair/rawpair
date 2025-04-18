@@ -15,6 +15,9 @@ defmodule RawPair.Workspaces.Workspace do
     field :workspace_port, :integer
     field :postgres_port, :integer
     field :devices, {:array, :string}, default: []
+    field :cpu_limit, :string
+    field :mem_limit, :string
+    field :mem_swap, :string
     field :status, Ecto.Enum, values: [:pending, :starting, :running, :stopped, :failed], default: :pending
     field :last_active_at, :utc_datetime
 
@@ -33,12 +36,18 @@ defmodule RawPair.Workspaces.Workspace do
       :postgres_port,
       :status,
       :last_active_at,
-      :devices
+      :devices,
+      :cpu_limit,
+      :mem_limit,
+      :mem_swap
     ])
     |> maybe_generate_slug()
     |> validate_required([:name, :docker_image])
     |> unique_constraint(:slug)
     |> validate_devices()
+    |> validate_format(:cpu_limit, ~r/^\d+(\.\d+)?$/, message: "Invalid CPU format")
+    |> validate_format(:mem_limit, ~r/^\d+(\.\d+)?[gm]$/i, message: "Invalid memory format")
+    |> validate_format(:mem_swap, ~r/^\d+(\.\d+)?[gm]$/i, message: "Invalid swap format")
   end
 
   defp maybe_generate_slug(changeset) do

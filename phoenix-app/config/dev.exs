@@ -2,15 +2,25 @@
 
 import Config
 
+db_url = System.get_env("DATABASE_URL")
+
 # Configure your database
 config :rawpair, RawPair.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "rawpair_dev",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  (if db_url do
+    [url: db_url]
+  else
+    [
+      username: "postgres",
+      password: "postgres",
+      hostname: "localhost",
+      database: "rawpair_dev"
+    ]
+  end)
+  |> Keyword.merge([
+    stacktrace: true,
+    show_sensitive_data_on_connection_error: true,
+    pool_size: 10
+  ])
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

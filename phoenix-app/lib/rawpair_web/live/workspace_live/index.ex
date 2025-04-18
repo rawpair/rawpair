@@ -13,6 +13,9 @@ defmodule RawPairWeb.WorkspaceLive.Index do
     socket =
       socket
       |> assign(:username, username)
+      |> assign(:default_cpu, RawPair.Docker.WorkspaceManager.default_cpu())
+      |> assign(:default_mem, RawPair.Docker.WorkspaceManager.default_mem())
+      |> assign(:default_swap, RawPair.Docker.WorkspaceManager.default_swap())
       |> stream(:workspaces, Workspaces.list_workspaces())
 
     {:ok, socket}

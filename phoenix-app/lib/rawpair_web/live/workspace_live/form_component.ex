@@ -87,6 +87,30 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
         />
         <p class="text-sm text-gray-500 mt-1">These will be mounted into the container using <code>--device=</code>.</p>
 
+        <.input
+          field={@form[:cpu_limit]}
+          type="text"
+          label="CPU Limit"
+          placeholder={"e.g. #{@default_cpu}"}
+        />
+        <.input
+          field={@form[:mem_limit]}
+          type="text"
+          label="Memory Limit"
+          placeholder={"e.g. #{@default_mem}"}
+        />
+        <.input
+          field={@form[:mem_swap]}
+          type="text"
+          label="Memory + Swap Limit"
+          placeholder={"e.g. #{@default_swap}"}
+        />
+        <p class="text-sm text-gray-500 mt-1">
+          If unset, defaults are <code><%= @default_cpu %></code> CPUs,
+          <code><%= @default_mem %></code> memory,
+          <code><%= @default_swap %></code> total (memory+swap).
+        </p>
+
 
         <:actions>
           <.button phx-disable-with="Saving...">Save Workspace</.button>
