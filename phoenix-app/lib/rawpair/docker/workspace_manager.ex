@@ -66,29 +66,24 @@ defmodule RawPair.Docker.WorkspaceManager do
 
 
   defp launch_container(workspace, container_name) do
-    image = workspace.docker_image
-    port = workspace.workspace_port
-    volume_name = "#{container_name}_volume"
+    with :ok <- RawPair.DockerClient.stop_and_remove(container_name),
+      :ok <- RawPair.DockerClient.launch(%{
+        image: workspace.docker_image,
+        volume: "#{container_name}_volume",
+        container_name: container_name,
+        devices: workspace.devices,
+        network: @docker_network,
+        cpu: effective_cpu(workspace),
+        memory: effective_mem(workspace),
+        swap: effective_swap(workspace),
+        slug: workspace.slug,
+        target: @app_dir
+      }) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
 
-    device_flags =
-      workspace.devices
-      |> Enum.flat_map(fn device -> ["--device=#{device}"] end)
-
-    cmd = [
-      "docker", "run", "-d",
-      "--name", container_name,
-      "--label", "rawpair.managed=true",
-      "--label", "rawpair.workspace_slug=#{workspace.slug}",
-      "--mount", "source=#{volume_name},target=#{@app_dir}",
-      "--network", @docker_network,
-      "--cpus=#{effective_cpu(workspace)}",
-      "--memory=#{effective_mem(workspace)}",
-      "--memory-swap=#{effective_swap(workspace)}",
-    ] ++ device_flags ++ [image]
-
-    :ok = remove_existing_container(container_name)
-
-    run_cmd(cmd)
   end
 
   defp maybe_launch_db(%Workspace{with_db: :none}, _), do: :ok
