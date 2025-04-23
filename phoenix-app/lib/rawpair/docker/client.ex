@@ -77,6 +77,40 @@ defmodule RawPair.DockerClient do
     end
   end
 
+  def launch_db(launch_spec) when is_map(launch_spec) do
+    image = launch_spec[:image]
+    env = launch_spec[:env]
+    host_port = launch_spec[:host_port]
+    container_port = launch_spec[:container_port]
+    container_name = launch_spec[:container_name]
+    network = launch_spec[:network]
+    slug = launch_spec[:slug]
+
+    body = %{
+      "Image" => image,
+      "Labels" => %{
+        "rawpair.managed" => "true",
+        "rawpair.workspace_db_slug" => slug
+      },
+      "Env" => env,
+      "ExposedPorts" => %{"#{container_port}/tcp" => %{}},
+      "HostConfig" => %{
+        "PortBindings" => %{"#{container_port}/tcp" => [%{"HostPort" => "#{host_port}"}]},
+        "NetworkMode" => network
+      }
+    }
+
+    query = URI.encode_query(%{"name" => container_name})
+
+    with {:ok, %{"Id" => id}} <- post_json("/containers/create?#{query}", body),
+        :ok <- post_empty("/containers/#{id}/start") do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+
   def stop_and_remove(name) do
     # Ignore non‐existent container errors (404) when stopping
     case post_empty("/containers/#{name}/stop") do

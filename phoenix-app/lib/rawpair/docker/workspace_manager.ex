@@ -83,44 +83,31 @@ defmodule RawPair.Docker.WorkspaceManager do
     else
       {:error, reason} -> {:error, reason}
     end
-
   end
 
   defp maybe_launch_db(%Workspace{with_db: :none}, _), do: :ok
 
   defp maybe_launch_db(%Workspace{} = workspace, db_container_name) do
-    {image, port} =
+    {image, internal_port, env} =
       case workspace.with_db do
-        :postgres -> {"postgres:15", 5432}
-        :mysql -> {"mysql:8", 3306}
-        :mariadb -> {"mariadb:10", 3306}
+        :postgres -> {"postgres:15", 5432, ["POSTGRES_PASSWORD=postgres"]}
+        :mysql    -> {"mysql:8",     3306, ["MYSQL_ROOT_PASSWORD=mysql"]}
+        :mariadb  -> {"mariadb:10",  3306, ["MARIADB_ROOT_PASSWORD=mariadb"]}
       end
 
-    host_port = workspace.postgres_port
-
-    env =
-      case workspace.with_db do
-        :postgres -> ["-e", "POSTGRES_PASSWORD=postgres"]
-        :mysql -> ["-e", "MYSQL_ROOT_PASSWORD=mysql"]
-        :mariadb -> ["-e", "MARIADB_ROOT_PASSWORD=mariadb"]
-      end
-
-    cmd = [
-      "docker", "run", "-d",
-      "--name", db_container_name,
-      "--network", @docker_network,
-      "-p", "#{host_port}:#{port}"
-    ] ++ env ++ [image]
-
-    :ok = remove_existing_container(db_container_name)
-
-    run_cmd(cmd)
-  end
-
-  defp run_cmd(cmd) do
-    case System.cmd(List.first(cmd), Enum.drop(cmd, 1), stderr_to_stdout: true) do
-      {output, 0} -> :ok
-      {output, _} -> {:error, output}
+    with :ok <- RawPair.DockerClient.stop_and_remove(db_container_name),
+      :ok <-RawPair.DockerClient.launch_db(%{
+        container_name: db_container_name,
+        image: image,
+        env: env,
+        container_port: internal_port,
+        host_port: workspace.postgres_port,
+        network: @docker_network,
+        slug: "#{workspace.slug}_db",
+      }) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
     end
   end
 
