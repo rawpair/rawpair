@@ -132,7 +132,7 @@ Any files saved in `/home/devuser/app` will persist in the associated named volu
 
 ### Using the Docker images
 
-The majority of the Docker images are available on https://hub.docker.com/repositories/rawpair
+The majority of the Docker images are available on https://hub.docker.com/u/rawpair
 
 You need to run `docker pull` commands appropriately.
 
