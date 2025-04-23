@@ -78,9 +78,18 @@ defmodule RawPair.DockerClient do
       },
       "HostConfig" => %{
         "Binds" => ["#{volume}:#{target}"],
-        "Devices" => Enum.map(devices, fn path ->
-          %{"PathOnHost" => path, "PathInContainer" => path, "CgroupPermissions" => "rwm"}
-        end),
+        "Devices" =>
+          devices
+          |> Enum.filter(fn path ->
+            if File.exists?(path), do: true, else: (Logger.warning("Skipping missing device: #{path}"); false)
+          end)
+          |> Enum.map(fn path ->
+            %{
+              "PathOnHost" => path,
+              "PathInContainer" => path,
+              "CgroupPermissions" => "rwm"
+            }
+          end),
         "NetworkMode" => network,
         "CpuQuota" => trunc(cpu * 100_000),
         "Memory" => memory,
@@ -220,7 +229,4 @@ defmodule RawPair.DockerClient do
   end
 
   defp parse_bytes(val) when is_integer(val), do: val
-
-
-
 end
