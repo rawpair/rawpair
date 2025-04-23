@@ -81,7 +81,22 @@ To run RawPair smoothly in a self-hosted environment, you'll need:
 
 ## Set up
 
-In case you haven't yet installed Erlang and Elixir.
+### Install Erlang and Elixir
+
+#### Verify/install dependencies
+
+##### Ubuntu / Debian
+
+```bash
+sudo apt update
+sudo apt install -y autoconf build-essential libncurses-dev libssl-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils libncurses5-dev openjdk-17-jdk curl git
+```
+
+#### Install asdf
+
+Follow the official instructions: https://asdf-vm.com/guide/getting-started.html
+
+#### Proceed with the installation of Erlang and Elixir
 
 ```bash
 asdf plugin add erlang
