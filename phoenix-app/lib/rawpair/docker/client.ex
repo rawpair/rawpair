@@ -161,8 +161,6 @@ defmodule RawPair.DockerClient do
   end
 
   def list_files(container_name, base_dir) do
-    base_dir = "/home/devuser/app"
-
     find_cmd = [
       "find", base_dir,
       "-type", "f",
