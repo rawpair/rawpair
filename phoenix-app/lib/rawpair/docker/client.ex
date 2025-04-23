@@ -78,15 +78,28 @@ defmodule RawPair.DockerClient do
   end
 
   def stop_and_remove(name) do
-    _ = post_empty("/containers/#{name}/stop")
-    _ = delete("/containers/#{name}")
-    :ok
+    # Ignore non‐existent container errors (404) when stopping
+    case post_empty("/containers/#{name}/stop") do
+      :ok -> :ok
+      {:error, {:http_error, 404, _}} -> :ok
+      {:error, reason} -> {:error, {:stop_failed, reason}}
+    end
+    |> case do
+      :ok ->
+        # Ignore non‐existent container errors (404) when removing
+        case delete("/containers/#{name}") do
+          :ok -> :ok
+          {:error, {:http_error, 404, _}} -> :ok
+          {:error, reason} -> {:error, {:remove_failed, reason}}
+        end
+      error -> error
+    end
   end
 
   defp post_json(path, data) do
-    url = "http://docker/v1.41#{path}"
+    url = "http://docker/#{@docker_api_version}#{path}"
 
-    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(data), unix_socket: "/var/run/docker.sock")
+    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(data), unix_socket: @sock)
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: code, body: body}} when code in 200..299 -> Jason.decode(body)
@@ -96,9 +109,9 @@ defmodule RawPair.DockerClient do
   end
 
   defp post_empty(path) do
-    url = "http://docker/v1.41#{path}"
+    url = "http://docker/#{@docker_api_version}#{path}"
 
-    Finch.build(:post, url, [{"host", "docker"}], nil, unix_socket: "/var/run/docker.sock")
+    Finch.build(:post, url, [{"host", "docker"}], nil, unix_socket: @sock)
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: code}} when code in 204..299 -> :ok
@@ -108,9 +121,9 @@ defmodule RawPair.DockerClient do
   end
 
   defp delete(path) do
-    url = "http://docker/v1.41#{path}"
+    url = "http://docker/#{@docker_api_version}#{path}"
 
-    Finch.build(:delete, url, [{"host", "docker"}], nil, unix_socket: "/var/run/docker.sock")
+    Finch.build(:delete, url, [{"host", "docker"}], nil, unix_socket: @sock)
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: code}} when code in 200..299 -> :ok
