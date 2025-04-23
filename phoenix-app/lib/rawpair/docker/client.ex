@@ -5,7 +5,28 @@ defmodule RawPair.DockerClient do
   @docker_api_version "v1.41"
   @sock "/var/run/docker.sock"
 
-  # ------------------------------------------------------------------
+  def running?(container_name) do
+    query =
+      URI.encode_query(%{
+        "filters" => Jason.encode!(%{"name" => [container_name]})
+      })
+
+    url = "http://docker/#{@docker_api_version}/containers/json?" <> query
+
+    Finch.build(:get, url, [{"host", "docker"}], nil, unix_socket: @sock)
+    |> Finch.request(RawPair.Finch)
+    |> case do
+      {:ok, %Finch.Response{status: 200, body: body}} ->
+        case Jason.decode(body) do
+          {:ok, containers} when is_list(containers) -> containers != []
+          _ -> false
+        end
+
+      _ -> false
+    end
+  end
+
+
   def list_containers(opts \\ []) do
     query =
       %{

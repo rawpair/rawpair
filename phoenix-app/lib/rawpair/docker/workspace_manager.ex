@@ -112,8 +112,7 @@ defmodule RawPair.Docker.WorkspaceManager do
   end
 
   defp running?(name) do
-    {output, 0} = System.cmd("docker", ["ps", "-q", "-f", "name=#{name}"])
-    output != ""
+    RawPair.DockerClient.running?(name)
   end
 
   defp update_status(workspace, status) do
