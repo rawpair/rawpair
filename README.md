@@ -130,6 +130,12 @@ You're welcome to customize the images, but omitting these components will likel
 
 Any files saved in `/home/devuser/app` will persist in the associated named volume. Everything else will be discarded when the container stops.
 
+### Using the Docker images
+
+The majority of the Docker images are available on https://hub.docker.com/repositories/rawpair
+
+You need to run `docker pull` commands appropriately.
+
 ## Quick Start (Development)
 
 ```bash
