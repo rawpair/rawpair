@@ -57,14 +57,6 @@ defmodule RawPair.Docker.WorkspaceManager do
     })
   end
 
-  defp remove_existing_container(name) do
-    {_out, 0} = System.cmd("docker", ["rm", "-f", name], stderr_to_stdout: true)
-    :ok
-  rescue
-    _ -> :ok
-  end
-
-
   defp launch_container(workspace, container_name) do
     with :ok <- RawPair.DockerClient.stop_and_remove(container_name),
       :ok <- RawPair.DockerClient.launch(%{
@@ -120,32 +112,12 @@ defmodule RawPair.Docker.WorkspaceManager do
   end
 
   def list_files(slug) do
-    container = "workspace-#{slug}"
-
-    base_dir = "/home/devuser/app"
-
-    cmd = [
-      "docker", "exec", container,
-      "find", base_dir,
-      "-type", "f",
-      "-not", "-path", "*/node_modules/*",
-      "-not", "-path", "*/.git/*",
-      "-not", "-path", "*/*.swp"
-    ]
-
-    case System.cmd(Enum.at(cmd, 0), Enum.drop(cmd, 1), stderr_to_stdout: true) do
-      {output, 0} ->
-        files =
-          output
-          |> String.trim()
-          |> String.split("\n")
-          |> Enum.map(&String.replace_prefix(&1, base_dir <> "/", ""))
-
+    case RawPair.DockerClient.list_files("workspace-#{slug}", @app_dir) do
+      {:ok, files} ->
         {:ok, files}
 
-      {error_output, _exit_code} ->
-        {:error, error_output}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
-
 end

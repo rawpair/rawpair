@@ -160,6 +160,89 @@ defmodule RawPair.DockerClient do
     end
   end
 
+  def list_files(container_name, base_dir) do
+    base_dir = "/home/devuser/app"
+
+    find_cmd = [
+      "find", base_dir,
+      "-type", "f",
+      "-not", "-path", "*/node_modules/*",
+      "-not", "-path", "*/.git/*",
+      "-not", "-path", "*/*.swp"
+    ]
+
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container_name, find_cmd),
+        {:ok, output} <- start_exec(exec_id),
+        {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+
+      files =
+        output
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(&String.replace_prefix(&1, base_dir <> "/", ""))
+
+      {:ok, files}
+
+    else
+      {:ok, %{"ExitCode" => code}} -> {:error, "Command failed with exit code #{code}"}
+      {:error, reason} -> {:error, reason}
+    end
+
+  end
+
+  defp create_exec(container, cmd) do
+    body = %{
+      "AttachStdout" => true,
+      "AttachStderr" => true,
+      "Cmd" => cmd
+    }
+
+    url = "http://docker/#{@docker_api_version}/containers/#{container}/exec"
+
+    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(body), unix_socket: @sock)
+    |> Finch.request(RawPair.Finch)
+    |> case do
+      {:ok, %Finch.Response{status: 201, body: body}} -> Jason.decode(body)
+      {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp start_exec(exec_id) do
+    body = %{
+      "Detach" => false,
+      "Tty" => false
+    }
+
+    url = "http://docker/#{@docker_api_version}/exec/#{exec_id}/start"
+
+    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(body), unix_socket: @sock)
+    |> Finch.request(RawPair.Finch)
+    |> case do
+      {:ok, %Finch.Response{status: 200, body: body}} -> {:ok, body}
+      {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp exec_inspect(exec_id) do
+    url = "http://docker/v1.41/exec/#{exec_id}/json"
+
+    Finch.build(:get, url, [{"host", "docker"}], nil, unix_socket: "/var/run/docker.sock")
+    |> Finch.request(RawPair.Finch)
+    |> case do
+      {:ok, %Finch.Response{status: 200, body: body}} ->
+        Jason.decode(body)
+
+      {:ok, %Finch.Response{status: code, body: body}} ->
+        {:error, {:http_error, code, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+
   defp post_json(path, data) do
     url = "http://docker/#{@docker_api_version}#{path}"
 
