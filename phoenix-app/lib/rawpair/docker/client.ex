@@ -207,26 +207,38 @@ defmodule RawPair.DockerClient do
   end
 
   defp start_exec(exec_id) do
-    body = %{
-      "Detach" => false,
-      "Tty" => false
-    }
+    body = %{"Detach" => false, "Tty" => false}
+    url = "http://docker/v1.41/exec/#{exec_id}/start"
 
-    url = "http://docker/#{@docker_api_version}/exec/#{exec_id}/start"
-
-    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(body), unix_socket: @sock)
+    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(body), unix_socket: "/var/run/docker.sock")
     |> Finch.request(RawPair.Finch)
     |> case do
-      {:ok, %Finch.Response{status: 200, body: body}} -> {:ok, body}
-      {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
-      {:error, reason} -> {:error, reason}
+      {:ok, %Finch.Response{status: 200, body: raw_output}} ->
+        {:ok, strip_exec_stream(raw_output)}
+
+      {:ok, %Finch.Response{status: code, body: body}} ->
+        {:error, {:http_error, code, body}}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
-  defp exec_inspect(exec_id) do
-    url = "http://docker/v1.41/exec/#{exec_id}/json"
+  defp strip_exec_stream(data) do
+    # Docker exec returns 8-byte framing per stream chunk
+    # If it's just one frame, we can just trim the header
+    if byte_size(data) > 8 do
+      binary_part(data, 8, byte_size(data) - 8)
+    else
+      data
+    end
+  end
 
-    Finch.build(:get, url, [{"host", "docker"}], nil, unix_socket: "/var/run/docker.sock")
+
+  defp exec_inspect(exec_id) do
+    url = "http://docker/#{@docker_api_version}/exec/#{exec_id}/json"
+
+    Finch.build(:get, url, [{"host", "docker"}], nil, unix_socket: @sock)
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: 200, body: body}} ->
