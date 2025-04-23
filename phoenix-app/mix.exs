@@ -61,7 +61,8 @@ defmodule RawPair.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:httpoison, "~> 1.8"},
-      {:slugify, "~> 1.3"}
+      {:slugify, "~> 1.3"},
+      {:mint_unix, "~> 0.1.0"}
     ]
   end
 
