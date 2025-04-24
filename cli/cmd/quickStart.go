@@ -87,7 +87,10 @@ var quickStartCmd = &cobra.Command{
 			Options:  imageNames,
 			PageSize: 8,
 		}
-		survey.AskOne(promptStacks, &selectedStacks)
+		if err := survey.AskOne(promptStacks, &selectedStacks); err != nil {
+			fmt.Println("Selection failed:", err)
+			return
+		}
 
 		fmt.Println("\nSelected options:")
 		fmt.Println("Architecture:", arch)
