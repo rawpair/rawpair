@@ -15,7 +15,6 @@ Built for fast, focused collaboration on your own infrastructure, RawPair also s
 
 ![image](https://github.com/user-attachments/assets/f4c790d9-6db7-47ec-9778-39687755ea93)
 
-
 ---
 
 ## Features
@@ -43,26 +42,7 @@ RawPair is built on a modern, production-grade foundation:
 
 ## Supported Tech Stacks
 
-| Stack                                                    | Docker Repository                                                                     | Notes                                          |
-|----------------------------------------------------------|---------------------------------------------------------------------------------------|------------------------------------------------|
-| **[Ada](https://www.gnu.org/software/gnat/)**            | [rawpair/ada](https://hub.docker.com/repository/docker/rawpair/ada)                   | Includes GNU GNAT                              |
-| **[Clojure](https://clojure.org/)**                      | [rawpair/clojure](https://hub.docker.com/repository/docker/rawpair/clojure)           | Runs on Temurin (OpenJDK)                      |
-| **[COBOL](https://gnucobol.sourceforge.io/)**            | [rawpair/gnucobol](https://hub.docker.com/repository/docker/rawpair/gnucobol)         | Includes GNU COBOL                             |
-| **[Elixir](https://elixir-lang.org/)**                   | [rawpair/elixir](https://hub.docker.com/repository/docker/rawpair/elixir)             |                                                |
-| **[Haskell](https://www.haskell.org/)**                  | [rawpair/haskell](https://hub.docker.com/repository/docker/rawpair/haskell)           | Includes GHC                                   |
-| **[Julia](https://julialang.org/)**                      | [rawpair/julia](https://hub.docker.com/repository/docker/rawpair/julia)               |                                                |
-| **[.NET](https://dotnet.microsoft.com/)**                | [rawpair/dotnet](https://hub.docker.com/repository/docker/rawpair/dotnet)             | Includes C#, F#, VB.NET, Mono                  |
-| **[Liberty Eiffel](https://www.liberty-eiffel.org/)**    | [rawpair/liberty-eiffel](https://hub.docker.com/repository/docker/rawpair/liberty-eiffel) | Compiled from [source](https://github.com/LibertyEiffel/Liberty) |
-| **[Node.js](https://nodejs.org/)**                       | [rawpair/node](https://hub.docker.com/repository/docker/rawpair/node)                 | Managed via NVM                                |
-| **[OCaml](https://ocaml.org/)**                          | [rawpair/ocaml](https://hub.docker.com/repository/docker/rawpair/ocaml)               | Includes OPAM, OCaml 4.14.1, Dune, Menhir      |
-| **[PHP](https://www.php.net/)**                          | [rawpair-php](https://hub.docker.com/repository/docker/rawpair/php)                   | Includes FPM/CLI; PHP 8.0–8.3                  |
-| **[Python](https://www.python.org/)**                    | [rawpair/python](https://hub.docker.com/repository/docker/rawpair/python)             | 2 base images available: Trixie; NVIDIA CUDA   |
-| **[Ruby](https://www.ruby-lang.org/en/)**                | [rawpair/ruby](https://hub.docker.com/repository/docker/rawpair/ruby)                 |                                                |
-| **[Rust](https://www.rust-lang.org/)**                   | [rawpair/rust](https://hub.docker.com/repository/docker/rawpair/rust)                 |                                                |
-| **[Smalltalk](https://www.gnu.org/software/smalltalk/)** | [rawpair/gnusmalltalk](https://hub.docker.com/repository/docker/rawpair/gnusmalltalk) | Includes GNU Smalltalk                         |
-| **[Steel Bank Common Lisp](https://www.sbcl.org/)**      | [rawpair/sbcl](https://hub.docker.com/repository/docker/rawpair/sbcl)                 | Includes SBCL and Quicklisp                    |
-
-Can't see your favourite stack? Submit a PR or create an issue.
+See [rawpair/stacks](https://github.com/rawpair/stacks) for all supported dev environments.
 
 ---
 
@@ -108,25 +88,7 @@ asdf install elixir 1.18.3
 asdf set -u elixir 1.18.3
 ```
 
-## An important note on Docker images
-
-RawPair provides Docker images to make development environments easier to spin up and work with—especially for collaborative or short-lived sessions. These images prioritize convenience over minimalism: they include a full toolchain, reasonable defaults, and everything needed to get started without extra setup. They're not security-hardened or optimized for production use, and that's by design.
-
-To work properly with RawPair, containers **must** include the following packages:
-
-- `bash` - for shell consistency
-- `tmux` - to manage terminal sessions
-- `supervisor` - to coordinate background services
-- `vector` - to stream logs to the host
-- `ttyd` - to expose the terminal over HTTP
-
-These are essential for enabling terminal access, log streaming, and reliable session orchestration. You're welcome to customize the images, but omitting these components will likely break core functionality. In short: build your own, but build smart.
-
-Additionally, three configuration files are required for proper orchestration: `supervisord.conf`, `ttyd-wrapper.sh`, and `vector.toml`. These are provided in the `docker/` folder of the repository and should be copied into your image during the build process. They set up the necessary services and log routing for the container to behave as expected inside the RawPair environment.
-
-You're welcome to customize the images, but omitting these components will likely break core functionality. In short: build your own, but build smart.
-
-### A note on named volumes
+### A note on named volumes in containers
 
 Any files saved in `/home/devuser/app` will persist in the associated named volume. Everything else will be discarded when the container stops.
 
