@@ -32,6 +32,8 @@ Login manually via CLI: `cloudflared login`. This cannot be automated.
 
 Make a note of the generated `.json` file in `~/.cloudflared`
 
+Create the tunnel: `cloudflared tunnel create <tunnel-name>`
+
 Create `~/.cloudflared/config.yml` with this content:
 
 ```yaml
@@ -52,9 +54,6 @@ ingress:
 ```
 
 You're free to change the ports, provided you remember to set the ENV vars accordingly.
-
-
-Create the tunnel: `cloudflared tunnel create <tunnel-name>`
 
 Create tunnel route dns entries:
 
