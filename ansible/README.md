@@ -4,6 +4,10 @@
 
 `sudo apt install ansible`
 
+## Set up secure remote SSH access (optional)
+
+`ansible-playbook -i hosts.ini secure-remote-ssh-access.yml -e "vps ansible_host=<ip.address> ansible_port=22 new_user=<your-user> ansible_user=root new_user_ssh_key='<ssh-public-key>'" --ask-become-pass`
+
 ## postgres
 
 Run `sudo apt install -y python3-psycopg2 acl ufw` on target machine
