@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"sort"
+	"strings"
 	"time"
 
 	// "path/filepath"
@@ -16,45 +16,67 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type dockerHubResponse struct {
-	Results []struct {
-		Name string `json:"name"`
-	} `json:"results"`
-	Next string `json:"next"`
+type StackTag struct {
+	Id        string   `json:"id"`
+	Name      string   `json:"name"`
+	Base      string   `json:"base"`
+	Platforms []string `json:"platforms"`
 }
 
-func fetchRawPairImages() ([]string, error) {
-	var images []string
-	url := "https://hub.docker.com/v2/repositories/rawpair/?page_size=100"
+type StackDescriptor struct {
+	Name string     `json:"name"`
+	Tags []StackTag `json:"tags"`
+}
+
+type StackDescriptorList []StackDescriptor
+
+type FlattenedTag struct {
+	StackName string
+	Id        string
+	Name      string
+	Base      string
+	Platforms []string
+}
+
+func FlattenStacks(stacks []StackDescriptor) []FlattenedTag {
+	var flat []FlattenedTag
+	for _, stack := range stacks {
+		for _, tag := range stack.Tags {
+			flat = append(flat, FlattenedTag{
+				StackName: stack.Name,
+				Id:        tag.Id,
+				Name:      tag.Name,
+				Base:      tag.Base,
+				Platforms: tag.Platforms,
+			})
+		}
+	}
+	return flat
+}
+
+func fetchRawPairStacks() ([]FlattenedTag, error) {
+	url := "https://raw.githubusercontent.com/rawpair/stacks/refs/heads/main/stacks/stacks.json"
 
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	for url != "" {
-		resp, err := client.Get(url)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch from Docker Hub: %w", err)
-		}
-		defer resp.Body.Close()
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch from GitHub: %w", err)
+	}
+	defer resp.Body.Close()
 
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-		}
-
-		var data dockerHubResponse
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			return nil, fmt.Errorf("failed to decode response: %w", err)
-		}
-
-		for _, repo := range data.Results {
-			images = append(images, repo.Name)
-		}
-
-		url = data.Next // if there's another page
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	sort.Strings(images)
+	var data StackDescriptorList
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
 
-	return images, nil
+	var flattenedStacks = FlattenStacks(data)
+
+	return flattenedStacks, nil
 }
 
 var quickStartCmd = &cobra.Command{
@@ -75,34 +97,60 @@ var quickStartCmd = &cobra.Command{
 			return
 		}
 
-		imageNames, err := fetchRawPairImages()
+		flattenedTags, err := fetchRawPairStacks()
 		if err != nil {
 			fmt.Println("Failed to fetch images:", err)
 			return
 		}
 
-		var selectedStacks []string
+		labelMap := make(map[string]FlattenedTag)
+		var displayOptions []string
+		for _, tag := range flattenedTags {
+			var supportsArch bool
+			for _, platform := range tag.Platforms {
+				if strings.HasSuffix(platform, arch) {
+					supportsArch = true
+					break
+				}
+			}
+			if !supportsArch {
+				continue // skip this tag
+			}
+
+			label := fmt.Sprintf("%s - %s - [%s]", tag.StackName, tag.Id, strings.Join(tag.Platforms, ","))
+			displayOptions = append(displayOptions, label)
+			labelMap[label] = tag
+		}
+
+		var selectedTagOptions []string
+		var selectedTags []FlattenedTag
 		promptStacks := &survey.MultiSelect{
 			Message:  "Select stacks to build:",
-			Options:  imageNames,
+			Options:  displayOptions,
 			PageSize: 8,
 		}
-		if err := survey.AskOne(promptStacks, &selectedStacks); err != nil {
+		if err := survey.AskOne(promptStacks, &selectedTagOptions); err != nil {
 			fmt.Println("Selection failed:", err)
 			return
 		}
 
 		fmt.Println("\nSelected options:")
 		fmt.Println("Architecture:", arch)
-		fmt.Println("Stacks:", selectedStacks)
+		fmt.Println("Stacks:", selectedTagOptions)
 
-		for _, name := range selectedStacks {
+		for _, name := range selectedTagOptions {
 			fmt.Printf("📦 Pulling rawpair/%s:latest...\n", name)
 			cmd := exec.Command("docker", "pull", fmt.Sprintf("rawpair/%s:latest", name))
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
 				fmt.Printf("Failed to pull rawpair/%s: %v\n", name, err)
+			}
+		}
+
+		for _, label := range selectedTagOptions {
+			if tag, ok := labelMap[label]; ok {
+				selectedTags = append(selectedTags, tag)
 			}
 		}
 	},
