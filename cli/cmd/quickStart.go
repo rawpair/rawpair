@@ -39,6 +39,11 @@ type FlattenedTag struct {
 	Platforms []string
 }
 
+func isDockerInstalled() bool {
+	_, err := exec.LookPath("docker")
+	return err == nil
+}
+
 func FlattenStacks(stacks []StackDescriptor) []FlattenedTag {
 	var flat []FlattenedTag
 	for _, stack := range stacks {
@@ -113,6 +118,51 @@ func fetchRawPairStacks() ([]FlattenedTag, error) {
 	return flattenedStacks, nil
 }
 
+func reviewAndConfirm(cfg *QuickStartConfig) {
+	fmt.Println("\n🔍 Review your configuration:")
+	fmt.Println("--------------------------------")
+	fmt.Printf("\nArchitecture: %s\n", cfg.Arch)
+	fmt.Printf("Selected Tags: %v\n", cfg.SelectedTags)
+
+	fmt.Println("\n--------------------------------")
+
+	if cfg.UseContainerizedPostgres {
+		fmt.Println("\nUse Containerized Postgres: Yes")
+		fmt.Printf("  DB Host: %s\n", cfg.Db.Host)
+		fmt.Printf("  DB Port: %s\n", cfg.Db.Port)
+		fmt.Printf("  DB Name: %s\n", cfg.Db.Name)
+		fmt.Printf("  DB User: %s\n", cfg.Db.User)
+		fmt.Printf("  DB Password: %s\n", cfg.Db.Password)
+		fmt.Printf("  DB URL: %s\n", cfg.Db.Url)
+	} else {
+		fmt.Println("\nUse Containerized Postgres: No")
+	}
+
+	fmt.Println("\n--------------------------------")
+
+	fmt.Println("\nRawPair Configuration:")
+	fmt.Printf("  Host: %s\n", cfg.RawPair.Host)
+	fmt.Printf("  Protocol: %s\n", cfg.RawPair.Protocol)
+	fmt.Printf("  Port: %s\n", cfg.RawPair.Port)
+	fmt.Printf("  BasePath: %s\n", cfg.RawPair.BasePath)
+
+	fmt.Println("\n--------------------------------")
+
+	fmt.Println("\nTerminal Service:")
+	fmt.Printf("  Host: %s\n", cfg.TerminalService.Host)
+	fmt.Printf("  Port: %s\n", cfg.TerminalService.Port)
+
+	fmt.Println("\n--------------------------------")
+
+	if cfg.UseGrafana {
+		fmt.Println("\nUse Grafana: Yes")
+		fmt.Printf("  Grafana Host: %s\n", cfg.Grafana.Host)
+		fmt.Printf("  Grafana Port: %s\n", cfg.Grafana.Port)
+	} else {
+		fmt.Println("\nUse Grafana: No")
+	}
+}
+
 var quickStartCmd = &cobra.Command{
 	Use:   "quickStart",
 	Short: "Interactively choose arch and stacks to build",
@@ -161,7 +211,7 @@ var quickStartCmd = &cobra.Command{
 		}
 
 		promptStacks := &survey.MultiSelect{
-			Message:  "Select stacks to include (will be built locally through `docker pull`):",
+			Message:  "Select stacks to include:",
 			Options:  displayOptions,
 			PageSize: 8,
 		}
@@ -180,13 +230,29 @@ var quickStartCmd = &cobra.Command{
 			}
 		}
 
-		for _, name := range cfg.SelectedTags {
-			fmt.Printf("Pulling rawpair/%s...\n", name)
-			cmd := exec.Command("docker", "pull", fmt.Sprintf("rawpair/%s", name))
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				fmt.Printf("Failed to pull rawpair/%s: %v\n", name, err)
+		if isDockerInstalled() {
+			pullDockerImages := false
+
+			err = survey.AskOne(&survey.Confirm{
+				Message: "Pull docker images for selected stacks?",
+				Default: false,
+			}, &pullDockerImages)
+
+			if err != nil {
+				fmt.Println("Aborted or failed:", err)
+				return
+			}
+
+			if pullDockerImages {
+				for _, name := range cfg.SelectedTags {
+					fmt.Printf("Pulling rawpair/%s...\n", name)
+					cmd := exec.Command("docker", "pull", fmt.Sprintf("rawpair/%s", name))
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					if err := cmd.Run(); err != nil {
+						fmt.Printf("Failed to pull rawpair/%s: %v\n", name, err)
+					}
+				}
 			}
 		}
 
@@ -357,6 +423,24 @@ var quickStartCmd = &cobra.Command{
 				fmt.Println("Aborted or failed:", err)
 				return
 			}
+		}
+
+		reviewAndConfirm(&cfg)
+
+		confirm := false
+		err = survey.AskOne(&survey.Confirm{
+			Message: "Is everything correct?",
+			Default: true,
+		}, &confirm)
+
+		if err != nil {
+			fmt.Println("Aborted or failed:", err)
+			return
+		}
+
+		if !confirm {
+			fmt.Println("Aborting configuration.")
+			return
 		}
 	},
 }
