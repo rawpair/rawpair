@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -314,7 +316,13 @@ var quickStartCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := QuickStartConfig{}
 
-		cfg.SecretKeyBase = "Generate your own by running `mix phx.gen.secret`"
+		randomBytes := make([]byte, 32)
+		if _, err := rand.Read(randomBytes); err != nil {
+			fmt.Println("Unable to generate a secret key base:", err)
+			cfg.SecretKeyBase = "Generate your own by running `mix phx.gen.secret`"
+		} else {
+			cfg.SecretKeyBase = hex.EncodeToString(randomBytes)
+		}
 
 		defaultArch := runtime.GOARCH
 
@@ -609,7 +617,21 @@ var quickStartCmd = &cobra.Command{
 		fmt.Println(".env file contents:")
 		fmt.Println(envContents)
 
-		dockerCompsoeYmlContents, err := runTemplate(cfg, dockerComposeYmlTemplate)
+		writeEnvFile := false
+		survey.AskOne(&survey.Confirm{
+			Message: "Write .env file to disk in the current folder?",
+			Default: true,
+		}, &writeEnvFile)
+
+		if writeEnvFile {
+			if err := os.WriteFile(".env", []byte(envContents), 0644); err != nil {
+				fmt.Println("Error writing .env file:", err)
+			} else {
+				fmt.Println("Successfully wrote .env file")
+			}
+		}
+
+		dockerComposeYmlContents, err := runTemplate(cfg, dockerComposeYmlTemplate)
 
 		if err != nil {
 			fmt.Println("Failed generating docker-compose.yml file contents:", err)
@@ -617,7 +639,21 @@ var quickStartCmd = &cobra.Command{
 		}
 
 		fmt.Println("docker-compose.yml file contents:")
-		fmt.Println(dockerCompsoeYmlContents)
+		fmt.Println(dockerComposeYmlContents)
+
+		writeComposeFile := false
+		survey.AskOne(&survey.Confirm{
+			Message: "Write docker-compose.yml file to disk?",
+			Default: true,
+		}, &writeComposeFile)
+
+		if writeComposeFile {
+			if err := os.WriteFile("docker-compose.yml", []byte(dockerComposeYmlContents), 0644); err != nil {
+				fmt.Println("Error writing docker-compose.yml file:", err)
+			} else {
+				fmt.Println("Successfully wrote docker-compose.yml file")
+			}
+		}
 	},
 }
 
