@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 	"time"
 
 	// "path/filepath"
@@ -39,6 +41,128 @@ type FlattenedTag struct {
 	Platforms []string
 }
 
+const envTemplate = `
+DATABASE_URL="{{ .Db.Url }}"
+SECRET_KEY_BASE="{{ .SecretKeyBase }}"
+CHECK_ORIGIN=//{{ .RawPair.Host }}:{{ .RawPair.Port }}
+
+RAWPAIR_PROTOCOL={{ .RawPair.Protocol }}
+RAWPAIR_HOST={{ .RawPair.Host }}
+RAWPAIR_PORT={{ .RawPair.Port }}
+RAWPAIR_BASE_PATH={{ .RawPair.BasePath }}
+
+RAWPAIR_TERMINAL_HOST={{ .TerminalService.Host }}
+RAWPAIR_TERMINAL_PORT={{ .TerminalService.Port }}
+
+RAWPAIR_GRAFANA_HOST={{ .Grafana.Host }}
+RAWPAIR_GRAFANA_PORT={{ .Grafana.Port }}
+
+PHX_HOST={{ .RawPair.Host }}
+PORT={{ .RawPair.Port }}
+`
+
+const dockerComposeYmlTemplate = `
+networks:
+  rawpair:
+    name: rawpair
+
+services:
+{{ if .UseContainerizedPostgres }}
+  db:
+    networks:
+      - rawpair
+    image: postgres:15
+    container_name: rawpair_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rawpair_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+{{ end }}
+
+  yjs:
+    networks:
+      - rawpair
+    build:
+      context: ./yjs-server
+    container_name: rawpair_yjs
+    environment:
+      - HOST=0.0.0.0
+      - PORT=1234
+    ports:
+      - "1234:1234"
+
+  nginx:
+    networks:
+      - rawpair
+    image: nginx:stable
+    container_name: rawpair_nginx
+    ports:
+      - "{{ .TerminalService.Port }}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+{{ if .UseGrafana }}
+  loki:
+    networks:
+      - rawpair
+    image: grafana/loki:2.9.4
+    container_name: rawpair_loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  grafana:
+    networks:
+      - rawpair
+    image: grafana/grafana-oss:10.3.1
+    container_name: rawpair_grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - loki
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
+{{ end }}
+{{ if .UsePortainer }}
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+{{ end }}
+{{ if or .UseContainerizedPostgres .UseGrafana .UsePortainer }}
+volumes:
+{{ if .UseContainerizedPostgres }}
+  pgdata:
+{{ end }}
+{{ if .UseGrafana }}
+  grafana_data:
+{{ end }}
+{{ if .UsePortainer }}
+  portainer_data:
+{{ end }}
+{{ end }}
+ `
+
 func isDockerInstalled() bool {
 	_, err := exec.LookPath("docker")
 	return err == nil
@@ -65,6 +189,8 @@ type QuickStartConfig struct {
 	SelectedTags             []string
 	UseContainerizedPostgres bool
 	UseGrafana               bool
+	UsePortainer             bool
+	SecretKeyBase            string
 
 	RawPair struct {
 		Host     string
@@ -161,6 +287,25 @@ func reviewAndConfirm(cfg *QuickStartConfig) {
 	} else {
 		fmt.Println("\nUse Grafana: No")
 	}
+
+	if cfg.UsePortainer {
+		fmt.Println("\nUse Portainer: Yes")
+	} else {
+		fmt.Println("\nUse Portainer: No")
+	}
+}
+
+func runTemplate(data QuickStartConfig, rawTmpl string) (string, error) {
+	tmpl, err := template.New("env").Parse(rawTmpl)
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
 
 var quickStartCmd = &cobra.Command{
@@ -168,6 +313,8 @@ var quickStartCmd = &cobra.Command{
 	Short: "Interactively choose arch and stacks to build",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := QuickStartConfig{}
+
+		cfg.SecretKeyBase = "Generate your own by running `mix phx.gen.secret`"
 
 		defaultArch := runtime.GOARCH
 
@@ -321,9 +468,8 @@ var quickStartCmd = &cobra.Command{
 			}
 
 			cfg.Db.Url = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", url.QueryEscape(cfg.Db.User), url.QueryEscape(cfg.Db.Password), cfg.Db.Host, cfg.Db.Port, cfg.Db.Name)
-
-			fmt.Println("Database URL:", cfg.Db.Url)
-
+		} else {
+			cfg.Db.Url = "postgres://postgres:postgres@localhost:5432/rawpair_dev"
 		}
 
 		if err != nil {
@@ -425,6 +571,16 @@ var quickStartCmd = &cobra.Command{
 			}
 		}
 
+		err = survey.AskOne(&survey.Confirm{
+			Message: "Use Portainer?",
+			Default: false,
+		}, &cfg.UsePortainer)
+
+		if err != nil {
+			fmt.Println("Aborted or failed:", err)
+			return
+		}
+
 		reviewAndConfirm(&cfg)
 
 		confirm := false
@@ -442,6 +598,26 @@ var quickStartCmd = &cobra.Command{
 			fmt.Println("Aborting configuration.")
 			return
 		}
+
+		envContents, err := runTemplate(cfg, envTemplate)
+
+		if err != nil {
+			fmt.Println("Failed generating .env file contents:", err)
+			return
+		}
+
+		fmt.Println(".env file contents:")
+		fmt.Println(envContents)
+
+		dockerCompsoeYmlContents, err := runTemplate(cfg, dockerComposeYmlTemplate)
+
+		if err != nil {
+			fmt.Println("Failed generating docker-compose.yml file contents:", err)
+			return
+		}
+
+		fmt.Println("docker-compose.yml file contents:")
+		fmt.Println(dockerCompsoeYmlContents)
 	},
 }
 
