@@ -1,0 +1,70 @@
+- name: Provision server with a new user
+  hosts: vps
+  become: true
+  vars:
+    new_user: ""
+    new_user_ssh_key: ""
+
+  tasks:
+    - name: Fail if 'new_user' is not set
+      fail:
+        msg: "'new_user' variable is required."
+      when: new_user == ""
+
+    - name: Fail if 'new_user_ssh_key' is not set
+      fail:
+        msg: "'new_user_ssh_key' variable is required."
+      when: new_user_ssh_key == ""
+
+    - name: Ensure user exists
+      user:
+        name: "{{ new_user }}"
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        create_home: yes
+
+    - name: Ensure .ssh directory exists
+      file:
+        path: "/home/{{ new_user }}/.ssh"
+        state: directory
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: '0700'
+
+    - name: Add SSH key
+      authorized_key:
+        user: "{{ new_user }}"
+        key: "{{ new_user_ssh_key }}"
+
+    - name: Allow passwordless sudo
+      copy:
+        dest: "/etc/sudoers.d/{{ new_user }}"
+        content: "{{ new_user }} ALL=(ALL) NOPASSWD:ALL"
+        owner: root
+        group: root
+        mode: '0440'
+
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+        backup: yes
+      notify: Restart SSH
+
+    - name: Disable password auth
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+        backup: yes
+      notify: Restart SSH
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted

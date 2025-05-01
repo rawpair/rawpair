@@ -4,6 +4,10 @@
 
 `sudo apt install ansible`
 
+## Set up secure remote SSH access (optional)
+
+`ansible-playbook -i hosts.ini secure-remote-ssh-access.yml -e "vps ansible_host=<ip.address> ansible_port=22 new_user=<your-user> ansible_user=root new_user_ssh_key='<ssh-public-key>'" --ask-become-pass`
+
 ## postgres
 
 Run `sudo apt install -y python3-psycopg2 acl ufw` on target machine
@@ -28,6 +32,8 @@ Login manually via CLI: `cloudflared login`. This cannot be automated.
 
 Make a note of the generated `.json` file in `~/.cloudflared`
 
+Create the tunnel: `cloudflared tunnel create <tunnel-name>`
+
 Create `~/.cloudflared/config.yml` with this content:
 
 ```yaml
@@ -48,9 +54,6 @@ ingress:
 ```
 
 You're free to change the ports, provided you remember to set the ENV vars accordingly.
-
-
-Create the tunnel: `cloudflared tunnel create <tunnel-name>`
 
 Create tunnel route dns entries:
 
