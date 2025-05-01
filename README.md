@@ -115,6 +115,21 @@ mkdir -p priv/static/assets
 
 Then open [http://localhost:4000](http://localhost:4000) to begin.
 
+### CLI Setup (Optional)
+
+A prebuilt CLI tool is available in [Releases](https://github.com/rawpair/rawpair/releases).
+Download the binary matching your platform (e.g. rawpair, rawpair.exe) and run:
+
+```bash
+./rawpair quickStart
+```
+
+or `./rawpair.exe quickStart` on Windows.
+
+This will prompt you for configuration details and generate a .env and docker-compose.yml to get you up and running with minimal effort.
+
+Use this if you don’t want to manually edit config files.
+
 ## Quick Start (Production)
 
 Set the required ENV variables, based on `phoenix-app/.env.example`.
