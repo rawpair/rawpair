@@ -2,7 +2,7 @@ project_name: rawpair
 
 builds:
   - id: rawpair
-    main: ./cli/cmd/main.go
+    main: ./cli/main.go
     goos:
       - linux
       - darwin
