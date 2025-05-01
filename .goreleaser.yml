@@ -1,0 +1,30 @@
+project_name: rawpair
+
+builds:
+  - id: rawpair
+    main: ./cli/cmd/main.go
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - riscv64
+    goarm:
+      - 7
+    ldflags:
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - format: tar.gz
+    files:
+      - LICENSE
+      - README.md
+
+release:
+  github:
+    owner: andreamancuso
+    name: rawpair
