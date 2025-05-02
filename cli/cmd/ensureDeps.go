@@ -111,16 +111,15 @@ func installASDF() error {
 		return fmt.Errorf("failed to download asdf: %w", err)
 	}
 
-	// Extract to ~/.asdf
-	err = exec.Command("tar", "-xzf", tarPath, "-C", home).Run()
-	if err != nil {
-		return fmt.Errorf("failed to extract asdf: %w", err)
+	// Create .asdf/bin directory
+	if err := os.MkdirAll(asdfDir, 0755); err != nil {
+		return fmt.Errorf("failed to create asdf directory: %w", err)
 	}
 
-	// Rename extracted folder to .asdf
-	err = os.Rename(filepath.Join(home, "asdf-"), asdfDir)
+	// Extract to ~/.asdf
+	err = exec.Command("tar", "-xzf", tarPath, "-C", asdfDir).Run()
 	if err != nil {
-		return fmt.Errorf("failed to rename asdf folder: %w", err)
+		return fmt.Errorf("failed to extract asdf: %w", err)
 	}
 
 	// Add sourcing lines to .bashrc/.zshrc (basic)
@@ -182,13 +181,13 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 			meetsDeps := true
 
-			if !isAtLeast(erlangVersion, "27") {
-				fmt.Println("Erlang version is less than 27, please update.")
+			if !isAtLeast(erlangVersion, "27.0.0") {
+				fmt.Println("Erlang version is less than 27.0.0, please update.")
 				meetsDeps = false
 			}
 
-			if !isAtLeast(elixirVersion, "1.18") {
-				fmt.Println("Elixir version is less than 1.18, please update.")
+			if !isAtLeast(elixirVersion, "1.18.0") {
+				fmt.Println("Elixir version is less than 1.18.0, please update.")
 				meetsDeps = false
 			}
 
