@@ -59,12 +59,9 @@ func detectShellRCFile() (string, error) {
 		return "", fmt.Errorf("could not get home directory: %w", err)
 	}
 
-	// 1. Try $SHELL
-	shellPath := os.Getenv("SHELL")
-	shell := filepath.Base(shellPath)
+	shell := filepath.Base(os.Getenv("SHELL"))
 
-	// 2. Fallback to runtime detection (ps)
-	if shell == "" || shell == "sh" {
+	if shell == "" || shell == "." || shell == "sh" {
 		out, err := exec.Command("ps", "-p", fmt.Sprint(os.Getppid()), "-o", "comm=").Output()
 		if err == nil {
 			shell = strings.TrimSpace(string(out))
@@ -76,8 +73,11 @@ func detectShellRCFile() (string, error) {
 		return filepath.Join(home, ".bashrc"), nil
 	case "zsh":
 		return filepath.Join(home, ".zshrc"), nil
+	case "fish":
+		return filepath.Join(home, ".config", "fish", "config.fish"), fmt.Errorf("detected fish shell, but fish is not supported yet")
 	default:
-		return "", fmt.Errorf("unsupported or unknown shell: %s", shell)
+		// Fallback: just write to ~/.profile
+		return filepath.Join(home, ".profile"), nil
 	}
 }
 
