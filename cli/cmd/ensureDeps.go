@@ -113,17 +113,18 @@ func installASDF() error {
 	}
 
 	// Create .asdf/bin directory
-	if err := os.MkdirAll(asdfDir, 0755); err != nil {
-		return fmt.Errorf("failed to create asdf directory: %w", err)
+	binDir := filepath.Join(asdfDir, "bin")
+	if err := os.MkdirAll(binDir, 0755); err != nil {
+		return fmt.Errorf("failed to create bin directory: %w", err)
 	}
 
-	// Extract to ~/.asdf
-	err = exec.Command("tar", "-xzf", tarPath, "-C", asdfDir).Run()
+	// Extract to ~/.asdf/bin
+	err = exec.Command("tar", "-xzf", tarPath, "-C", binDir).Run()
 	if err != nil {
 		return fmt.Errorf("failed to extract asdf: %w", err)
 	}
 
-	// Add sourcing lines to .bashrc/.zshrc (basic)
+	// Add sourcing lines to shell RC file
 	shellRcFile, err := detectShellRCFile()
 	if err != nil {
 		return fmt.Errorf("failed to detect shell RC file: %w", err)
@@ -136,7 +137,7 @@ func installASDF() error {
 
 	defer f.Close()
 
-	if _, err := f.WriteString("\n\nexport PATH=\"${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH\"\n"); err != nil {
+	if _, err := f.WriteString("\n\nexport PATH=\"$HOME/.asdf/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH\"\n"); err != nil {
 		return fmt.Errorf("failed to update shell RC file: %w", err)
 	}
 

@@ -20,9 +20,6 @@ builds:
 
 archives:
   - format: tar.gz
-    files:
-      - LICENSE
-      - README.md
 
 release:
   github:
