@@ -1,3 +1,4 @@
 .vscode
 docker-compose.yml
 .env
+dist
