@@ -53,6 +53,11 @@ func detectDistro() (string, error) {
 	return "", fmt.Errorf("could not detect distro")
 }
 
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
 func detectShellRCFile() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -66,9 +71,12 @@ func detectShellRCFile() (string, error) {
 	log.Printf("Shell ENV: %q\n", shellEnv)
 
 	if shell == "" || shell == "." || shell == "sh" {
-		out, err := exec.Command("ps", "-p", fmt.Sprint(os.Getppid()), "-o", "comm=").Output()
-		if err == nil {
-			shell = strings.TrimSpace(string(out))
+		if fileExists(filepath.Join(home, ".bashrc")) {
+			shell = "bash"
+		} else if fileExists(filepath.Join(home, ".zshrc")) {
+			shell = "zsh"
+		} else {
+			shell = "unknown"
 		}
 	}
 
