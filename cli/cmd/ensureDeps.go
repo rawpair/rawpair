@@ -100,13 +100,13 @@ func checkInstalled(name string) bool {
 	return err == nil
 }
 
-func runCommandAndReturnOutput(cmd string, args ...string) string {
+func runCommandAndReturnOutput(cmd string, args ...string) (string, error) {
 	command := exec.Command(cmd, args...)
 	out, err := command.CombinedOutput()
 	if err != nil {
-		return fmt.Sprintf("error: %s\noutput: %s", err, string(out))
+		return "", nil
 	}
-	return string(out)
+	return string(out), nil
 }
 
 func installASDF() error {
@@ -168,13 +168,13 @@ var depCommands = map[string][]string{
 	},
 	"debian": {
 		"apt-get update",
-		"apt-get install -y curl git autoconf build-essential libssl-dev libncurses-dev libwxgtk3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev",
+		"apt-get install -y curl git autoconf build-essential libssl-dev libncurses-dev libwxgtk3.2-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev",
 	},
 	"fedora": {
 		"dnf install -y awk unzip curl git make automake gcc gcc-c++ kernel-devel openssl-devel ncurses-devel wxGTK-devel mesa-libGL-devel mesa-libGLU-devel libpng-devel libssh-devel unixODBC-devel",
 	},
 	"arch": {
-		"pacman -Sy --noconfirm curl git base-devel openssl ncurses wxgtk3 mesa glu libpng libssh unixodbc",
+		"pacman -Sy --noconfirm curl git base-devel openssl ncurses wxgtk3 mesa glu libpng libssh unixodbc unzip",
 	},
 }
 
@@ -199,19 +199,33 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 		if hasErlang && hasElixir {
 			meetsDeps := true
 
-			erlangVersion := strings.TrimSpace(runCommandAndReturnOutput("erl",
+			erlRawVersionOutput, err := runCommandAndReturnOutput("erl",
 				"-eval",
 				`{ok, Version} = file:read_file(filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"])), io:fwrite(Version), halt().`,
-				"-noshell"))
+				"-noshell")
+
+			if err != nil {
+				fmt.Println("Could not reliably detect Erlang version. Please ensure you have v27.0.0 or greater installed.")
+				return
+			}
+
+			erlangVersion := strings.TrimSpace(erlRawVersionOutput)
 
 			if !isAtLeast(erlangVersion, "27.0.0") {
 				fmt.Println("Erlang version is less than 27.0.0, please update.")
 				meetsDeps = false
 			}
 
-			elixirVersion, err := extractSemver(strings.TrimSpace(runCommandAndReturnOutput("elixir",
+			elixirRawVersionOutput, err := runCommandAndReturnOutput("elixir",
 				"-e",
-				"IO.puts(System.version())")))
+				"IO.puts(System.version())")
+
+			if err != nil {
+				fmt.Println("Could not reliably detect Elixir version. Please run `elixir --version` manually and ensure you have v1.18.0 or greater installed.")
+				return
+			}
+
+			elixirVersion, err := extractSemver(strings.TrimSpace(elixirRawVersionOutput))
 
 			if err != nil {
 				fmt.Println("Could not reliably detect Elixir version. Please run `elixir --version` manually and ensure you have v1.18.0 or greater installed.")
@@ -229,10 +243,7 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 			} else {
 				fmt.Println("Erlang and Elixir versions are up to date.")
 			}
-
 		} else {
-			fmt.Println("Erlang, and Elixir are not installed.")
-
 			distro, err := detectDistro()
 			if err != nil {
 				log.Fatal(err)
@@ -278,7 +289,14 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 			} else {
 				fmt.Println("Detected asdf, checking version...")
 
-				rawAsdfVersion := runCommandAndReturnOutput("asdf", "--version")
+				rawAsdfVersion, err := runCommandAndReturnOutput("asdf", "--version")
+
+				if err != nil {
+					fmt.Println("Could not reliably detect asdf version.")
+					fmt.Println("asdf version:", rawAsdfVersion)
+					return
+				}
+
 				asdfVersion, err := extractSemver(rawAsdfVersion)
 
 				if err != nil {
@@ -311,21 +329,21 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 					}
 
 					if proceed {
-						output := runCommandAndReturnOutput("asdf", "plugin", "add", "erlang")
-						if strings.Contains(output, "error") {
+						output, err := runCommandAndReturnOutput("asdf", "plugin", "add", "erlang")
+						if err != nil {
 							fmt.Println("Failed to add erlang plugin:", output)
 							return
 						}
 
 						fmt.Println("Installing Erlang 27.3.2, this may take several minutes...")
-						output = runCommandAndReturnOutput("asdf", "install", "erlang", "27.3.2")
-						if strings.Contains(output, "error") {
+						output, err = runCommandAndReturnOutput("asdf", "install", "erlang", "27.3.2")
+						if err != nil {
 							fmt.Println("Failed to install erlang:", output)
 							return
 						}
 
-						output = runCommandAndReturnOutput("asdf", "set", "-u", "erlang", "27.3.2")
-						if strings.Contains(output, "error") {
+						output, err = runCommandAndReturnOutput("asdf", "set", "-u", "erlang", "27.3.2")
+						if err != nil {
 							fmt.Println("Failed to set erlang version:", output)
 							return
 						}
@@ -353,21 +371,21 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 					if proceed {
 						fmt.Println("Running commands. This may take a while...")
-						output := runCommandAndReturnOutput("asdf", "plugin", "add", "elixir")
-						if strings.Contains(output, "error") {
+						output, err := runCommandAndReturnOutput("asdf", "plugin", "add", "elixir")
+						if err != nil {
 							fmt.Println("Failed to add elixir plugin:", output)
 							return
 						}
 
 						fmt.Println("Installing Elixir 1.18.3, this may take a few minutes...")
-						output = runCommandAndReturnOutput("asdf", "install", "elixir", "1.18.3")
-						if strings.Contains(output, "error") {
+						output, err = runCommandAndReturnOutput("asdf", "install", "elixir", "1.18.3")
+						if err != nil {
 							fmt.Println("Failed to install elixir:", output)
 							return
 						}
 
-						output = runCommandAndReturnOutput("asdf", "set", "-u", "elixir", "1.18.3")
-						if strings.Contains(output, "error") {
+						output, err = runCommandAndReturnOutput("asdf", "set", "-u", "elixir", "1.18.3")
+						if err != nil {
 							fmt.Println("Failed to set elixir version:", output)
 							return
 						}
