@@ -314,7 +314,7 @@ func runTemplate(data QuickStartConfig, rawTmpl string) (string, error) {
 
 var quickStartCmd = &cobra.Command{
 	Use:   "quickStart",
-	Short: "Interactively choose arch and stacks to build",
+	Short: "Generates .env and docker-compose.yml files for RawPair",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := QuickStartConfig{}
 
