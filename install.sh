@@ -41,7 +41,27 @@ tar -xzf "$FILENAME"
 chmod +x rawpair
 
 echo "🚀 Installing to $INSTALL_DIR..."
-sudo mv rawpair "$INSTALL_DIR"
+
+if [ "$(id -u)" -eq 0 ]; then
+    # Already root
+    mv rawpair "$INSTALL_DIR"
+elif command -v sudo >/dev/null 2>&1; then
+    sudo mv rawpair "$INSTALL_DIR"
+else
+    echo "⚠️  Neither root nor sudo detected. Installing to \$HOME/.local/bin..."
+    mkdir -p "$HOME/.local/bin"
+    mv rawpair "$HOME/.local/bin"
+
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        echo "⚠️  \$HOME/.local/bin is not in your PATH. You may want to add:"
+        echo '  export PATH="$HOME/.local/bin:$PATH"'
+    fi
+fi
+
+if ! command -v rawpair >/dev/null; then
+    echo "❌ Installation failed or rawpair not in PATH"
+    exit 1
+fi
 
 echo "✅ Installed: $(which rawpair)"
 rawpair --version
