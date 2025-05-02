@@ -171,7 +171,7 @@ var depCommands = map[string][]string{
 		"apt-get install -y curl git autoconf build-essential libssl-dev libncurses-dev libwxgtk3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev",
 	},
 	"fedora": {
-		"dnf install -y curl git make automake gcc gcc-c++ kernel-devel openssl-devel ncurses-devel wxGTK3-devel mesa-libGL-devel mesa-libGLU-devel libpng-devel libssh-devel unixODBC-devel",
+		"dnf install -y awk unzip curl git make automake gcc gcc-c++ kernel-devel openssl-devel ncurses-devel wxGTK-devel mesa-libGL-devel mesa-libGLU-devel libpng-devel libssh-devel unixODBC-devel",
 	},
 	"arch": {
 		"pacman -Sy --noconfirm curl git base-devel openssl ncurses wxgtk3 mesa glu libpng libssh unixodbc",
