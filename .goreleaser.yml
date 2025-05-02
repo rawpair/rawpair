@@ -20,6 +20,8 @@ builds:
 
 archives:
   - format: tar.gz
+    files:
+      - none*
 
 release:
   github:
