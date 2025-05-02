@@ -118,17 +118,26 @@ Then open [http://localhost:4000](http://localhost:4000) to begin.
 ### CLI Setup (Optional)
 
 A prebuilt CLI tool is available in [Releases](https://github.com/rawpair/rawpair/releases).
-Download the binary matching your platform (e.g. rawpair, rawpair.exe) and run:
+Either install via `curl -sSf https://rawpair.dev/install.sh | sh` or download the binary matching your platform manually.
+
+Then run to ensure that you have Erlang and Elixir installed:
+
+```bash
+./rawpair ensureDeps
+```
+
+Run this command, follow the instructions and at the end of the process you will have the opportunity to generate .env and .docker-compose.yml files.
 
 ```bash
 ./rawpair quickStart
 ```
 
-or `./rawpair.exe quickStart` on Windows.
 
-This will prompt you for configuration details and generate a .env and docker-compose.yml to get you up and running with minimal effort.
+This should get you up and running with minimal effort.
 
 Use this if you don’t want to manually edit config files.
+
+**Tested on Ubuntu 24.04, Debian Bookwork, Fedora 42, Archlinux (20250430)**
 
 ## Quick Start (Production)
 
