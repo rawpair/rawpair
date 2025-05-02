@@ -52,10 +52,13 @@ else
     mkdir -p "$HOME/.local/bin"
     mv rawpair "$HOME/.local/bin"
 
-    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *)
         echo "⚠️  \$HOME/.local/bin is not in your PATH. You may want to add:"
         echo '  export PATH="$HOME/.local/bin:$PATH"'
-    fi
+        ;;
+    esac
 fi
 
 if ! command -v rawpair >/dev/null; then
