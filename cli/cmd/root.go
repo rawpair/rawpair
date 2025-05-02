@@ -10,13 +10,14 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "rawpair",
-	Short: "CLI tool for RawPair development environments",
+	Version: "0.0.0-a007",
+	Use:     "rawpair",
+	Short:   "CLI tool for RawPair development environments",
 	Long: `RawPair CLI provides utilities to help set up and manage
-+development environments for RawPair applications.
-+
-+Use the quickStart command to interactively choose architecture
-+and stacks to pull Docker images for your environment.`,
+development environments for RawPair applications.
+
+Use the quickStart command to interactively choose architecture
+and stacks to pull Docker images for your environment.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
