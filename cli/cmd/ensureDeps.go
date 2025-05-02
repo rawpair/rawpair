@@ -128,8 +128,13 @@ func installASDF() error {
 		return fmt.Errorf("failed to detect shell RC file: %w", err)
 	}
 
-	f, _ := os.OpenFile(shellRcFile, os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(shellRcFile, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open shell RC file: %w", err)
+	}
+
 	defer f.Close()
+
 	if _, err := f.WriteString("\n\nexport PATH=\"${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH\"\n"); err != nil {
 		return fmt.Errorf("failed to update shell RC file: %w", err)
 	}
@@ -256,8 +261,8 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 					return
 				}
 
-				if !isAtLeast(asdfVersion, "0.16") {
-					fmt.Println("asdf version is less than 0.16, please update.")
+				if !isAtLeast(asdfVersion, "0.16.0") {
+					fmt.Println("asdf version is less than 0.16.0, please update.")
 					return
 				}
 
