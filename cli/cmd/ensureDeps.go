@@ -130,7 +130,9 @@ func installASDF() error {
 
 	f, _ := os.OpenFile(shellRcFile, os.O_APPEND|os.O_WRONLY, 0644)
 	defer f.Close()
-	f.WriteString("\n\nexport PATH=\"${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH\"\n")
+	if _, err := f.WriteString("\n\nexport PATH=\"${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH\"\n"); err != nil {
+		return fmt.Errorf("failed to update shell RC file: %w", err)
+	}
 
 	return nil
 }
@@ -278,10 +280,25 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 					}
 
 					if proceed {
-						fmt.Println("Running commands. This may take a while...")
-						runCommandAndReturnOutput("asdf", "plugin", "add", "erlang")
-						runCommandAndReturnOutput("asdf", "install", "erlang", "27.3.2")
-						runCommandAndReturnOutput("asdf", "set", "-u", "erlang", "27.3.2")
+						output := runCommandAndReturnOutput("asdf", "plugin", "add", "erlang")
+						if strings.Contains(output, "error") {
+							fmt.Println("Failed to add erlang plugin:", output)
+							return
+						}
+
+						fmt.Println("Installing Erlang 27.3.2, this may take several minutes...")
+						output = runCommandAndReturnOutput("asdf", "install", "erlang", "27.3.2")
+						if strings.Contains(output, "error") {
+							fmt.Println("Failed to install erlang:", output)
+							return
+						}
+
+						output = runCommandAndReturnOutput("asdf", "set", "-u", "erlang", "27.3.2")
+						if strings.Contains(output, "error") {
+							fmt.Println("Failed to set erlang version:", output)
+							return
+						}
+						fmt.Println("Erlang installed successfully!")
 					}
 				}
 
@@ -305,9 +322,25 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 					if proceed {
 						fmt.Println("Running commands. This may take a while...")
-						runCommandAndReturnOutput("asdf", "plugin", "add", "elixir")
-						runCommandAndReturnOutput("asdf", "install", "elixir", "1.18.3")
-						runCommandAndReturnOutput("asdf", "set", "-u", "elixir", "1.18.3")
+						output := runCommandAndReturnOutput("asdf", "plugin", "add", "elixir")
+						if strings.Contains(output, "error") {
+							fmt.Println("Failed to add elixir plugin:", output)
+							return
+						}
+
+						fmt.Println("Installing Elixir 1.18.3, this may take a few minutes...")
+						output = runCommandAndReturnOutput("asdf", "install", "elixir", "1.18.3")
+						if strings.Contains(output, "error") {
+							fmt.Println("Failed to install elixir:", output)
+							return
+						}
+
+						output = runCommandAndReturnOutput("asdf", "set", "-u", "elixir", "1.18.3")
+						if strings.Contains(output, "error") {
+							fmt.Println("Failed to set elixir version:", output)
+							return
+						}
+						fmt.Println("Elixir installed successfully!")
 					}
 				}
 			}
