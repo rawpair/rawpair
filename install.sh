@@ -59,15 +59,19 @@ else
         echo '  export PATH="$HOME/.local/bin:$PATH"'
         ;;
     esac
+
+    if [ ! -f "$HOME/.local/bin/rawpair" ]; then
+        echo "❌ Failed to install rawpair"
+        exit 1
+    fi
 fi
 
-if ! command -v rawpair >/dev/null; then
-    echo "❌ Installation failed or rawpair not in PATH"
-    exit 1
+if command -v rawpair >/dev/null; then
+    echo "✅ rawpair installed and in PATH: $(which rawpair)"
+    rawpair --version
+else
+    echo "rawpair installed but not in PATH."
 fi
-
-echo "✅ Installed: $(which rawpair)"
-rawpair --version
 
 # Clean up
 rm "$FILENAME"
