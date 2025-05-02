@@ -87,9 +87,10 @@ func checkInstalled(name string) bool {
 }
 
 func runCommandAndReturnOutput(cmd string, args ...string) string {
-	out, err := exec.Command(cmd, args...).Output()
+	command := exec.Command(cmd, args...)
+	out, err := command.CombinedOutput()
 	if err != nil {
-		return "not found"
+		return fmt.Sprintf("error: %s\noutput: %s", err, string(out))
 	}
 	return string(out)
 }
