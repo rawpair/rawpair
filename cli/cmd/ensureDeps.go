@@ -59,7 +59,11 @@ func detectShellRCFile() (string, error) {
 		return "", fmt.Errorf("could not get home directory: %w", err)
 	}
 
-	shell := filepath.Base(os.Getenv("SHELL"))
+	shellEnv := os.Getenv("SHELL")
+
+	shell := filepath.Base(shellEnv)
+
+	log.Printf("Shell ENV: %q\n", shellEnv)
 
 	if shell == "" || shell == "." || shell == "sh" {
 		out, err := exec.Command("ps", "-p", fmt.Sprint(os.Getppid()), "-o", "comm=").Output()
@@ -67,6 +71,8 @@ func detectShellRCFile() (string, error) {
 			shell = strings.TrimSpace(string(out))
 		}
 	}
+
+	log.Printf("Detected shell: %q\n", shell)
 
 	switch shell {
 	case "bash":
@@ -150,7 +156,7 @@ func installASDF() error {
 var depCommands = map[string][]string{
 	"ubuntu": {
 		"apt-get update",
-		"apt-get install -y curl git autoconf build-essential libssl-dev libncurses-dev libwxgtk3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev",
+		"apt-get install -y curl git autoconf build-essential libssl-dev libncurses-dev libwxgtk3.2-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev",
 	},
 	"debian": {
 		"apt-get update",
@@ -183,19 +189,26 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 		hasElixir := checkInstalled("elixir")
 
 		if hasErlang && hasElixir {
+			meetsDeps := true
+
 			erlangVersion := strings.TrimSpace(runCommandAndReturnOutput("erl",
 				"-eval",
 				`{ok, Version} = file:read_file(filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"])), io:fwrite(Version), halt().`,
 				"-noshell"))
-			elixirVersion := strings.TrimSpace(runCommandAndReturnOutput("elixir",
-				"-e",
-				"IO.puts(System.version())"))
-
-			meetsDeps := true
 
 			if !isAtLeast(erlangVersion, "27.0.0") {
 				fmt.Println("Erlang version is less than 27.0.0, please update.")
 				meetsDeps = false
+			}
+
+			elixirVersion, err := extractSemver(strings.TrimSpace(runCommandAndReturnOutput("elixir",
+				"-e",
+				"IO.puts(System.version())")))
+
+			if err != nil {
+				fmt.Println("Could not reliably detect Elixir version. Please run `elixir --version` manually and ensure you have v1.18.0 or greater installed.")
+				fmt.Println("Elixir version:", elixirVersion)
+				return
 			}
 
 			if !isAtLeast(elixirVersion, "1.18.0") {

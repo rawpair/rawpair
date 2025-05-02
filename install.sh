@@ -67,7 +67,7 @@ else
 fi
 
 if command -v rawpair >/dev/null; then
-    echo "✅ rawpair installed and in PATH: $(which rawpair)"
+    echo "✅ rawpair installed and in PATH: $(command -v rawpair)"
     rawpair --version
 else
     echo "rawpair installed but not in PATH."
