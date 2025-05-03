@@ -10,35 +10,35 @@ import (
 	"github.com/rawpair/rawpair/cli/internal/executils"
 )
 
-func IsASDFInstalled() (bool, error) {
-	hasASDF := executils.CheckInstalled("asdf")
+func GetPathToASDF() (string, error) {
+	asdfPath, _ := exec.LookPath("asdf")
 
-	if hasASDF {
-		return true, nil
+	if asdfPath != "" {
+		return asdfPath, nil
 	}
 
 	home, err := os.UserHomeDir()
 
 	if err != nil {
-		return false, fmt.Errorf("could not get home directory: %w", err)
+		return "", fmt.Errorf("could not get home directory: %w", err)
 	}
 
-	asdfPath := filepath.Join(home, ".asdf", "bin", "asdf")
+	asdfPath = filepath.Join(home, ".asdf", "bin", "asdf")
 
 	info, err := os.Stat(asdfPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil // File doesn't exist
+			return "", nil // File doesn't exist
 		}
-		return false, fmt.Errorf("could not stat %q: %w", asdfPath, err)
+		return "", fmt.Errorf("could not stat %q: %w", asdfPath, err)
 	}
 
 	// Check if it's a regular file and executable by user/group/others
 	if info.Mode().IsRegular() && info.Mode().Perm()&0111 != 0 {
-		return true, nil
+		return asdfPath, nil
 	}
 
-	return false, nil
+	return "", nil
 }
 
 func InstallASDF(shellRcFile string, asdfVersionToBeInstalled string) (string, error) {

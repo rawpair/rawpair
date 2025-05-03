@@ -54,7 +54,7 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 		fmt.Println("Proceeding with asdf, Erlang, and Elixir detection...")
 
-		hasASDF, err := setup.IsASDFInstalled()
+		pathToAsdf, err := setup.GetPathToASDF()
 
 		if err != nil {
 			fmt.Println("Error checking for asdf installation:", err)
@@ -63,8 +63,7 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 		hasErlang := executils.CheckInstalled("erl")
 		hasElixir := executils.CheckInstalled("elixir")
-
-		var pathToAsdf string
+		hasASDF := pathToAsdf != ""
 
 		if hasErlang && hasElixir {
 			meetsDeps := true
@@ -144,12 +143,6 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 				if shellRcFileErr != nil {
 					fmt.Println("Could not detect shell RC file so asdf is not in PATH.")
-				}
-			} else {
-				pathToAsdf, err = executils.GetPathToExecutable("asdf")
-				if err != nil {
-					fmt.Println("asdf is not in PATH.")
-					return
 				}
 			}
 
