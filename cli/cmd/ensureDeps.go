@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	minErlangVersion = "27.0.0"
-	minElixirVersion = "1.18.0"
-	minAsdfVersion   = "0.16.0"
+	minErlangVersion         = "27.0.0"
+	minElixirVersion         = "1.18.0"
+	minAsdfVersion           = "0.16.0"
+	asdfVersionToBeInstalled = "0.16.7"
 )
 
 var nonInteractive bool
@@ -53,11 +54,16 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 		fmt.Println("Proceeding with asdf, Erlang, and Elixir detection...")
 
-		hasASDF := executils.CheckInstalled("asdf")
+		pathToAsdf, err := setup.GetPathToASDF()
+
+		if err != nil {
+			fmt.Println("Error checking for asdf installation:", err)
+			return
+		}
+
 		hasErlang := executils.CheckInstalled("erl")
 		hasElixir := executils.CheckInstalled("elixir")
-
-		var pathToAsdf string
+		hasASDF := pathToAsdf != ""
 
 		if hasErlang && hasElixir {
 			meetsDeps := true
@@ -127,7 +133,7 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 				shellRcFile, shellRcFileErr := osutils.DetectShellRCFile()
 
-				pathToAsdf, err = setup.InstallASDF(shellRcFile)
+				pathToAsdf, err = setup.InstallASDF(shellRcFile, asdfVersionToBeInstalled)
 
 				if err != nil {
 					fmt.Println("asdf installation failed:", err)
@@ -137,12 +143,6 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 				if shellRcFileErr != nil {
 					fmt.Println("Could not detect shell RC file so asdf is not in PATH.")
-				}
-			} else {
-				pathToAsdf, err = executils.GetPathToExecutable("asdf")
-				if err != nil {
-					fmt.Println("asdf is not in PATH.")
-					return
 				}
 			}
 
