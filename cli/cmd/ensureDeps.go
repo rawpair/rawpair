@@ -211,8 +211,8 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 				}
 			}
 
-			if executils.CheckInstalled("erl") || executils.CheckInstalled("elixir") || executils.CheckInstalled("asdf") {
-				fmt.Println("asdf, Erlang, and Elixir are installed but not in PATH. Either manually add them to your PATH or restart your terminal.")
+			if !executils.CheckInstalled("erl") && !executils.CheckInstalled("elixir") && !executils.CheckInstalled("asdf") {
+				fmt.Println("asdf, Erlang, and Elixir were likely installed but are not in your PATH. Please restart your terminal.")
 			}
 		}
 	},
