@@ -126,6 +126,14 @@ Then run to ensure that you have Erlang and Elixir installed:
 ./rawpair ensureDeps
 ```
 
+Or add flags for unsupervised installation of dependencies:
+
+```bash
+./rawpair ensureDeps --non-interactive --install-deps
+```
+
+**Note: --install-deps requires root**
+
 Run this command, follow the instructions and at the end of the process you will have the opportunity to generate .env and .docker-compose.yml files.
 
 ```bash
