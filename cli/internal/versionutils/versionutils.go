@@ -19,6 +19,7 @@ func IsAtLeast(versionStr, minVersionStr string) bool {
 	constraints, err := semver.NewConstraint(">=" + minVersionStr)
 	if err != nil {
 		log.Fatalf("Invalid constraint: %s", err)
+		return false
 	}
 
 	return constraints.Check(version)

@@ -11,7 +11,12 @@ import (
 )
 
 func InstallASDF(shellRcFile string) (string, error) {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+
+	if err != nil {
+		return "", fmt.Errorf("could not get home directory: %w", err)
+	}
+
 	asdfDir := filepath.Join(home, ".asdf")
 	if _, err := os.Stat(asdfDir); err == nil {
 		return "", fmt.Errorf("asdf possibly already installed at %s", asdfDir)
@@ -22,7 +27,7 @@ func InstallASDF(shellRcFile string) (string, error) {
 	tarPath := "/tmp/asdf.tar.gz"
 
 	// Download tarball
-	err := exec.Command("curl", "-L", "-o", tarPath, tarURL).Run()
+	err = exec.Command("curl", "-L", "-o", tarPath, tarURL).Run()
 	if err != nil {
 		return "", fmt.Errorf("failed to download asdf: %w", err)
 	}

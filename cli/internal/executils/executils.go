@@ -15,7 +15,7 @@ func RunCommandAndReturnOutput(cmd string, args ...string) (string, error) {
 	command := exec.Command(cmd, args...)
 	out, err := command.CombinedOutput()
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return string(out), nil
 }
