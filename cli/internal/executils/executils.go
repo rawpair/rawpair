@@ -1,6 +1,11 @@
 package executils
 
-import "os/exec"
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+)
 
 func CheckInstalled(name string) bool {
 	_, err := exec.LookPath(name)
@@ -18,4 +23,17 @@ func RunCommandAndReturnOutput(cmd string, args ...string) (string, error) {
 		return "", err
 	}
 	return string(out), nil
+}
+
+func RunCommandString(cmdStr string) error {
+	args := strings.Fields(cmdStr)
+	if len(args) == 0 {
+		return fmt.Errorf("empty command string")
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
