@@ -10,19 +10,45 @@ import (
 	"github.com/rawpair/rawpair/cli/internal/executils"
 )
 
-func InstallASDF(shellRcFile string) (string, error) {
+func IsASDFInstalled() (bool, error) {
+	hasASDF := executils.CheckInstalled("asdf")
+
+	if hasASDF {
+		return true, nil
+	}
+
+	home, err := os.UserHomeDir()
+
+	if err != nil {
+		return false, fmt.Errorf("could not get home directory: %w", err)
+	}
+
+	asdfPath := filepath.Join(home, ".asdf", "bin", "asdf")
+
+	info, err := os.Stat(asdfPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil // File doesn't exist
+		}
+		return false, fmt.Errorf("could not stat %q: %w", asdfPath, err)
+	}
+
+	// Check if it's a regular file and executable by user/group/others
+	if info.Mode().IsRegular() && info.Mode().Perm()&0111 != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func InstallASDF(shellRcFile string, asdfVersionToBeInstalled string) (string, error) {
 	home, err := os.UserHomeDir()
 
 	if err != nil {
 		return "", fmt.Errorf("could not get home directory: %w", err)
 	}
 
-	asdfDir := filepath.Join(home, ".asdf")
-	if _, err := os.Stat(asdfDir); err == nil {
-		return "", fmt.Errorf("asdf possibly already installed at %s", asdfDir)
-	}
-
-	version := "v0.16.7"
+	version := fmt.Sprintf("v%s", asdfVersionToBeInstalled)
 	tarURL := fmt.Sprintf("https://github.com/asdf-vm/asdf/releases/download/%s/asdf-%s-%s-%s.tar.gz", version, version, runtime.GOOS, runtime.GOARCH)
 	tarPath := "/tmp/asdf.tar.gz"
 
@@ -33,7 +59,7 @@ func InstallASDF(shellRcFile string) (string, error) {
 	}
 
 	// Create .asdf/bin directory
-	binDir := filepath.Join(asdfDir, "bin")
+	binDir := filepath.Join(home, ".asdf", "bin")
 	if err := os.MkdirAll(binDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create bin directory: %w", err)
 	}
