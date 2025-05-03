@@ -21,6 +21,7 @@ const (
 	asdfVersionToBeInstalled = "0.16.7"
 )
 
+var installDeps bool
 var nonInteractive bool
 
 var depCommands = map[string][]string{
@@ -109,16 +110,30 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 				return
 			}
 
-			fmt.Println("Ensure the following dependencies are satisfied/installed:")
-			for _, c := range cmds {
-				fmt.Println("  ", c)
-			}
+			if installDeps {
+				fmt.Println("Attempting to install dependencies...")
+				for _, c := range cmds {
+					fmt.Println("Running:", c)
+					err := executils.RunCommandString(c)
+					if err != nil {
+						fmt.Println("Error running command:", c, err)
+						return
+					}
+					fmt.Println("Command completed successfully.")
+				}
+				fmt.Println("Dependencies installed successfully.")
+			} else {
+				fmt.Println("Ensure the following dependencies are satisfied/installed:")
+				for _, c := range cmds {
+					fmt.Println("  ", c)
+				}
 
-			proceed := userflow.AskToProceedOrAuto("Proceed with asdf detection?", nonInteractive)
+				proceed := userflow.AskToProceedOrAuto("Proceed with asdf detection?", nonInteractive)
 
-			if !proceed {
-				fmt.Println("Aborted.")
-				return
+				if !proceed {
+					fmt.Println("Aborted.")
+					return
+				}
 			}
 
 			if !hasASDF {
@@ -203,5 +218,6 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 func init() {
 	rootCmd.AddCommand(ensureDepsCmd)
 
+	ensureDepsCmd.Flags().BoolVar(&installDeps, "install-deps", false, "Attempts to install dependencies automatically")
 	ensureDepsCmd.Flags().BoolVar(&nonInteractive, "non-interactive", false, "Run without prompting for confirmation")
 }
