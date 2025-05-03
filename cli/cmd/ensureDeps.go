@@ -66,6 +66,8 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 		hasElixir := executils.CheckInstalled("elixir")
 		hasASDF := pathToAsdf != ""
 
+		var shellRcFile = ""
+
 		if hasErlang && hasElixir {
 			meetsDeps := true
 
@@ -146,7 +148,7 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 					return
 				}
 
-				shellRcFile, shellRcFileErr := osutils.DetectShellRCFile()
+				shellRcFile, _ = osutils.DetectShellRCFile()
 
 				pathToAsdf, err = setup.InstallASDF(shellRcFile, asdfVersionToBeInstalled)
 
@@ -155,10 +157,6 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 					return
 				}
 				fmt.Println("asdf installed successfully.")
-
-				if shellRcFileErr != nil {
-					fmt.Println("Could not detect shell RC file so asdf is not in PATH.")
-				}
 			}
 
 			fmt.Println("Detected asdf, checking version...")
@@ -212,7 +210,14 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 			}
 
 			if !executils.CheckInstalled("erl") && !executils.CheckInstalled("elixir") && !executils.CheckInstalled("asdf") {
-				fmt.Println("asdf, Erlang, and Elixir were likely installed but are not in your PATH. Please restart your terminal.")
+				fmt.Println("asdf, Erlang, and Elixir were likely correctly installed but are not in your PATH.")
+
+				if shellRcFile != "" {
+					fmt.Println("Please restart your terminal.")
+				} else {
+					fmt.Println("Could not detect your shell RC file. Please manually add the following line to your shell RC file then either source it or start a new terminal.")
+					fmt.Println("export PATH=\"$HOME/.asdf/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH")
+				}
 			}
 		}
 	},
