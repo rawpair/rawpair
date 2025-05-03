@@ -222,45 +222,69 @@ defmodule RawPair.DockerClient do
   end
 
   def write_file(container, path, content) do
-    # Create a tar archive in memory
     basename = Path.basename(path)
-    tar_stream = :erl_tar.create({:binary, :memory}, [{String.to_charlist(basename), content}], [:verbose])
+    dirname = Path.dirname(path)
 
-    case tar_stream do
-      {:ok, tar_binary} ->
-        url = "http://docker/#{@docker_api_version}/containers/#{container}/archive?path=#{URI.encode(Path.dirname(path))}"
-        headers = [{"Content-Type", "application/x-tar"}, {"host", "docker"}]
+    with {:ok, tar_binary} <- MemoTar.create([{basename, content}]),
+      :ok <- put_archive(container, dirname, tar_binary),
+      :ok <- fix_ownership(container, path),
+      :ok <- fix_permissions(container, path) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-        Finch.build(:put, url, headers, tar_binary, unix_socket: @sock)
-        |> Finch.request(RawPair.Finch)
-        |> case do
-          {:ok, %Finch.Response{status: code}} when code in 200..299 -> :ok
-          {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
-          {:error, reason} -> {:error, reason}
-        end
+  defp put_archive(container, dest_path, tar_binary) do
+    url = "http://docker/#{@docker_api_version}/containers/#{container}/archive?path=#{URI.encode(dest_path)}"
 
-      {:error, reason} ->
-        {:error, reason}
+    Finch.build(:put, url, [
+      {"Content-Type", "application/x-tar"},
+      {"host", "docker"}
+    ], tar_binary, unix_socket: @sock)
+    |> Finch.request(RawPair.Finch)
+    |> case do
+      {:ok, %Finch.Response{status: code}} when code in 200..299 -> :ok
+      {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
+      {:error, reason} -> {:error, reason}
     end
   end
 
   def fix_ownership(container, path) do
     cmd = ["chown", "devuser:devuser", path]
-    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd, "root"),
          {:ok, _} <- start_exec(exec_id),
          {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
       :ok
     else
-      _ -> {:error, "Failed to fix file ownership"}
+      {:ok, %{"ExitCode" => code}} -> {:error, "chown failed with exit code #{code}"}
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  defp create_exec(container, cmd) do
+  def fix_permissions(container, path) do
+    cmd = ["chmod", "0644", path]
+
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd, "root"),
+         {:ok, _} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      :ok
+    else
+      _ -> {:error, "chmod failed"}
+    end
+  end
+
+
+  defp create_exec(container, cmd, user \\ nil) do
     body = %{
       "AttachStdout" => true,
       "AttachStderr" => true,
       "Cmd" => cmd
     }
+    |> then(fn base ->
+      if user, do: Map.put(base, "User", user), else: base
+    end)
 
     url = "http://docker/#{@docker_api_version}/containers/#{container}/exec"
 

@@ -85,8 +85,6 @@ defmodule RawPairWeb.FileController do
     end
   end
 
-
-
   def update_file(conn, %{"slug" => slug, "path" => file_path_parts, "content" => content}) do
     workspace = Workspaces.get_workspace_by_slug!(slug)
     container = "workspace-#{workspace.slug}"
@@ -98,7 +96,7 @@ defmodule RawPairWeb.FileController do
       |> put_status(:forbidden)
       |> json(%{error: "Invalid path"})
     else
-      case write_file(container, full_path, content) do
+      case RawPair.DockerClient.write_file(container, full_path, content) do
         :ok ->
           json(conn, %{status: "ok"})
 
@@ -109,26 +107,4 @@ defmodule RawPairWeb.FileController do
       end
     end
   end
-
-  def write_file(container, path, content) do
-    tmp = Path.join(System.tmp_dir!(), "bt-docker-write-#{:erlang.unique_integer([:positive])}")
-    File.write!(tmp, content)
-
-    {_, status} = System.cmd("docker", ["cp", tmp, "#{container}:#{path}"])
-    File.rm(tmp)
-
-    case status do
-      0 ->
-        # Force ownership fix
-        {_, chown_status} = System.cmd("docker", ["exec", "--user", "root", container, "chown", "devuser:devuser", path])
-        if chown_status == 0, do: :ok, else: {:error, "chown failed with #{chown_status}"}
-
-      _ -> {:error, "docker cp failed with #{status}"}
-    end
-  end
-
-
-
-
-
 end
