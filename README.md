@@ -250,3 +250,32 @@ This project is licensed under the [Mozilla Public License 2.0](https://www.mozi
 ## Contributing
 
 Contributions are welcome. Please open issues and submit pull requests through GitHub.
+
+## Acknowledgments
+
+RawPair is made possible thanks to the following open-source libraries:
+
+| Library                                                    | Version           | Description                                         |
+|------------------------------------------------------------|-------------------|-----------------------------------------------------|
+| https://github.com/phoenixframework/phoenix                | ~> 1.7.21         | Core framework for building interactive web apps   |
+| https://github.com/phoenixframework/phoenix_ecto           | ~> 4.5            | Integration between Phoenix and Ecto               |
+| https://github.com/elixir-ecto/ecto_sql                    | ~> 3.10           | SQL-based persistence layer                        |
+| https://github.com/elixir-ecto/postgrex                    | >= 0.0.0          | PostgreSQL driver for Elixir                       |
+| https://github.com/phoenixframework/phoenix_html           | ~> 4.1            | HTML helpers for Phoenix                           |
+| https://github.com/phoenixframework/phoenix_live_reload    | ~> 1.2 (dev)      | Live reload support during development             |
+| https://github.com/phoenixframework/phoenix_live_view      | ~> 1.0            | Real-time UI with server-rendered DOM diffs        |
+| https://github.com/philss/floki                            | >= 0.30.0 (test)  | HTML parser used for testing                       |
+| https://github.com/phoenixframework/phoenix_live_dashboard | ~> 0.8.3          | Real-time monitoring dashboard                     |
+| https://github.com/evanw/esbuild                           | ~> 0.8 (dev)      | JavaScript bundler                                 |
+| https://github.com/tailwindlabs/tailwindcss                | ~> 0.3 (dev)      | Utility-first CSS framework                        |
+| https://github.com/tailwindlabs/heroicons                  | v2.1.1            | SVG icons from Tailwind Labs                       |
+| https://github.com/swoosh/swoosh                           | ~> 1.5            | Email composition and delivery                     |
+| https://github.com/sneako/finch                            | ~> 0.13           | HTTP client for Elixir                             |
+| https://github.com/beam-telemetry/telemetry_metrics        | ~> 1.0            | Metrics reporter for Telemetry                     |
+| https://github.com/beam-telemetry/telemetry_poller         | ~> 1.0            | Periodic Telemetry measurements                    |
+| https://github.com/elixir-gettext/gettext                  | ~> 0.26           | Internationalization (i18n) support                |
+| https://github.com/michalmuskala/jason                     | ~> 1.2            | JSON parser and encoder                            |
+| https://github.com/phoenixframework/dns_cluster            | ~> 0.1.1          | DNS-based clustering                               |
+| https://github.com/mtrudel/bandit                          | ~> 1.5            | HTTP server compatible with Plug and Phoenix       |
+| https://github.com/jayjun/slugify                          | ~> 1.3            | Slug generator for URLs and file names             |
+| https://github.com/akasprzok/memo_tar                      | ~> 0.1.0          | In-memory tar archive generation                   |

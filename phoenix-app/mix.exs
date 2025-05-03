@@ -6,7 +6,7 @@ defmodule RawPair.MixProject do
   def project do
     [
       app: :rawpair,
-      version: "0.0.0-a002",
+      version: "0.0.0-a020",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -60,9 +60,8 @@ defmodule RawPair.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:httpoison, "~> 1.8"},
       {:slugify, "~> 1.3"},
-      {:mint_unix, "~> 0.1.0"}
+      {:memo_tar, "~> 0.1.0"}
     ]
   end
 

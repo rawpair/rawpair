@@ -166,6 +166,7 @@ defmodule RawPair.DockerClient do
       "-type", "f",
       "-not", "-path", "*/node_modules/*",
       "-not", "-path", "*/.git/*",
+      "-not", "-path", "*/_build/*",
       "-not", "-path", "*/*.swp"
     ]
 
@@ -188,12 +189,103 @@ defmodule RawPair.DockerClient do
 
   end
 
-  defp create_exec(container, cmd) do
+  def get_file_stat(container, path) do
+    cmd = ["stat", "-c", "%s", path]
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+         {:ok, output} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      {:ok, String.trim(output) |> String.to_integer()}
+    else
+      _ -> {:error, "Unable to stat file"}
+    end
+  end
+
+  def get_file_mime(container, path) do
+    cmd = ["file", "--brief", "--mime-type", path]
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+         {:ok, output} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      {:ok, String.trim(output)}
+    else
+      _ -> {:error, "Unable to detect MIME type"}
+    end
+  end
+
+  def read_file(container, path) do
+    cmd = ["cat", path]
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+         {:ok, output} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      {:ok, output}
+    else
+      _ -> {:error, "Failed to read file"}
+    end
+  end
+
+  def write_file(container, path, content) do
+    basename = Path.basename(path)
+    dirname = Path.dirname(path)
+
+    with {:ok, tar_binary} <- MemoTar.create([{basename, content}]),
+      :ok <- put_archive(container, dirname, tar_binary),
+      :ok <- fix_ownership(container, path),
+      :ok <- fix_permissions(container, path) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp put_archive(container, dest_path, tar_binary) do
+    url = "http://docker/#{@docker_api_version}/containers/#{container}/archive?path=#{URI.encode(dest_path)}"
+
+    Finch.build(:put, url, [
+      {"Content-Type", "application/x-tar"},
+      {"host", "docker"}
+    ], tar_binary, unix_socket: @sock)
+    |> Finch.request(RawPair.Finch)
+    |> case do
+      {:ok, %Finch.Response{status: code}} when code in 200..299 -> :ok
+      {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def fix_ownership(container, path) do
+    cmd = ["chown", "devuser:devuser", path]
+
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd, "root"),
+         {:ok, _} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      :ok
+    else
+      {:ok, %{"ExitCode" => code}} -> {:error, "chown failed with exit code #{code}"}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def fix_permissions(container, path) do
+    cmd = ["chmod", "0644", path]
+
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd, "root"),
+         {:ok, _} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      :ok
+    else
+      _ -> {:error, "chmod failed"}
+    end
+  end
+
+
+  defp create_exec(container, cmd, user \\ nil) do
     body = %{
       "AttachStdout" => true,
       "AttachStderr" => true,
       "Cmd" => cmd
     }
+    |> then(fn base ->
+      if user, do: Map.put(base, "User", user), else: base
+    end)
 
     url = "http://docker/#{@docker_api_version}/containers/#{container}/exec"
 
@@ -271,7 +363,7 @@ defmodule RawPair.DockerClient do
     Finch.build(:post, url, [{"host", "docker"}], nil, unix_socket: @sock)
     |> Finch.request(RawPair.Finch)
     |> case do
-      {:ok, %Finch.Response{status: code}} when code in 204..299 -> :ok
+      {:ok, %Finch.Response{status: code}} when code in 200..299 or code == 304 -> :ok
       {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
       {:error, reason} -> {:error, reason}
     end

@@ -55,62 +55,35 @@ defmodule RawPairWeb.FileController do
     full_path = Path.join([base_path | file_path_parts])
     safe_path = Path.expand(full_path)
 
-    if String.slice(safe_path, 0, String.length(base_path)) != base_path do
+    if not String.starts_with?(safe_path, base_path) do
       conn
       |> put_status(:forbidden)
       |> json(%{error: "Invalid path"})
     else
-      # First: check file size
-      size_cmd = ["exec", container, "stat", "-c", "%s", safe_path]
-      case System.cmd("docker", size_cmd, stderr_to_stdout: true) do
-        {size_str, 0} ->
-          size = String.trim(size_str) |> String.to_integer()
-
-          if size > 2 * 1024 * 1024 do
-            conn
-            |> put_status(:bad_request)
-            |> json(%{error: "File too large"})
-          else
-            # Second: check MIME type
-            mime_cmd = ["exec", container, "file", "--brief", "--mime-type", safe_path]
-
-            case System.cmd("docker", mime_cmd, stderr_to_stdout: true) do
-              {mime, 0} ->
-                mime = String.trim(mime)
-
-                if mime in @allowed_mime_types do
-                  cat_cmd = ["exec", container, "cat", safe_path]
-
-                  case System.cmd("docker", cat_cmd, stderr_to_stdout: true) do
-                    {contents, 0} ->
-                      json(conn, %{contents: contents})
-
-                    {err, _} ->
-                      conn
-                      |> put_status(:internal_server_error)
-                      |> json(%{error: "Failed to read file", detail: err})
-                  end
-                else
-                  conn
-                  |> put_status(:unsupported_media_type)
-                  |> json(%{error: "Only text files are supported. Detected file type: #{mime}", detected: mime})
-                end
-
-              _ ->
-                conn
-                |> put_status(:unsupported_media_type)
-                |> json(%{error: "Unable to detect mime type of file"})
-            end
-          end
-
-        {err, _} ->
+      with {:ok, size} <- RawPair.DockerClient.get_file_stat(container, safe_path),
+           true <- size <= 2 * 1024 * 1024 or {:error, :too_large},
+           {:ok, mime} <- RawPair.DockerClient.get_file_mime(container, safe_path),
+           true <- mime in @allowed_mime_types or {:error, {:unsupported_media_type, mime}},
+           {:ok, contents} <- RawPair.DockerClient.read_file(container, safe_path) do
+        json(conn, %{contents: contents})
+      else
+        {:error, :too_large} ->
           conn
-          |> put_status(:not_found)
-          |> json(%{error: "File not found", detail: err})
+          |> put_status(:bad_request)
+          |> json(%{error: "File too large"})
+
+        {:error, {:unsupported_media_type, mime}} ->
+          conn
+          |> put_status(:unsupported_media_type)
+          |> json(%{error: "Only text files are supported. Detected file type: #{mime}", detected: mime})
+
+        {:error, reason} ->
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: "Failed to read file", detail: inspect(reason)})
       end
     end
   end
-
 
   def update_file(conn, %{"slug" => slug, "path" => file_path_parts, "content" => content}) do
     workspace = Workspaces.get_workspace_by_slug!(slug)
@@ -123,7 +96,7 @@ defmodule RawPairWeb.FileController do
       |> put_status(:forbidden)
       |> json(%{error: "Invalid path"})
     else
-      case write_file(container, full_path, content) do
+      case RawPair.DockerClient.write_file(container, full_path, content) do
         :ok ->
           json(conn, %{status: "ok"})
 
@@ -134,26 +107,4 @@ defmodule RawPairWeb.FileController do
       end
     end
   end
-
-  def write_file(container, path, content) do
-    tmp = Path.join(System.tmp_dir!(), "bt-docker-write-#{:erlang.unique_integer([:positive])}")
-    File.write!(tmp, content)
-
-    {_, status} = System.cmd("docker", ["cp", tmp, "#{container}:#{path}"])
-    File.rm(tmp)
-
-    case status do
-      0 ->
-        # Force ownership fix
-        {_, chown_status} = System.cmd("docker", ["exec", "--user", "root", container, "chown", "devuser:devuser", path])
-        if chown_status == 0, do: :ok, else: {:error, "chown failed with #{chown_status}"}
-
-      _ -> {:error, "docker cp failed with #{status}"}
-    end
-  end
-
-
-
-
-
 end
