@@ -188,6 +188,73 @@ defmodule RawPair.DockerClient do
 
   end
 
+  def get_file_stat(container, path) do
+    cmd = ["stat", "-c", "%s", path]
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+         {:ok, output} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      {:ok, String.trim(output) |> String.to_integer()}
+    else
+      _ -> {:error, "Unable to stat file"}
+    end
+  end
+
+  def get_file_mime(container, path) do
+    cmd = ["file", "--brief", "--mime-type", path]
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+         {:ok, output} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      {:ok, String.trim(output)}
+    else
+      _ -> {:error, "Unable to detect MIME type"}
+    end
+  end
+
+  def read_file(container, path) do
+    cmd = ["cat", path]
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+         {:ok, output} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      {:ok, output}
+    else
+      _ -> {:error, "Failed to read file"}
+    end
+  end
+
+  def write_file(container, path, content) do
+    # Create a tar archive in memory
+    basename = Path.basename(path)
+    tar_stream = :erl_tar.create({:binary, :memory}, [{String.to_charlist(basename), content}], [:verbose])
+
+    case tar_stream do
+      {:ok, tar_binary} ->
+        url = "http://docker/#{@docker_api_version}/containers/#{container}/archive?path=#{URI.encode(Path.dirname(path))}"
+        headers = [{"Content-Type", "application/x-tar"}, {"host", "docker"}]
+
+        Finch.build(:put, url, headers, tar_binary, unix_socket: @sock)
+        |> Finch.request(RawPair.Finch)
+        |> case do
+          {:ok, %Finch.Response{status: code}} when code in 200..299 -> :ok
+          {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def fix_ownership(container, path) do
+    cmd = ["chown", "devuser:devuser", path]
+    with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
+         {:ok, _} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
+      :ok
+    else
+      _ -> {:error, "Failed to fix file ownership"}
+    end
+  end
+
   defp create_exec(container, cmd) do
     body = %{
       "AttachStdout" => true,
