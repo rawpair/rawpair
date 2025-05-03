@@ -82,8 +82,6 @@ func InstallASDF(shellRcFile string, asdfVersionToBeInstalled string) (string, e
 			return "", fmt.Errorf("failed to update shell RC file: %w", err)
 		}
 
-		fmt.Println("To use asdf right now, run:")
-		fmt.Printf("   source %s\n", shellRcFile)
 	}
 
 	return filepath.Join(binDir, "asdf"), nil
