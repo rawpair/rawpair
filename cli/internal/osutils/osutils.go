@@ -39,13 +39,7 @@ func DetectShellRCFile() (string, error) {
 	log.Printf("Shell ENV: %q\n", shellEnv)
 
 	if shell == "" || shell == "." || shell == "sh" {
-		if fileExists(filepath.Join(home, ".bashrc")) {
-			shell = "bash"
-		} else if fileExists(filepath.Join(home, ".zshrc")) {
-			shell = "zsh"
-		} else {
-			shell = "unknown"
-		}
+		return GetPathToShellRCFile(home), nil
 	}
 
 	log.Printf("Detected shell: %q\n", shell)
@@ -58,7 +52,18 @@ func DetectShellRCFile() (string, error) {
 	case "fish":
 		return filepath.Join(home, ".config", "fish", "config.fish"), fmt.Errorf("detected fish shell, but fish is not supported yet")
 	default:
-		// Fallback: just write to ~/.profile
-		return filepath.Join(home, ".profile"), nil
+		return GetPathToShellRCFile(home), nil
 	}
+}
+
+func GetPathToShellRCFile(home string) string {
+	if fileExists(filepath.Join(home, ".bashrc")) {
+		return filepath.Join(home, ".bashrc")
+	} else if fileExists(filepath.Join(home, ".zshrc")) {
+		return filepath.Join(home, ".zshrc")
+	} else if fileExists(filepath.Join(home, ".profile")) {
+		return filepath.Join(home, ".profile")
+	}
+
+	return ""
 }
