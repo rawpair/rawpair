@@ -338,7 +338,7 @@ defmodule RawPair.DockerClient do
     Finch.build(:post, url, [{"host", "docker"}], nil, unix_socket: @sock)
     |> Finch.request(RawPair.Finch)
     |> case do
-      {:ok, %Finch.Response{status: code}} when code in 204..299 -> :ok
+      {:ok, %Finch.Response{status: code}} when code in 200..299 or code == 304 -> :ok
       {:ok, %Finch.Response{status: code, body: body}} -> {:error, {:http_error, code, body}}
       {:error, reason} -> {:error, reason}
     end
