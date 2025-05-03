@@ -10,7 +10,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: "0.0.0-a013",
+	Version: "0.0.0-a014",
 	Use:     "rawpair",
 	Short:   "CLI tool for RawPair development environments",
 	Long: `RawPair CLI provides utilities to help set up and manage

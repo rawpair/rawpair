@@ -4,162 +4,23 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/Masterminds/semver/v3"
+	executils "github.com/rawpair/rawpair/cli/internal/executils"
+	osutils "github.com/rawpair/rawpair/cli/internal/osutils"
+	setup "github.com/rawpair/rawpair/cli/internal/setup"
+	userflow "github.com/rawpair/rawpair/cli/internal/userflow"
+	versionutils "github.com/rawpair/rawpair/cli/internal/versionutils"
+
 	"github.com/spf13/cobra"
 )
 
-func extractSemver(text string) (string, error) {
-	re := regexp.MustCompile(`v?(\d+\.\d+\.\d+)`)
-	matches := re.FindStringSubmatch(text)
-	if len(matches) < 2 {
-		return "", fmt.Errorf("no semantic version found")
-	}
-	return matches[1], nil // stripped leading "v"
-}
+const (
+	minErlangVersion = "27.0.0"
+	minElixirVersion = "1.18.0"
+	minAsdfVersion   = "0.16.0"
+)
 
-func isAtLeast(versionStr, minVersionStr string) bool {
-	version, err := semver.NewVersion(versionStr)
-	if err != nil {
-		log.Fatalf("Invalid version: %s", err)
-	}
-
-	constraints, err := semver.NewConstraint(">=" + minVersionStr)
-	if err != nil {
-		log.Fatalf("Invalid constraint: %s", err)
-	}
-
-	return constraints.Check(version)
-}
-
-func detectDistro() (string, error) {
-	data, err := os.ReadFile("/etc/os-release")
-	if err != nil {
-		return "", err
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(line, "ID=") {
-			return strings.Trim(strings.SplitN(line, "=", 2)[1], "\""), nil
-		}
-	}
-	return "", fmt.Errorf("could not detect distro")
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-func detectShellRCFile() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("could not get home directory: %w", err)
-	}
-
-	shellEnv := os.Getenv("SHELL")
-
-	shell := filepath.Base(shellEnv)
-
-	log.Printf("Shell ENV: %q\n", shellEnv)
-
-	if shell == "" || shell == "." || shell == "sh" {
-		if fileExists(filepath.Join(home, ".bashrc")) {
-			shell = "bash"
-		} else if fileExists(filepath.Join(home, ".zshrc")) {
-			shell = "zsh"
-		} else {
-			shell = "unknown"
-		}
-	}
-
-	log.Printf("Detected shell: %q\n", shell)
-
-	switch shell {
-	case "bash":
-		return filepath.Join(home, ".bashrc"), nil
-	case "zsh":
-		return filepath.Join(home, ".zshrc"), nil
-	case "fish":
-		return filepath.Join(home, ".config", "fish", "config.fish"), fmt.Errorf("detected fish shell, but fish is not supported yet")
-	default:
-		// Fallback: just write to ~/.profile
-		return filepath.Join(home, ".profile"), nil
-	}
-}
-
-func checkInstalled(name string) bool {
-	_, err := exec.LookPath(name)
-	return err == nil
-}
-
-func runCommandAndReturnOutput(cmd string, args ...string) (string, error) {
-	command := exec.Command(cmd, args...)
-	out, err := command.CombinedOutput()
-	if err != nil {
-		return "", nil
-	}
-	return string(out), nil
-}
-
-func installASDF() error {
-	home, _ := os.UserHomeDir()
-	asdfDir := filepath.Join(home, ".asdf")
-	if _, err := os.Stat(asdfDir); err == nil {
-		return fmt.Errorf("asdf possibly already installed at %s", asdfDir)
-	}
-
-	version := "v0.16.7"
-	tarURL := fmt.Sprintf("https://github.com/asdf-vm/asdf/releases/download/%s/asdf-%s-%s-%s.tar.gz", version, version, runtime.GOOS, runtime.GOARCH)
-	tarPath := "/tmp/asdf.tar.gz"
-
-	// Download tarball
-	err := exec.Command("curl", "-L", "-o", tarPath, tarURL).Run()
-	if err != nil {
-		return fmt.Errorf("failed to download asdf: %w", err)
-	}
-
-	// Create .asdf/bin directory
-	binDir := filepath.Join(asdfDir, "bin")
-	if err := os.MkdirAll(binDir, 0755); err != nil {
-		return fmt.Errorf("failed to create bin directory: %w", err)
-	}
-
-	// Extract to ~/.asdf/bin
-	err = exec.Command("tar", "-xzf", tarPath, "-C", binDir).Run()
-	if err != nil {
-		return fmt.Errorf("failed to extract asdf: %w", err)
-	}
-
-	// Add sourcing lines to shell RC file
-	shellRcFile, err := detectShellRCFile()
-	if err != nil {
-		return fmt.Errorf("failed to detect shell RC file: %w", err)
-	}
-
-	f, err := os.OpenFile(shellRcFile, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open shell RC file: %w", err)
-	}
-
-	defer f.Close()
-
-	if _, err := f.WriteString("\n\nexport PATH=\"$HOME/.asdf/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH\"\n"); err != nil {
-		return fmt.Errorf("failed to update shell RC file: %w", err)
-	}
-
-	fmt.Println("To use asdf right now, run:")
-	fmt.Printf("   source %s\n", shellRcFile)
-
-	return nil
-}
+var nonInteractive bool
 
 var depCommands = map[string][]string{
 	"ubuntu": {
@@ -192,49 +53,35 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 
 		fmt.Println("Proceeding with asdf, Erlang, and Elixir detection...")
 
-		hasASDF := checkInstalled("asdf")
-		hasErlang := checkInstalled("erl")
-		hasElixir := checkInstalled("elixir")
+		hasASDF := executils.CheckInstalled("asdf")
+		hasErlang := executils.CheckInstalled("erl")
+		hasElixir := executils.CheckInstalled("elixir")
+
+		var pathToAsdf string
 
 		if hasErlang && hasElixir {
 			meetsDeps := true
 
-			erlRawVersionOutput, err := runCommandAndReturnOutput("erl",
-				"-eval",
-				`{ok, Version} = file:read_file(filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"])), io:fwrite(Version), halt().`,
-				"-noshell")
-
+			erlangVersion, err := versionutils.GetErlangVersion()
 			if err != nil {
-				fmt.Println("Could not reliably detect Erlang version. Please ensure you have v27.0.0 or greater installed.")
+				fmt.Printf("Could not reliably detect Erlang version. Please ensure you have v%s or greater installed.\n", minErlangVersion)
 				return
 			}
 
-			erlangVersion := strings.TrimSpace(erlRawVersionOutput)
-
-			if !isAtLeast(erlangVersion, "27.0.0") {
-				fmt.Println("Erlang version is less than 27.0.0, please update.")
+			if !versionutils.IsAtLeast(erlangVersion, minErlangVersion) {
+				fmt.Printf("Erlang version is less than %s, please update.\n", minErlangVersion)
 				meetsDeps = false
 			}
 
-			elixirRawVersionOutput, err := runCommandAndReturnOutput("elixir",
-				"-e",
-				"IO.puts(System.version())")
+			elixirVersion, err := versionutils.GetElixirVersion()
 
 			if err != nil {
-				fmt.Println("Could not reliably detect Elixir version. Please run `elixir --version` manually and ensure you have v1.18.0 or greater installed.")
+				fmt.Printf("Could not reliably detect Elixir version. Please run `elixir --version` manually and ensure you have v%s or greater installed.\n", minElixirVersion)
 				return
 			}
 
-			elixirVersion, err := extractSemver(strings.TrimSpace(elixirRawVersionOutput))
-
-			if err != nil {
-				fmt.Println("Could not reliably detect Elixir version. Please run `elixir --version` manually and ensure you have v1.18.0 or greater installed.")
-				fmt.Println("Elixir version:", elixirVersion)
-				return
-			}
-
-			if !isAtLeast(elixirVersion, "1.18.0") {
-				fmt.Println("Elixir version is less than 1.18.0, please update.")
+			if !versionutils.IsAtLeast(elixirVersion, minElixirVersion) {
+				fmt.Printf("Elixir version is less than %s, please update.\n", minElixirVersion)
 				meetsDeps = false
 			}
 
@@ -244,155 +91,111 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 				fmt.Println("Erlang and Elixir versions are up to date.")
 			}
 		} else {
-			distro, err := detectDistro()
+			distro, err := osutils.DetectDistro()
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println("Could not detect Linux distribution:", err)
+				return
 			}
+
 			cmds, ok := depCommands[distro]
 			if !ok {
 				fmt.Println("Unrecognized distro, unable to determine the dependencies needed to build Erlang.")
 				return
-			} else {
-				fmt.Println("Ensure the following dependencies are satisfied/installed:")
-				for _, c := range cmds {
-					fmt.Println("  ", c)
-				}
+			}
+
+			fmt.Println("Ensure the following dependencies are satisfied/installed:")
+			for _, c := range cmds {
+				fmt.Println("  ", c)
+			}
+
+			proceed := userflow.AskToProceedOrAuto("Proceed with asdf detection?", nonInteractive)
+
+			if !proceed {
+				fmt.Println("Aborted.")
+				return
 			}
 
 			if !hasASDF {
 				fmt.Println("asdf is not installed.")
 
-				proceed := false
-
-				err := survey.AskOne(&survey.Confirm{
-					Message: "Install asdf?",
-					Default: true,
-				}, &proceed)
-
-				if err != nil {
-					fmt.Println("Aborted or failed:", err)
-					return
-				}
+				proceed := userflow.AskToProceedOrAuto("asdf is not installed. Would you like to install it?", nonInteractive)
 
 				if !proceed {
 					fmt.Println("Aborted.")
 					return
 				}
 
-				err = installASDF()
+				shellRcFile, shellRcFileErr := osutils.DetectShellRCFile()
+
+				pathToAsdf, err = setup.InstallASDF(shellRcFile)
 
 				if err != nil {
 					fmt.Println("asdf installation failed:", err)
 					return
 				}
 				fmt.Println("asdf installed successfully.")
+
+				if shellRcFileErr != nil {
+					fmt.Println("Could not detect shell RC file so asdf is not in PATH.")
+				}
 			} else {
-				fmt.Println("Detected asdf, checking version...")
-
-				rawAsdfVersion, err := runCommandAndReturnOutput("asdf", "--version")
-
+				pathToAsdf, err = executils.GetPathToExecutable("asdf")
 				if err != nil {
-					fmt.Println("Could not reliably detect asdf version.")
-					fmt.Println("asdf version:", rawAsdfVersion)
+					fmt.Println("asdf is not in PATH.")
 					return
-				}
-
-				asdfVersion, err := extractSemver(rawAsdfVersion)
-
-				if err != nil {
-					fmt.Println("Could not reliably detect asdf version.")
-					fmt.Println("asdf version:", rawAsdfVersion)
-					return
-				}
-
-				if !isAtLeast(asdfVersion, "0.16.0") {
-					fmt.Println("asdf version is less than 0.16.0, please update.")
-					return
-				}
-
-				if !hasErlang {
-					fmt.Println("Need to run the following commands to install Erlang:")
-					fmt.Println("asdf plugin add erlang")
-					fmt.Println("asdf install erlang 27.3.2")
-					fmt.Println("asdf set -u erlang 27.3.2")
-
-					proceed := false
-
-					err := survey.AskOne(&survey.Confirm{
-						Message: "Run commands now?",
-						Default: true,
-					}, &proceed)
-
-					if err != nil {
-						fmt.Println("Aborted or failed:", err)
-						return
-					}
-
-					if proceed {
-						output, err := runCommandAndReturnOutput("asdf", "plugin", "add", "erlang")
-						if err != nil {
-							fmt.Println("Failed to add erlang plugin:", output)
-							return
-						}
-
-						fmt.Println("Installing Erlang 27.3.2, this may take several minutes...")
-						output, err = runCommandAndReturnOutput("asdf", "install", "erlang", "27.3.2")
-						if err != nil {
-							fmt.Println("Failed to install erlang:", output)
-							return
-						}
-
-						output, err = runCommandAndReturnOutput("asdf", "set", "-u", "erlang", "27.3.2")
-						if err != nil {
-							fmt.Println("Failed to set erlang version:", output)
-							return
-						}
-						fmt.Println("Erlang installed successfully!")
-					}
-				}
-
-				if !hasElixir {
-					fmt.Println("Need to run the following commands to install Elixir:")
-					fmt.Println("asdf plugin add elixir")
-					fmt.Println("asdf install elixir 1.18.3")
-					fmt.Println("asdf set -u elixir 1.18.3")
-
-					proceed := false
-
-					err := survey.AskOne(&survey.Confirm{
-						Message: "Run commands now?",
-						Default: true,
-					}, &proceed)
-
-					if err != nil {
-						fmt.Println("Aborted or failed:", err)
-						return
-					}
-
-					if proceed {
-						fmt.Println("Running commands. This may take a while...")
-						output, err := runCommandAndReturnOutput("asdf", "plugin", "add", "elixir")
-						if err != nil {
-							fmt.Println("Failed to add elixir plugin:", output)
-							return
-						}
-
-						fmt.Println("Installing Elixir 1.18.3, this may take a few minutes...")
-						output, err = runCommandAndReturnOutput("asdf", "install", "elixir", "1.18.3")
-						if err != nil {
-							fmt.Println("Failed to install elixir:", output)
-							return
-						}
-
-						output, err = runCommandAndReturnOutput("asdf", "set", "-u", "elixir", "1.18.3")
-						if err != nil {
-							fmt.Println("Failed to set elixir version:", output)
-							return
-						}
-						fmt.Println("Elixir installed successfully!")
-					}
 				}
 			}
+
+			fmt.Println("Detected asdf, checking version...")
+
+			asdfVersion, err := versionutils.GetAsdfVersion(pathToAsdf)
+
+			if err != nil {
+				fmt.Println("Could not reliably detect asdf version.")
+				return
+			}
+
+			if !versionutils.IsAtLeast(asdfVersion, minAsdfVersion) {
+				fmt.Printf("asdf version is less than %s, please update.\n", minAsdfVersion)
+				return
+			}
+
+			if !hasErlang {
+				proceed := userflow.AskToProceedOrAuto("Erlang is not installed. Would you like to install it?", nonInteractive)
+
+				if proceed {
+					err := setup.InstallErlang(pathToAsdf)
+
+					if err != nil {
+						fmt.Println("Erlang installation failed:", err)
+						return
+					}
+
+					fmt.Println("Erlang installed successfully!")
+				} else {
+					fmt.Println("Aborted.")
+					return
+				}
+			}
+
+			if !hasElixir {
+				proceed := userflow.AskToProceedOrAuto("Elixir is not installed. Would you like to install it?", nonInteractive)
+
+				if proceed {
+					err := setup.InstallElixir(pathToAsdf)
+
+					if err != nil {
+						fmt.Println("Elixir installation failed:", err)
+						return
+					}
+
+					fmt.Println("Elixir installed successfully!")
+				} else {
+					fmt.Println("Aborted.")
+					return
+				}
+			}
+
 		}
 	},
 }
@@ -400,13 +203,5 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 func init() {
 	rootCmd.AddCommand(ensureDepsCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// ensureDepsCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// ensureDepsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	ensureDepsCmd.Flags().BoolVar(&nonInteractive, "non-interactive", false, "Run without prompting for confirmation")
 }
