@@ -216,7 +216,7 @@ Supports most common Linux distributions: Ubuntu, Debian, Fedora, Arch.
 					fmt.Println("Please restart your terminal.")
 				} else {
 					fmt.Println("Could not detect your shell RC file. Please manually add the following line to your shell RC file then either source it or start a new terminal.")
-					fmt.Println("export PATH=\"$HOME/.asdf/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH")
+					fmt.Println("export PATH=\"$HOME/.asdf/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH\"")
 				}
 			}
 		}
