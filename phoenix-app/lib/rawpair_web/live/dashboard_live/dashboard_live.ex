@@ -3,6 +3,8 @@
 defmodule RawPairWeb.DashboardLive do
   use RawPairWeb, :live_view
 
+  require Logger
+
   alias RawPair.Monitoring
 
   @impl true
@@ -18,4 +20,17 @@ defmodule RawPairWeb.DashboardLive do
     {:noreply, assign(socket, containers: Monitoring.list_rawpair_containers())}
   end
 
+  @impl true
+  def handle_event("stop", %{"id" => id}, socket) do
+    case RawPair.DockerClient.stop(id) do
+      :ok ->
+        containers = Monitoring.list_rawpair_containers()
+        {:noreply, assign(socket, containers: containers)}
+
+      {:error, {:stop_failed, reason}} ->
+        # Log or handle error, maybe flash a message
+        Logger.warning("Failed to stop container #{id}: #{inspect(reason)}")
+        {:noreply, put_flash(socket, :error, "Failed to stop container.")}
+    end
+  end
 end

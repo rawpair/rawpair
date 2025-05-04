@@ -1,7 +1,7 @@
 defmodule RawPair.Stacks do
   use GenServer
 
-  @default_stack_version "v0.1.0"
+  @default_stack_version "0.1.2"
   @cache_key :stacks_json
   @cache_ttl_ms 30 * 60 * 1000  # 30 minutes
 
@@ -51,7 +51,7 @@ defmodule RawPair.Stacks do
 
   defp download_stacks_json do
     version = stack_version()
-    url = "https://raw.githubusercontent.com/rawpair/stacks/#{version}/stacks/stacks.json"
+    url = "https://raw.githubusercontent.com/rawpair/stacks/v#{version}/stacks/stacks.json"
 
     case Finch.build(:get, url) |> Finch.request(RawPair.Finch) do
       {:ok, %Finch.Response{status: 200, body: body}} ->
