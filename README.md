@@ -176,6 +176,64 @@ It is advisable to use a reverse proxy in production.
 
 ---
 
+
+## Environment Variables
+
+RawPair is configured via the following environment variables. These should be defined in a `.env` file or passed directly into your runtime environment (e.g. Docker, systemd, or a `mix phx.server` session).
+
+### Core Configuration
+
+| Variable                  | Description                                                                                                                                      | Default           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| `RAWPAIR_STACKS_VERSION`  | Version of `stacks.json` to load from the [`rawpair/stacks`](https://github.com/rawpair/stacks) repository. Must match a Git tag or branch.      | `0.1.0`           |
+| `RAWPAIR_DOCKER_PLATFORM` | Target Docker platform (e.g. `linux/amd64`, `linux/arm64`). If unset, RawPair will detect the local platform using `uname -m` and log a warning. | *(auto-detected)* |
+
+---
+
+### Database
+
+| Variable       | Description                 | Example                                              |
+| -------------- | --------------------------- | ---------------------------------------------------- |
+| `DATABASE_URL` | Postgres connection string. | `postgres://postgres:postgres@localhost/rawpair_dev` |
+
+---
+
+### Secrets & Security
+
+| Variable          | Description                                                            | Example                          |
+| ----------------- | ---------------------------------------------------------------------- | -------------------------------- |
+| `SECRET_KEY_BASE` | Phoenix secret key for session encryption.                             | *(random 64-byte base64 string)* |
+| `CHECK_ORIGIN`    | Allowed CORS origins, comma-separated. Required for LiveView security. | `//localhost:4000`   |
+
+---
+
+### Application Host
+
+| Variable                | Description                                                                                | Example     |
+| ----------------------- | ------------------------------------------------------------------------------------------ | ----------- |
+| `PHX_HOST`              | Public hostname used by Phoenix.                                                           | `localhost` |
+| `PORT`                  | Port Phoenix listens on.                                                                   | `4000`      |
+| `RAWPAIR_PROTOCOL`      | RawPair protocol (used for internal URL generation).                                       | `http`      |
+| `RAWPAIR_HOST`          | RawPair hostname (used internally).                                                        | `localhost` |
+| `RAWPAIR_PORT`          | RawPair application port.                                                                  | `4000`      |
+| `RAWPAIR_BASE_PATH`     | Root path prefix for RawPair (e.g. `/rawpair`). Useful if reverse-proxied under a subpath. | `/`         |
+| `RAWPAIR_TERMINAL_HOST` | Hostname of the terminal backend (e.g. `ttyd`).                                            | `localhost` |
+| `RAWPAIR_TERMINAL_PORT` | Port of the terminal backend.                                                              | `8080`      |
+
+---
+
+### Grafana
+
+| Variable                | Description                                                  | Example     |
+| ----------------------- | ------------------------------------------------------------ | ----------- |
+| `RAWPAIR_TERMINAL_HOST` | Hostname of the terminal backend (e.g. `ttyd`).              | `localhost` |
+| `RAWPAIR_TERMINAL_PORT` | Port of the terminal backend.                                | `8080`      |
+| `RAWPAIR_GRAFANA_HOST`  | Hostname of Grafana (used for embedding metrics dashboards). | `localhost` |
+| `RAWPAIR_GRAFANA_PORT`  | Port of Grafana.                                             | `3000`      |
+
+---
+
+
 ## How to scroll the terminal?
 
 ttyd terminals run in the browser and don't support mouse scrollback.
@@ -198,17 +256,6 @@ If you mount `/var/run/docker.sock` into the container running Phoenix (e.g., fo
 For safer setups, consider using [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy), a minimal Go-based HTTP proxy that lets you expose only specific Docker API endpoints to containers. This allows for fine-grained access control, so you can limit what the Phoenix backend is allowed to do.
 
 Use socket access only if you understand the risks, and only in environments where trust boundaries are clear.
-
----
-
-## Architecture Overview
-
-- **Phoenix** handles session logic, orchestration, and WebSocket communication
-- **Docker** is used to manage isolated workspace containers
-- **ttyd** provides web-based terminal access
-- **Monaco + Yjs** power the collaborative code editor
-- **Nginx** handles access to ttyd
-- **Volumes** allow optional persistent or disposable file systems
 
 ---
 
