@@ -17,6 +17,10 @@ Built for fast, focused collaboration on your own infrastructure, RawPair also s
 
 ---
 
+https://github.com/user-attachments/assets/fdbabd96-1bdf-4269-a408-7b6c11948443
+
+---
+
 ## Features
 
 - Collaborative code editing and shared terminal session in the browser
