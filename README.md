@@ -226,8 +226,6 @@ RawPair is configured via the following environment variables. These should be d
 
 | Variable                | Description                                                  | Example     |
 | ----------------------- | ------------------------------------------------------------ | ----------- |
-| `RAWPAIR_TERMINAL_HOST` | Hostname of the terminal backend (e.g. `ttyd`).              | `localhost` |
-| `RAWPAIR_TERMINAL_PORT` | Port of the terminal backend.                                | `8080`      |
 | `RAWPAIR_GRAFANA_HOST`  | Hostname of Grafana (used for embedding metrics dashboards). | `localhost` |
 | `RAWPAIR_GRAFANA_PORT`  | Port of Grafana.                                             | `3000`      |
 
