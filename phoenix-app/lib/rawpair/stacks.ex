@@ -50,7 +50,7 @@ defmodule RawPair.Stacks do
   end
 
   defp download_stacks_json do
-    version = System.get_env("RAWPAIR_STACKS_VERSION") || "v0.1.0"
+    version = stack_version()
     url = "https://raw.githubusercontent.com/rawpair/stacks/#{version}/stacks/stacks.json"
 
     case Finch.build(:get, url) |> Finch.request(RawPair.Finch) do
