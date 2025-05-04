@@ -10,6 +10,7 @@
           <th class="px-4 py-2">Image</th>
           <th class="px-4 py-2">Name</th>
           <th class="px-4 py-2">Status</th>
+          <th class="px-4 py-2">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -19,6 +20,9 @@
             <td class="px-4 py-2"><%= c.image %></td>
             <td class="px-4 py-2"><%= c.name %></td>
             <td class="px-4 py-2"><%= c.status %></td>
+            <td>
+              <button phx-click="stop" phx-value-id={c.id} class="bg-red-500 hover:bg-red-800 text-white px-4 py-2 rounded">Stop</button>
+            </td>
           </tr>
         <% end %>
       </tbody>

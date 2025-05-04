@@ -140,9 +140,15 @@ defmodule RawPair.DockerClient do
     end
   end
 
+  def stop(name) do
+    case post_empty("/containers/#{name}/stop") do
+      :ok -> :ok
+      {:error, {:http_error, 404, _}} -> :ok
+      {:error, reason} -> {:error, {:stop_failed, reason}}
+    end
+  end
 
   def stop_and_remove(name) do
-    # Ignore non‐existent container errors (404) when stopping
     case post_empty("/containers/#{name}/stop") do
       :ok -> :ok
       {:error, {:http_error, 404, _}} -> :ok
