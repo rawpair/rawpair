@@ -3,6 +3,8 @@
 defmodule RawPairWeb.DashboardLive do
   use RawPairWeb, :live_view
 
+  require Logger
+
   alias RawPair.Monitoring
 
   @impl true
@@ -27,7 +29,7 @@ defmodule RawPairWeb.DashboardLive do
 
       {:error, {:stop_failed, reason}} ->
         # Log or handle error, maybe flash a message
-        IO.warn("Failed to stop container #{id}: #{inspect(reason)}")
+        Logger.warning("Failed to stop container #{id}: #{inspect(reason)}")
         {:noreply, put_flash(socket, :error, "Failed to stop container.")}
     end
   end
