@@ -5,41 +5,6 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
 
   alias RawPair.Workspaces
 
-  # This really should be exposed by Phoenix based on actual availability of images
-  @docker_images [
-    {"Ada FSF GNAT [Debian Bookworm (x64)]", "rawpair/ada:bookworm"},
-    {"Ada FSF GNAT [Debian Trixie (x64)]", "rawpair/ada:trixie"},
-    {"Ada FSF GNAT [Debian Trixie (arm64)]", "rawpair/ada:trixie-arm64"},
-    # {"Clojure [Debian Bookworm, Temurin 21 (x64)]", "rawpair/clojure:temurin-21-bookworm"},
-    {"Clojure [Debian Bookworm, Temurin 22 (x64)]", "rawpair/clojure:temurin-22-bookworm"},
-    # {"Clojure [Debian Bookworm, Temurin 23 (x64)]", "rawpair/clojure:temurin-23-bookworm"},
-    # {"Clojure [Debian Bookworm, Temurin 24 (x64)]", "rawpair/clojure:temurin-24-bookworm"},
-    {"Elixir [Debian Bookworm (x64)]", "rawpair/elixir:bookworm"},
-    {"Elixir [Debian Bookworm (arm64)]", "rawpair/elixir:bookworm-arm64"},
-    {"GNU Cobol [Debian Bookworm (x64)]", "rawpair/gnucobol:bookworm"},
-    {"GNU Cobol [Debian Trixie (x64)]", "rawpair/gnucobol:trixie"},
-    {"Haskell [Debian Trixie (x64)]", "rawpair/haskell:trixie"},
-    {"Haskell [Debian Trixie (arm64)]", "rawpair/haskell:trixie-arm64"},
-    {"Julia [Debian Trixie (x64)]", "rawpair/julia:trixie"},
-    {"Julia [Debian Trixie (arm64)]", "rawpair/julia:trixie-arm64"},
-    {"Liberty Eiffel [Debian Bookworm (x64)]", "rawpair/liberty-eiffel:bookworm"},
-    {".NET SDK 9 [Debian Bookworm (x64)]", "rawpair/dotnet:sdk9-bookworm"},
-    {".NET SDK 9 [Debian Bookworm (arm64)]", "rawpair/dotnet:sdk9-bookworm-arm64"},
-    {"Node.js (NVM) [Debian Trixie (x64)]", "rawpair/node:trixie"},
-    {"OCaml 4.14.1 [Ubuntu 24.04 (x64)]", "rawpair/ocaml:ubuntu-2404"},
-    {"OCaml 4.14.1 [Ubuntu 24.04 (arm64)]", "rawpair/ocaml:ubuntu-2404-arm64"},
-    {"PHP-FPM 8.0/8.1/8.2/8.3 + Nginx [Debian Trixie (x64)]", "rawpair/php:trixie"},
-    {"Python 3.12 [Debian Trixie (x64)]", "rawpair/python:trixie"},
-    {"Python 3.12 [Debian Trixie (arm64)]", "rawpair/python:trixie-arm64"},
-    {"Python 3.12 with AI/ML tools [CUDA 12.8.1 - Ubuntu 24.04 (x64)]", "rawpair/python-nvidia-cuda:nvidia-ubuntu24.04"},
-    {"Ruby [Debian Trixie (x64)]", "rawpair/ruby:trixie"},
-    {"Ruby [Debian Trixie (arm64)]", "rawpair/ruby:trixie-arm64"},
-    {"Rust [Debian Trixie (x64)]", "rawpair/rust:trixie"},
-    {"Rust [Debian Trixie (arm64)]", "rawpair/rust:trixie-arm64"},
-    {"Steel Bank Common Lisp (2.5.2) [Debian Trixie (x64)]", "rawpair/sbcl:trixie"},
-    {"Steel Bank Common Lisp (2.5.2) [Debian Trixie (arm64)]", "rawpair/sbcl:trixie-arm64"}
-  ]
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -122,10 +87,13 @@ defmodule RawPairWeb.WorkspaceLive.FormComponent do
 
   @impl true
   def update(%{workspace: workspace} = assigns, socket) do
+    platform = :persistent_term.get(:rawpair_platform)
+    stacks = RawPair.Stacks.to_docker_image_tuples(RawPair.Stacks.filtered_stack_tags(platform))
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:docker_images, @docker_images)
+     |> assign(:docker_images, stacks)
      |> assign_new(:form, fn ->
        to_form(Workspaces.change_workspace(workspace))
      end)}

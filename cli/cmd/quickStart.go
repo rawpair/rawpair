@@ -46,6 +46,9 @@ type FlattenedTag struct {
 }
 
 const envTemplate = `
+RAWPAIR_DOCKER_PLATFORM=linux/{{ .Arch }}
+RAWPAIR_STACKS_VERSION=0.1.0
+
 DATABASE_URL="{{ .Db.Url }}"
 SECRET_KEY_BASE="{{ .SecretKeyBase }}"
 CHECK_ORIGIN=//{{ .RawPair.Host }}:{{ .RawPair.Port }}
