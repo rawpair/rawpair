@@ -1,7 +1,7 @@
 defmodule RawPair.Stacks do
   use GenServer
 
-  @default_stack_version "0.1.3"
+  @default_stack_version "0.1.4"
   @cache_key :stacks_json
   @cache_ttl_ms 30 * 60 * 1000  # 30 minutes
 

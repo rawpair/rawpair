@@ -189,7 +189,7 @@ RawPair is configured via the following environment variables. These should be d
 
 | Variable                  | Description                                                                                                                                      | Default           |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| `RAWPAIR_STACKS_VERSION`  | Version of `stacks.json` to load from the [`rawpair/stacks`](https://github.com/rawpair/stacks) repository. Must match a Git tag or branch.      | `0.1.3`           |
+| `RAWPAIR_STACKS_VERSION`  | Version of `stacks.json` to load from the [`rawpair/stacks`](https://github.com/rawpair/stacks) repository. Must match a Git tag or branch.      | `0.1.4`           |
 | `RAWPAIR_DOCKER_PLATFORM` | Target Docker platform (e.g. `linux/amd64`, `linux/arm64`). If unset, RawPair will detect the local platform using `uname -m` and log a warning. | *(auto-detected)* |
 
 ---
