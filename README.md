@@ -54,7 +54,7 @@ See [rawpair/stacks](https://github.com/rawpair/stacks) for all supported dev en
 
 To run RawPair smoothly in a self-hosted environment, you'll need:
 
-- 64-bit Linux host (Debian/Ubuntu recommended), works also on a Raspberry Pi
+- 64-bit Linux host (Debian/Ubuntu recommended), works also on a Raspberry Pi and Mac OS Sequoia (Erlang and Elixir installed through Homebrew)
 - Docker (version 20.10+)
 - Docker Compose (v2+)
 - At least 2 CPU cores and 4 GB RAM (8 GB recommended for multiple sessions)
@@ -104,6 +104,57 @@ You need to run `docker pull` commands appropriately.
 
 ## Quick Start (Development)
 
+### Download and customize docker-compose.yml
+
+Basic setup, without Loki/Grafana:
+
+```yml
+networks:
+  rawpair:
+    name: rawpair
+
+services:
+  db:
+    networks:
+      - rawpair
+    image: postgres:15
+    container_name: rawpair_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rawpair_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  yjs:
+    networks:
+      - rawpair
+    build:
+      context: ./yjs-server
+    container_name: rawpair_yjs
+    environment:
+      - HOST=0.0.0.0
+      - PORT=1234
+    ports:
+      - "1234:1234"
+
+  nginx:
+    networks:
+      - rawpair
+    image: nginx:stable
+    container_name: rawpair_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+volumes:
+  pgdata:
+```
+
 ```bash
 git clone https://github.com/rawpair/rawpair
 cd rawpair
@@ -143,7 +194,6 @@ Run this command, follow the instructions and at the end of the process you will
 ```bash
 ./rawpair quickStart
 ```
-
 
 This should get you up and running with minimal effort.
 
