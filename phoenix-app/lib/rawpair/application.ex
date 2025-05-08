@@ -65,8 +65,8 @@ defmodule RawPair.Application do
     |> case do
       "x86_64" -> "linux/amd64"
       "aarch64" -> "linux/arm64"
+      "arm64" -> "linux/arm64"
       other -> raise "Unsupported local platform: #{other}"
     end
   end
-
 end
