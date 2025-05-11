@@ -41,6 +41,8 @@ deb:
 	  $(STAGING_DIR)/lib/systemd/system/rawpair.service=/lib/systemd/system/rawpair.service \
 	  $(STAGING_DIR)/etc/logrotate.d/$(APP_NAME)=/etc/logrotate.d/$(APP_NAME)
 
+	rm -f postinst.sh postrm.sh
+
 clean:
 	rm -rf dist
 	rm -f *.deb

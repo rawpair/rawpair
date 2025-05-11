@@ -10,8 +10,8 @@ SERVICE_NAME="rawpair.service"
 
 systemctl stop "$SERVICE_NAME" || true
 systemctl disable "$SERVICE_NAME" || true
-systemctl daemon-reload
 rm -f "/lib/systemd/system/$SERVICE_NAME"
+systemctl daemon-reload
 
 if [ "$1" = "purge" ]; then
   [ -f "$ENV_FILE" ] && rm -f "$ENV_FILE"
