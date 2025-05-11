@@ -19,6 +19,16 @@ jobs:
           elixir-version: '1.18.3'
           otp-version: '27.3.2'
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Build RawPair CLI
+        run: |
+          cd cli
+          go build -o ../rawpair-cli
+
       - name: Install packaging dependencies
         run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm
 
@@ -47,6 +57,16 @@ jobs:
         with:
           elixir-version: '1.18.3'
           otp-version: '27.3.2'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Build RawPair CLI
+        run: |
+          cd cli
+          go build -o ../rawpair-cli
 
       - name: Install packaging dependencies
         run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm

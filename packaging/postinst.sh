@@ -50,6 +50,17 @@ fi
 
 mkdir -p /opt/rawpair/tmp
 chown -R "$RAWPAIR_USER:$RAWPAIR_GROUP" /opt/rawpair/tmp
+# Ensure CLI is accessible in PATH
+if [ -f "/opt/rawpair-cli/bin/rawpair-cli" ]; then
+  # Remove existing symlink if it exists
+  if [ -L "/usr/local/bin/rawpair-cli" ]; then
+    rm -f /usr/local/bin/rawpair-cli
+  fi
+  ln -sf /opt/rawpair-cli/bin/rawpair-cli /usr/local/bin/rawpair-cli
+  echo "Symlink created for rawpair-cli in /usr/local/bin"
+else
+  echo "Warning: rawpair-cli binary not found in /opt/rawpair-cli/bin"
+fi
 
 if getent group docker >/dev/null; then
   usermod -aG docker "$RAWPAIR_USER"

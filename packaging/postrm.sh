@@ -15,7 +15,10 @@ if [ -f "/lib/systemd/system/$SERVICE_NAME" ]; then
   systemctl daemon-reload
 fi
 
+echo "Removing /opt/rawpair/tmp directory..." 
 rm -fr /opt/rawpair/tmp
+echo "Removing rawpair-cli symlink..." 
+rm -f /usr/local/bin/rawpair-cli
 
 if [ "$1" = "purge" ]; then
   echo "--- Starting purge actions ---"

@@ -1,9 +1,10 @@
-/var/log/rawpair/*.log {
+/opt/rawpair/tmp/log/*.log {
     daily
     missingok
-    rotate 14
+    rotate 7
     compress
     delaycompress
     notifempty
     copytruncate
+    create 640 rawpair rawpair
 }
