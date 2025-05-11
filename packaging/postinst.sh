@@ -6,8 +6,14 @@ SERVICE_NAME="rawpair.service"
 RAWPAIR_USER="rawpair"
 RAWPAIR_GROUP="rawpair"
 
+if ! getent group "$RAWPAIR_GROUP" >/dev/null; then
+  echo "Creating group $RAWPAIR_GROUP" 
+  groupadd --system "$RAWPAIR_GROUP"
+fi
+
 if ! id -u "$RAWPAIR_USER" >/dev/null 2>&1; then
-  useradd --system --no-create-home --shell /usr/sbin/nologin "$RAWPAIR_USER"
+  echo "Creating user $RAWPAIR_USER" 
+  useradd --system --no-create-home --shell /usr/sbin/nologin --gid "$RAWPAIR_GROUP" "$RAWPAIR_USER"
 fi
 
 mkdir -p /etc/rawpair
@@ -42,10 +48,12 @@ else
   done
 fi
 
-mkdir -p /opt/rawpair/tmp
-chown rawpair:rawpair /opt/rawpair/tmp
+chown -R "$RAWPAIR_USER:$RAWPAIR_GROUP" /opt/rawpair/tmp
+
+if getent group docker >/dev/null; then
+  usermod -aG docker "$RAWPAIR_USER"
+fi
 
 systemctl daemon-reexec
 systemctl daemon-reload
 systemctl enable "$SERVICE_NAME"
-systemctl start "$SERVICE_NAME"
