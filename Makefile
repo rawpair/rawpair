@@ -1,6 +1,6 @@
 APP_NAME=rawpair
 APP_NAME_CLI=rawpair-cli
-VERSION ?= $(shell echo $(RAW_VERSION) | sed 's/^v//' | sed 's/-/~/')
+VERSION?=$(subst -,~, $(subst v,,$(RAW_VERSION)))
 ARCH?=amd64
 BUILD_DIR=phoenix-app/_build/prod/rel/$(APP_NAME)
 STAGING_DIR=dist/deb/$(APP_NAME)
