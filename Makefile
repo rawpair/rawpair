@@ -49,6 +49,7 @@ deb:
 	  --after-install postinst.sh \
 	  --after-remove postrm.sh \
 	  $(STAGING_DIR)/opt/$(APP_NAME)/=/opt/$(APP_NAME)/ \
+	  $(STAGING_DIR)/opt/$(APP_NAME_CLI)/=/opt/$(APP_NAME_CLI)/ \
 	  $(STAGING_DIR)/etc/$(APP_NAME)/=/etc/$(APP_NAME)/ \
 	  $(STAGING_DIR)/lib/systemd/system/rawpair.service=/lib/systemd/system/rawpair.service \
 	  $(STAGING_DIR)/etc/logrotate.d/$(APP_NAME)=/etc/logrotate.d/$(APP_NAME)
