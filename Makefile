@@ -20,6 +20,7 @@ stage:
 	mkdir -p $(STAGING_DIR)/etc/logrotate.d
 
 	cp -r $(BUILD_DIR)/* $(STAGING_DIR)/opt/$(APP_NAME)/
+	cp packaging/run-migrations.sh $(STAGING_DIR)/opt/$(APP_NAME)/bin
 	cp packaging/rawpair.env.default $(STAGING_DIR)/etc/$(APP_NAME)/rawpair.env.default
 	cp packaging/rawpair.service $(STAGING_DIR)/lib/systemd/system/rawpair.service
 	cp packaging/rawpair.logrotate $(STAGING_DIR)/etc/logrotate.d/$(APP_NAME)
