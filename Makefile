@@ -5,10 +5,14 @@ ARCH?=amd64
 BUILD_DIR=phoenix-app/_build/prod/rel/$(APP_NAME)
 STAGING_DIR=dist/deb/$(APP_NAME)
 DEB_NAME=$(APP_NAME)_$(VERSION)_$(ARCH).deb
+CLI_BUILD_DIR=cli
 
 .PHONY: all build-release stage deb clean
 
-all: build-release stage deb
+all: build-release build-cli stage deb
+
+build-cli:
+	cd $(CLI_BUILD_DIR) && go build -o ../rawpair-cli
 
 build-release:
 	cd phoenix-app && ./deploy.sh
@@ -22,7 +26,11 @@ stage:
 	mkdir -p $(STAGING_DIR)/etc/logrotate.d
 
 	cp -r $(BUILD_DIR)/* $(STAGING_DIR)/opt/$(APP_NAME)/
-	cp rawpair-cli $(STAGING_DIR)/opt/$(APP_NAME_CLI)/bin
+	if [ ! -f "rawpair-cli" ]; then \
+		echo "Error: rawpair-cli binary not found"; \
+		exit 1; \
+	fi
+	cp rawpair-cli $(STAGING_DIR)/opt/$(APP_NAME_CLI)/bin/
 	cp packaging/run-migrations.sh $(STAGING_DIR)/opt/$(APP_NAME)/bin
 	cp packaging/rawpair.env.default $(STAGING_DIR)/etc/$(APP_NAME)/rawpair.env.default
 	cp packaging/rawpair.service $(STAGING_DIR)/lib/systemd/system/rawpair.service
