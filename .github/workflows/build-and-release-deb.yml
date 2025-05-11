@@ -35,6 +35,8 @@ jobs:
 
   build-arm64:
     runs-on: [self-hosted, linux, arm64]
+    env:
+      ImageOS: ubuntu22
 
     steps:
       - name: Checkout source
