@@ -16,9 +16,7 @@ chown "$RAWPAIR_USER:$RAWPAIR_GROUP" /etc/rawpair
 echo "Installing default environment template at $DEFAULT_ENV_FILE"
 cat <<EOF > "$DEFAULT_ENV_FILE"
 # RAWPAIR_ENV_VERSION=1
-PORT=4000
 SECRET_KEY_BASE=
-DOCKER_HOST=unix:///var/run/docker.sock
 LOG_LEVEL=info
 EOF
 chown "$RAWPAIR_USER:$RAWPAIR_GROUP" "$DEFAULT_ENV_FILE"
@@ -27,7 +25,16 @@ chmod 644 "$DEFAULT_ENV_FILE"
 if [ ! -f "$ENV_FILE" ]; then
   echo "Generating initial environment config at $ENV_FILE"
   cp "$DEFAULT_ENV_FILE" "$ENV_FILE"
+
+  arch=$(uname -m)
+  case "$arch" in
+    x86_64) docker_platform="linux/amd64" ;;
+    aarch64) docker_platform="linux/arm64" ;;
+    *) echo "Unsupported architecture: $arch" >&2; exit 1 ;;
+  esac
+
   sed -i "s|^SECRET_KEY_BASE=.*|SECRET_KEY_BASE=$(openssl rand -hex 64)|" "$ENV_FILE"
+  sed -i "s|^RAWPAIR_DOCKER_PLATFORM=.*|RAWPAIR_DOCKER_PLATFORM=$docker_platform|" "$ENV_FILE"
   chown "$RAWPAIR_USER:$RAWPAIR_GROUP" "$ENV_FILE"
   chmod 640 "$ENV_FILE"
 else

@@ -8,10 +8,13 @@ CONFIG_DIR="/etc/rawpair"
 LOG_DIR="/var/log/rawpair"
 SERVICE_NAME="rawpair.service"
 
-systemctl stop "$SERVICE_NAME" || true
-systemctl disable "$SERVICE_NAME" || true
-rm -f "/lib/systemd/system/$SERVICE_NAME"
-systemctl daemon-reload
+if [ -f "/lib/systemd/system/$SERVICE_NAME" ]; then
+  systemctl stop "$SERVICE_NAME" || true
+  systemctl disable "$SERVICE_NAME" || true
+  rm -f "/lib/systemd/system/$SERVICE_NAME"
+  systemctl daemon-reload
+fi
+
 
 if [ "$1" = "purge" ]; then
   [ -f "$ENV_FILE" ] && rm -f "$ENV_FILE"
