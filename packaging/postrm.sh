@@ -37,11 +37,10 @@ if [ "$1" = "purge" ]; then
 
   echo "Attempting to remove directory $LOG_DIR..."
   if [ -d "$LOG_DIR" ]; then
-    rm -rf "$LOG_DIR"
-    if [ "$?" -ne 0 ]; then
-      echo "Error removing $LOG_DIR."
-    else
+    if rm -rf "$LOG_DIR"; then
       echo "$LOG_DIR removed successfully."
+    else
+      echo "Error removing $LOG_DIR."
     fi
   else
     echo "$LOG_DIR does not exist."
