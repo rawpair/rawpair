@@ -1,4 +1,4 @@
-name: Biuld and release CLI tool
+name: Build and release CLI tool
 
 on:
   push:

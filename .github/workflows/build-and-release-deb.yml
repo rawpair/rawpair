@@ -2,8 +2,6 @@ name: Build and release RawPair .deb
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
 
