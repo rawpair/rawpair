@@ -1,0 +1,37 @@
+name: Build and release RawPair .deb
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Elixir + Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.3'
+          otp-version: '27.3.2'
+
+      - name: Install packaging dependencies
+        run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm
+
+      - name: Build RawPair .deb
+        run: make
+
+      - name: Upload .deb to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
