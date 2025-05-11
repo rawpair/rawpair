@@ -1,6 +1,6 @@
 APP_NAME=rawpair
 VERSION=0.0.0~a025
-ARCH=amd64
+ARCH?=amd64
 BUILD_DIR=phoenix-app/_build/prod/rel/$(APP_NAME)
 STAGING_DIR=dist/deb/$(APP_NAME)
 DEB_NAME=$(APP_NAME)_$(VERSION)_$(ARCH).deb

@@ -9,6 +9,10 @@ jobs:
   build-deb:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -22,8 +26,8 @@ jobs:
       - name: Install packaging dependencies
         run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm
 
-      - name: Build RawPair .deb
-        run: make
+      - name: Build RawPair .deb for ${{ matrix.arch }}
+        run: make ARCH=${{ matrix.arch }}
 
       - name: Upload .deb to GitHub Release
         uses: softprops/action-gh-release@v2
