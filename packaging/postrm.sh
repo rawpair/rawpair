@@ -56,7 +56,7 @@ if [ "$1" = "purge" ]; then
   fi
 
   echo "Attempting to remove group $RAWPAIR_GROUP..."
-  if [ getent group "$RAWPAIR_GROUP" &>/dev/null ]; then
+  if getent group "$RAWPAIR_GROUP" &>/dev/null; then
     groupdel "$RAWPAIR_GROUP" || true
     echo "Group $RAWPAIR_GROUP removed successfully."
   else
