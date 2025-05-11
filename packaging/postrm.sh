@@ -15,15 +15,52 @@ if [ -f "/lib/systemd/system/$SERVICE_NAME" ]; then
   systemctl daemon-reload
 fi
 
+rm -fr /opt/rawpair/tmp
 
 if [ "$1" = "purge" ]; then
-  [ -f "$ENV_FILE" ] && rm -f "$ENV_FILE"
-  [ -f "$DEFAULT_ENV_FILE" ] && rm -f "$DEFAULT_ENV_FILE"
-  if [ -d "$CONFIG_DIR" ]; then
-    rmdir "$CONFIG_DIR" 2>/dev/null || true
-  fi
-  [ -d "$LOG_DIR" ] && rm -rf "$LOG_DIR"
+  echo "--- Starting purge actions ---"
 
-  id "$RAWPAIR_USER" >/dev/null 2>&1 && userdel "$RAWPAIR_USER"
-  getent group "$RAWPAIR_GROUP" >/dev/null 2>&1 && groupdel "$RAWPAIR_GROUP"
+  echo "Removing $ENV_FILE (if it exists)..."
+  [ -f "$ENV_FILE" ] && rm -f "$ENV_FILE"
+  echo "Removed $ENV_FILE (or it didn't exist)."
+
+  echo "Removing $DEFAULT_ENV_FILE (if it exists)..."
+  [ -f "$DEFAULT_ENV_FILE" ] && rm -f "$DEFAULT_ENV_FILE"
+  echo "Removed $DEFAULT_ENV_FILE (or it didn't exist)."
+
+  echo "Attempting to remove directory $CONFIG_DIR..."
+  if [ -d "$CONFIG_DIR" ]; then
+    rm -rf "$CONFIG_DIR"
+  else
+    echo "$CONFIG_DIR does not exist."
+  fi
+
+  echo "Attempting to remove directory $LOG_DIR..."
+  if [ -d "$LOG_DIR" ]; then
+    if rm -rf "$LOG_DIR"; then
+      echo "$LOG_DIR removed successfully."
+    else
+      echo "Error removing $LOG_DIR."
+    fi
+  else
+    echo "$LOG_DIR does not exist."
+  fi
+
+  echo "Attempting to remove user $RAWPAIR_USER..."
+  if id -u "$RAWPAIR_USER" &>/dev/null; then
+    userdel "$RAWPAIR_USER" || true
+    echo "User $RAWPAIR_USER deleted."
+  else
+    echo "User $RAWPAIR_USER does not exist."
+  fi
+
+  echo "Attempting to remove group $RAWPAIR_GROUP..."
+  if getent group "$RAWPAIR_GROUP" &>/dev/null; then
+    groupdel "$RAWPAIR_GROUP" || true
+    echo "Group $RAWPAIR_GROUP removed successfully."
+  else
+    echo "Group $RAWPAIR_GROUP does not exist."
+  fi
+
+  echo "--- Purge actions finished ---"
 fi
