@@ -1,5 +1,5 @@
 APP_NAME=rawpair
-VERSION=0.0.0~a025
+VERSION?=$(shell echo $(RAW_VERSION) | sed 's/^v//')
 ARCH?=amd64
 BUILD_DIR=phoenix-app/_build/prod/rel/$(APP_NAME)
 STAGING_DIR=dist/deb/$(APP_NAME)
@@ -20,6 +20,7 @@ stage:
 	mkdir -p $(STAGING_DIR)/etc/logrotate.d
 
 	cp -r $(BUILD_DIR)/* $(STAGING_DIR)/opt/$(APP_NAME)/
+	cp packaging/run-migrations.sh $(STAGING_DIR)/opt/$(APP_NAME)/bin
 	cp packaging/rawpair.env.default $(STAGING_DIR)/etc/$(APP_NAME)/rawpair.env.default
 	cp packaging/rawpair.service $(STAGING_DIR)/lib/systemd/system/rawpair.service
 	cp packaging/rawpair.logrotate $(STAGING_DIR)/etc/logrotate.d/$(APP_NAME)
