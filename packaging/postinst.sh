@@ -48,6 +48,7 @@ else
   done
 fi
 
+mkdir -p /opt/rawpair/tmp
 chown -R "$RAWPAIR_USER:$RAWPAIR_GROUP" /opt/rawpair/tmp
 
 if getent group docker >/dev/null; then
