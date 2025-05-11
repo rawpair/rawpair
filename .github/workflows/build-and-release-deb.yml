@@ -1,4 +1,4 @@
-name: Build and release RawPair .deb
+name: Build and release RawPair .deb for amd64 and arm64
 
 on:
   push:
@@ -6,12 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  build-deb:
+  build-amd64:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        arch: [amd64, arm64]
 
     steps:
       - name: Checkout source
@@ -26,8 +22,8 @@ jobs:
       - name: Install packaging dependencies
         run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm
 
-      - name: Build RawPair .deb for ${{ matrix.arch }}
-        run: make ARCH=${{ matrix.arch }}
+      - name: Build RawPair .deb for amd64
+        run: make ARCH=amd64
 
       - name: Upload .deb to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -37,3 +33,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
+  build-arm64:
+    runs-on: [self-hosted, linux, arm64]
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Elixir + Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.3'
+          otp-version: '27.3.2'
+
+      - name: Install packaging dependencies
+        run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm
+
+      - name: Build RawPair .deb for arm64
+        run: make ARCH=arm64
+
+      - name: Upload .deb to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
