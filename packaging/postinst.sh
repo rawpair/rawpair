@@ -14,11 +14,6 @@ mkdir -p /etc/rawpair
 chown "$RAWPAIR_USER:$RAWPAIR_GROUP" /etc/rawpair
 
 echo "Installing default environment template at $DEFAULT_ENV_FILE"
-cat <<EOF > "$DEFAULT_ENV_FILE"
-# RAWPAIR_ENV_VERSION=1
-SECRET_KEY_BASE=
-LOG_LEVEL=info
-EOF
 chown "$RAWPAIR_USER:$RAWPAIR_GROUP" "$DEFAULT_ENV_FILE"
 chmod 644 "$DEFAULT_ENV_FILE"
 
@@ -46,6 +41,9 @@ else
     fi
   done
 fi
+
+mkdir -p /opt/rawpair/tmp
+chown rawpair:rawpair /opt/rawpair/tmp
 
 systemctl daemon-reexec
 systemctl daemon-reload

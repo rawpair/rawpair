@@ -19,7 +19,9 @@ fi
 if [ "$1" = "purge" ]; then
   [ -f "$ENV_FILE" ] && rm -f "$ENV_FILE"
   [ -f "$DEFAULT_ENV_FILE" ] && rm -f "$DEFAULT_ENV_FILE"
-  [ -d "$CONFIG_DIR" ] && rmdir "$CONFIG_DIR" 2>/dev/null || true
+  if [ -d "$CONFIG_DIR" ]; then
+    rmdir "$CONFIG_DIR" 2>/dev/null || true
+  fi
   [ -d "$LOG_DIR" ] && rm -rf "$LOG_DIR"
 
   id "$RAWPAIR_USER" >/dev/null 2>&1 && userdel "$RAWPAIR_USER"
