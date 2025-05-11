@@ -1,4 +1,5 @@
 APP_NAME=rawpair
+APP_NAME_CLI=rawpair-cli
 VERSION?=$(shell echo $(RAW_VERSION) | sed 's/^v//')
 ARCH?=amd64
 BUILD_DIR=phoenix-app/_build/prod/rel/$(APP_NAME)
@@ -15,11 +16,13 @@ build-release:
 stage:
 	rm -rf $(STAGING_DIR)
 	mkdir -p $(STAGING_DIR)/opt/$(APP_NAME)
+	mkdir -p $(STAGING_DIR)/opt/$(APP_NAME_CLI)/bin
 	mkdir -p $(STAGING_DIR)/etc/$(APP_NAME)
 	mkdir -p $(STAGING_DIR)/lib/systemd/system
 	mkdir -p $(STAGING_DIR)/etc/logrotate.d
 
 	cp -r $(BUILD_DIR)/* $(STAGING_DIR)/opt/$(APP_NAME)/
+	cp rawpair-cli $(STAGING_DIR)/opt/$(APP_NAME_CLI)/bin
 	cp packaging/run-migrations.sh $(STAGING_DIR)/opt/$(APP_NAME)/bin
 	cp packaging/rawpair.env.default $(STAGING_DIR)/etc/$(APP_NAME)/rawpair.env.default
 	cp packaging/rawpair.service $(STAGING_DIR)/lib/systemd/system/rawpair.service

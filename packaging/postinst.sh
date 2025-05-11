@@ -50,6 +50,7 @@ fi
 
 mkdir -p /opt/rawpair/tmp
 chown -R "$RAWPAIR_USER:$RAWPAIR_GROUP" /opt/rawpair/tmp
+ln -s /opt/rawpair-cli/bin/rawpair-cli /usr/local/bin/rawpair-cli
 
 if getent group docker >/dev/null; then
   usermod -aG docker "$RAWPAIR_USER"
