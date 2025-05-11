@@ -1,0 +1,20 @@
+[Unit]
+Description=RawPair self-hosted collaborative development server
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=rawpair
+Group=rawpair
+WorkingDirectory=/opt/rawpair
+EnvironmentFile=/etc/rawpair/rawpair.env
+ExecStart=/opt/rawpair/bin/rawpair daemon
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=65536
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
