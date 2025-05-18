@@ -1,9 +1,10 @@
 defmodule RawPair.Stacks do
   use GenServer
 
-  @default_stack_version "0.1.5"
+  @default_stack_version "0.1.8"
   @cache_key :stacks_json
-  @cache_ttl_ms 30 * 60 * 1000  # 30 minutes
+  # 30 minutes
+  @cache_ttl_ms 30 * 60 * 1000
 
   def stack_version do
     System.get_env("RAWPAIR_STACKS_VERSION") || @default_stack_version
@@ -27,7 +28,12 @@ defmodule RawPair.Stacks do
 
       _ ->
         stacks = download_stacks_json()
-        :ets.insert(:rawpair_stacks_cache, {@cache_key, %{expires_at: now + @cache_ttl_ms, value: stacks}})
+
+        :ets.insert(
+          :rawpair_stacks_cache,
+          {@cache_key, %{expires_at: now + @cache_ttl_ms, value: stacks}}
+        )
+
         stacks
     end
   end
@@ -64,5 +70,4 @@ defmodule RawPair.Stacks do
         raise "Failed to fetch stacks.json: #{inspect(reason)}"
     end
   end
-
 end
