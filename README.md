@@ -9,8 +9,6 @@ It enables you to spin up isolated containers with a shared terminal and code ed
 
 Built for fast, focused collaboration on your own infrastructure, RawPair also supports use cases like remote development, penetration testing, and red teaming, as long as it's done ethically and with proper authorization.
 
-**Join the Discord**: [discord.gg/muGYzJg3Aj](https://discord.gg/muGYzJg3Aj)
-
 ---
 
 ![image](https://github.com/user-attachments/assets/f4c790d9-6db7-47ec-9778-39687755ea93)
