@@ -1,0 +1,7 @@
+{
+  "name": "rawpair-collaboration",
+  "private": true,
+  "type": "module",
+  "scripts": {"start": "node server.mjs", "test": "node --test server.test.mjs"},
+  "dependencies": {"@y/websocket-server": "0.1.1", "yjs": "^13.6.24", "ws": "^8.18.1", "y-websocket": "^3.0.0"}
+}

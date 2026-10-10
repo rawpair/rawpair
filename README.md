@@ -5,7 +5,9 @@
 [![GitHub stars](https://img.shields.io/github/stars/rawpair/rawpair?style=social)](https://github.com/rawpair/rawpair/stargazers)
 
 **RawPair™** is a self-hosted, real-time collaborative development environment.
-It enables you to spin up isolated containers with a shared terminal and code editor for effective pair (or mob) programming.
+It provides persistent project workspaces with a shared terminal and collaborative code editor for pair or mob programming.
+
+Native Linux workspaces run through Orqos using systemd, dedicated Unix accounts, cgroup limits and per-workspace network namespaces. Follow [native setup](docs/NATIVE_SETUP.md) or the separate [Docker setup](docs/CONTAINER_SETUP.md). The [delivery handoff](docs/HANDOFF.md) records implementation details, checks and limitations; [goal.txt](goal.txt) remains the canonical scope.
 
 Built for fast, focused collaboration on your own infrastructure, RawPair also supports use cases like remote development, penetration testing, and red teaming, as long as it's done ethically and with proper authorization.
 
@@ -21,8 +23,11 @@ https://github.com/user-attachments/assets/fdbabd96-1bdf-4269-a408-7b6c11948443
 
 ## Features
 
-- Collaborative code editing and shared terminal session in the browser
-- One container per session, fully isolated from others
+- Password login, workspace membership and multiple persistent projects per user
+- File-scoped collaborative editing and persistent shared tmux terminals in the browser
+- Native Linux workspaces through Orqos, with independent loopback ports and resource limits
+- Named HTTPS application previews with WebSocket support and private or deliberate public access
+- Retained Docker workspace backend as a separate deployment option
 - Licensed under MPL v2.0
 
 ---
@@ -34,7 +39,8 @@ RawPair is built on a modern, production-grade foundation:
 - [Phoenix](https://github.com/phoenixframework/phoenix) ([Elixir](https://github.com/elixir-lang/elixir)) - handles real-time collaboration and session management
 - [Monaco](https://github.com/microsoft/monaco-editor) + [Yjs](https://github.com/yjs/yjs) - collaborative code editing in the browser
 - [ttyd](https://github.com/tsl0922/ttyd) + [tmux](https://github.com/tmux/tmux) - shared terminal sessions
-- [docker](https://github.com/docker) - isolated containers per user session
+- [Orqos](https://github.com/rawpair/orqos) + Linux systemd/cgroups/network namespaces - native workspace execution
+- [Docker](https://github.com/docker) - optional container workspace backend
 - [Nginx](https://github.com/nginx/nginx) - reverse proxy and traffic routing for ttyd
 - [PostgreSQL](https://github.com/postgres/postgres) - workspace metadata persistence
 - [Vector](https://github.com/vectordotdev/vector) + [Loki](https://github.com/grafana/loki) + [Grafana](https://github.com/grafana/grafana) - observability for logs and metrics
@@ -48,190 +54,19 @@ See [rawpair/stacks](https://github.com/rawpair/stacks) for all supported dev en
 
 ---
 
-## System Requirements
+## Setup
 
-To run RawPair smoothly in a self-hosted environment, you'll need:
+Use [NATIVE_SETUP.md](docs/NATIVE_SETUP.md) for a normal Linux systemd host. It includes prerequisites, Orqos installation, workspace-account provisioning, PostgreSQL, Phoenix, collaboration, ttyd/tmux, nginx, local hostname/TLS trust, first login and operating instructions. Native mode needs no Docker, Kubernetes, image downloads or stack catalog. Host language tools are operator-installed or user-local.
 
-- 64-bit Linux host (Debian/Ubuntu recommended), works also on a Raspberry Pi and Mac OS Sequoia (Erlang and Elixir installed through Homebrew)
-- Docker (version 20.10+)
-- Docker Compose (v2+)
-- At least 2 CPU cores and 4 GB RAM (8 GB recommended for multiple sessions)
-- Persistent storage for PostgreSQL and logs
-- Optional (but recommended): Domain + TLS for secure public access (via Nginx or a reverse proxy)
+Use [CONTAINER_SETUP.md](docs/CONTAINER_SETUP.md) and `compose.container.example.yml` for the retained Docker backend, including authenticated terminals and collaboration. Existing stack images still provide container toolchains. This recipe replaces the old generic Yjs and unauthenticated proxy setup. The CLI, Ansible recipes and older compose files remain legacy container helpers; they do not install the current native services or secure gateway configuration.
+
+Accounts are operator-created. Workspace owners add collaborators and control application visibility. The intended initial deployment is one Linux host for trusted collaborators. See [HANDOFF.md](docs/HANDOFF.md) for build/test evidence and live paths still unverified.
 
 ---
-
-## Set up
-
-### Install Erlang and Elixir
-
-#### Verify/install dependencies
-
-##### Ubuntu / Debian
-
-```bash
-sudo apt update
-sudo apt install -y autoconf build-essential libncurses-dev libssl-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils libncurses5-dev openjdk-17-jdk curl git
-```
-
-#### Install asdf
-
-Follow the official instructions: https://asdf-vm.com/guide/getting-started.html
-
-#### Proceed with the installation of Erlang and Elixir
-
-```bash
-asdf plugin add erlang
-asdf install erlang 27.3.2
-asdf set -u erlang 27.3.2
-
-asdf plugin add elixir
-asdf install elixir 1.18.3
-asdf set -u elixir 1.18.3
-```
-
-### A note on named volumes in containers
-
-Any files saved in `/home/devuser/app` will persist in the associated named volume. Everything else will be discarded when the container stops.
-
-### Using the Docker images
-
-The majority of the Docker images are available on https://hub.docker.com/u/rawpair
-
-You need to run `docker pull` commands appropriately.
-
-## Quick Start (Development)
-
-### Download and customize docker-compose.yml
-
-Basic setup, without Loki/Grafana:
-
-```yml
-networks:
-  rawpair:
-    name: rawpair
-
-services:
-  db:
-    networks:
-      - rawpair
-    image: postgres:15
-    container_name: rawpair_db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: rawpair_dev
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  yjs:
-    networks:
-      - rawpair
-    build:
-      context: ./yjs-server
-    container_name: rawpair_yjs
-    environment:
-      - HOST=0.0.0.0
-      - PORT=1234
-    ports:
-      - "1234:1234"
-
-  nginx:
-    networks:
-      - rawpair
-    image: nginx:stable
-    container_name: rawpair_nginx
-    ports:
-      - "8080:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-
-volumes:
-  pgdata:
-```
-
-```bash
-git clone https://github.com/rawpair/rawpair
-cd rawpair
-docker compose up -d
-cd phoenix-app
-mix deps.get
-cd assets
-npm i
-cd ..
-mkdir -p priv/static/assets
-./dev.sh
-```
-
-Then open [http://localhost:4000](http://localhost:4000) to begin.
-
-### CLI Setup (Optional)
-
-A prebuilt CLI tool is available in [Releases](https://github.com/rawpair/rawpair/releases).
-Either install via `curl -sSf https://rawpair.dev/install.sh | sh` or download the binary matching your platform manually.
-
-Then run to ensure that you have Erlang and Elixir installed:
-
-```bash
-./rawpair ensureDeps
-```
-
-Or add flags for unsupervised installation of dependencies:
-
-```bash
-./rawpair ensureDeps --non-interactive --install-deps
-```
-
-**Note: --install-deps requires root**
-
-Run this command, follow the instructions and at the end of the process you will have the opportunity to generate .env and .docker-compose.yml files.
-
-```bash
-./rawpair quickStart
-```
-
-This should get you up and running with minimal effort.
-
-Use this if you don’t want to manually edit config files.
-
-**Tested on Ubuntu 24.04, Debian Bookwork, Fedora 42, Archlinux (20250430)**
-
-## Quick Start (Production)
-
-Set the required ENV variables, based on `phoenix-app/.env.example`.
-
-Then run:
-
-```bash
-git clone https://github.com/rawpair/rawpair
-cd rawpair
-docker compose up -d
-cd phoenix-app
-./deploy.sh
-./start.sh
-```
-
-Refer to [deployment instructions/guidelines](./DEPLOYMENT.md) and [Ansible playbooks](./ansible/README.md)
-
-**Important**: You should generate your own `SECRET_KEY_BASE`
-
-```bash
-mix phx.gen.secret
-```
-
-Then open [http://localhost:4000](http://localhost:4000) to begin.
-
-It is advisable to use a reverse proxy in production.
-
----
-
 
 ## Environment Variables
 
-RawPair is configured via the following environment variables. These should be defined in a `.env` file or passed directly into your runtime environment (e.g. Docker, systemd, or a `mix phx.server` session).
+The setup guides contain the complete current service configuration. Native examples are in [native/rawpair.env.example](native/rawpair.env.example); Docker uses the root `.env` described in its setup guide. The historical variable reference below also includes options used only by legacy container helpers.
 
 ### Core Configuration
 

@@ -1,73 +1,80 @@
-# SPDX-License-Identifier: MPL-2.0
-
 defmodule RawPairWeb.WorkspaceLive.Index do
   use RawPairWeb, :live_view
-
-  alias RawPair.Workspaces
+  alias RawPair.{Workspaces, Runtime}
   alias RawPair.Workspaces.Workspace
 
-  @impl true
-  def mount(_params, session, socket) do
-    username = session["username"]
+  def mount(_, _, socket) do
+    if connected?(socket), do: :timer.send_interval(10_000, :refresh)
+    default = Application.get_env(:rawpair, :backends, [:docker]) |> hd()
 
-    socket =
-      socket
-      |> assign(:username, username)
-      |> assign(:default_cpu, RawPair.Docker.WorkspaceManager.default_cpu())
-      |> assign(:default_mem, RawPair.Docker.WorkspaceManager.default_mem())
-      |> assign(:default_swap, RawPair.Docker.WorkspaceManager.default_swap())
-      |> stream(:workspaces, Workspaces.list_workspaces())
-
-    {:ok, socket}
+    {:ok,
+     socket
+     |> assign(
+       form: to_form(Workspaces.change_workspace(%Workspace{backend: default})),
+       slots: [],
+       inventory_error: nil
+     )
+     |> refresh()}
   end
 
+  def handle_params(%{"id" => id}, _, socket),
+    do: {:noreply, push_navigate(socket, to: ~p"/workspaces/#{id}")}
 
-  @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  def handle_params(_, _, socket) do
+    {slots, error} =
+      if :host in Application.get_env(:rawpair, :backends, [:docker]) do
+        case RawPair.Runtime.Orqos.inventory() do
+          {:ok, %{"slots" => slots}} -> {slots, nil}
+          {:error, error} -> {[], inspect(error)}
+        end
+      else
+        {[], nil}
+      end
+
+    {:noreply, assign(socket, page_title: "Workspaces", slots: slots, inventory_error: error)}
   end
 
-  defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Workspace")
-    |> assign(:workspace, Workspaces.get_workspace!(id))
+  def handle_info(:refresh, socket), do: {:noreply, refresh(socket)}
+
+  def handle_event("validate", %{"workspace" => attrs}, socket) do
+    default = hd(Application.get_env(:rawpair, :backends, [:docker]))
+
+    {:noreply,
+     assign(socket,
+       form: to_form(Workspaces.change_workspace(%Workspace{backend: default}, attrs))
+     )}
   end
 
-  @impl true
-  def handle_event("launch", %{"id" => id}, socket) do
-    workspace = Workspaces.get_workspace!(id)
-
-    case RawPair.Docker.WorkspaceManager.start_workspace(workspace) do
-      {:ok, _} ->
-        {:noreply, put_flash(socket, :info, "Workspace launched!")}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, "Failed to launch: #{inspect(reason)}")}
+  def handle_event("create", %{"workspace" => attrs}, socket) do
+    case Workspaces.create_workspace(socket.assigns.current_user, attrs) do
+      {:ok, workspace} -> {:noreply, push_navigate(socket, to: ~p"/workspaces/#{workspace}")}
+      {:error, changeset} -> {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 
-  defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Workspace")
-    |> assign(:workspace, %Workspace{})
+  def handle_event(action, %{"id" => id}, socket) when action in ["start", "stop"] do
+    workspace = Workspaces.get_authorized!(socket.assigns.current_user, id)
+    operation = if action == "start", do: :start, else: :stop
+
+    case Workspaces.transition(socket.assigns.current_user, workspace, operation) do
+      {:ok, _} -> {:noreply, refresh(socket)}
+      {:error, error} -> {:noreply, put_flash(socket, :error, inspect(error)) |> refresh()}
+    end
   end
 
-  defp apply_action(socket, :index, _params) do
-    socket
-    |> assign(:page_title, "Listing Workspaces")
-    |> assign(:workspace, nil)
-  end
+  defp refresh(socket) do
+    rows =
+      Workspaces.list_workspaces(socket.assigns.current_user)
+      |> Enum.map(fn workspace ->
+        observed =
+          case Runtime.inspect_workspace(workspace) do
+            {:ok, status} -> Map.get(status, "status", "unavailable")
+            {:error, _} -> "unavailable"
+          end
 
-  @impl true
-  def handle_info({RawPairWeb.WorkspaceLive.FormComponent, {:saved, workspace}}, socket) do
-    {:noreply, stream_insert(socket, :workspaces, workspace)}
-  end
+        %{workspace: workspace, observed: observed}
+      end)
 
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    workspace = Workspaces.get_workspace!(id)
-    {:ok, _} = Workspaces.delete_workspace(workspace)
-
-    {:noreply, stream_delete(socket, :workspaces, workspace)}
+    assign(socket, rows: rows)
   end
 end

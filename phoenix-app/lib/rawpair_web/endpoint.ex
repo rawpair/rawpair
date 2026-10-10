@@ -8,7 +8,9 @@ defmodule RawPairWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
-    key: "_rawpair_key",
+    key: "__Host-rawpair_session",
+    secure: true,
+    http_only: true,
     signing_salt: "cYQw5F+2",
     same_site: "Lax"
   ]
@@ -18,9 +20,8 @@ defmodule RawPairWeb.Endpoint do
     longpoll: [connect_info: [session: @session_options]]
 
   socket "/socket", RawPairWeb.UserSocket,
-    websocket: [connect_info: [:peer_data, :user_agent]],
+    websocket: [connect_info: [session: @session_options]],
     longpoll: false
-
 
   # Serve at "/" the static files from "priv/static" directory.
   #

@@ -1,5 +1,13 @@
 # Deployment
 
+Use [NATIVE_SETUP.md](docs/NATIVE_SETUP.md) for the implemented Linux systemd deployment through Orqos. It supplies the build/install scripts, service units, workspace accounts, database/login bootstrap, nginx gateway and local TLS instructions without Docker or Kubernetes.
+
+Use [CONTAINER_SETUP.md](docs/CONTAINER_SETUP.md) with `compose.container.example.yml` for the separate Docker backend. It includes the authenticated collaboration and terminal gateway required by the current application. The [handoff](docs/HANDOFF.md) records available checks and operational limits.
+
+## Legacy container deployment notes
+
+The material below preserves earlier operator recipes and optional infrastructure references. It has not been migrated to the current authentication and gateway configuration; start a new deployment from one of the two setup guides above. In particular, native mode uses `native/admin.sh` and dedicated service units, never `phoenix-app/stop.sh`, Docker infrastructure units or the older generic Yjs compose configuration.
+
 ## Ubuntu Server 24.04
 
 The recommendation is to rely on systemd for process management.

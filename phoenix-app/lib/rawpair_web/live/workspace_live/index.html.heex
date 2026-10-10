@@ -1,91 +1,80 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
-<div class="flex w-full justify-center">
-  <div class="w-[90%] py-12">
-    <.header>
-      Listing Workspaces
-      <:actions>
-        <.link patch={~p"/workspaces/new"}>
-          <.button>New Workspace</.button>
-        </.link>
-      </:actions>
-    </.header>
-
-    <.table
-      id="workspaces"
-      rows={@streams.workspaces}
-      row_click={fn {_id, workspace} -> JS.navigate(~p"/workspaces/#{workspace}") end}
+<div class="p-8 space-y-6">
+  <.header>
+    Workspaces<:actions>
+      <.link patch={~p"/workspaces/new"}>
+        <.button>New project workspace</.button>
+      </.link>
+    </:actions>
+  </.header>
+  <p>Each workspace has persistent project files and an explicitly shared editor and terminal.</p>
+  <div :for={row <- @rows} class="border rounded p-4 flex gap-4 items-center">
+    <.link navigate={~p"/workspaces/#{row.workspace}"} class="font-bold">
+      {row.workspace.name}
+    </.link>
+    <span>{row.workspace.backend} · {row.observed}</span>
+    <.link navigate={~p"/rooms/#{row.workspace.slug}"}>Open editor and terminal</.link>
+    <button phx-click="start" phx-value-id={row.workspace.id}>Start</button>
+    <button
+      phx-click="stop"
+      phx-value-id={row.workspace.id}
+      data-confirm="Stop all processes in this workspace? Project files will remain."
     >
-      <:col :let={{_id, workspace}} label="Name">{workspace.name}</:col>
-      <:col :let={{_id, workspace}} label="Slug">{workspace.slug}</:col>
-      <:col :let={{_id, workspace}} label="Description">{workspace.description}</:col>
-      <:col :let={{_id, workspace}} label="Docker image">{workspace.docker_image}</:col>
-      <:col :let={{_id, workspace}} label="CPU Limit">{workspace.cpu_limit}</:col>
-      <:col :let={{_id, workspace}} label="Memory Limit">{workspace.mem_limit}</:col>
-      <:col :let={{_id, workspace}} label="Memory Swap">{workspace.mem_swap}</:col>
-      <:col :let={{_id, workspace}} label="With DB?">{workspace.with_db}</:col>
-      <:col :let={{_id, workspace}} label="Devices">
-        <%= Enum.join(workspace.devices || [], ", ") %>
-      </:col>
-      <%!-- <:col :let={{_id, workspace}} label="Workspace port">{workspace.workspace_port}</:col> --%>
-      <%!-- <:col :let={{_id, workspace}} label="Postgres port">{workspace.postgres_port}</:col> --%>
-      <:col :let={{_id, workspace}} label="Status">{workspace.status}</:col>
-      <:col :let={{_id, workspace}} label="Last active at">{workspace.last_active_at}</:col>
-      <:action :let={{_id, workspace}}>
-        <div class="sr-only">
-          <.link navigate={~p"/workspaces/#{workspace}"}>Show</.link>
-        </div>
-        <.link patch={~p"/workspaces/#{workspace}/edit"}>Edit</.link>
-        
-      </:action>
-      <:action :let={{_id, workspace}}>
-        <.link
-          phx-click={JS.push("launch", value: %{id: workspace.id})}
-          data-confirm="Start this workspace?"
-          class="text-blue-600 hover:underline"
-        >
-          Launch
-        </.link>
-      </:action>
-      <:action :let={{_id, workspace}}>
-          <.link
-            href={"/rooms/#{workspace.slug}"}
-            class="text-green-600 hover:underline"
-          >
-            Open
-          </.link>
-      </:action>
-      <:action :let={{_id, workspace}}>
-          <.link
-            href={"#{RawPair.Env.terminal_base_url()}terminal/#{workspace.slug}"}
-            class="text-green-800 hover:underline"
-            target="_blank"
-          >
-            Open Terminal
-          </.link>
-      </:action>
+      Stop
+    </button>
+  </div>
+  <p :if={@rows == []}>
+    No workspaces yet. Create a project or ask an owner to add your account.
+  </p>
 
-      <:action :let={{id, workspace}}>
-        <.link
-          phx-click={JS.push("delete", value: %{id: workspace.id}) |> hide("##{id}")}
-          data-confirm="Are you sure?"
-        >
-          Delete
-        </.link>
-      </:action>
-    </.table>
+  <div :if={@live_action == :new} class="border rounded p-6 max-w-xl space-y-4">
+    <h2 class="text-xl font-bold">Create a project workspace</h2>
+    <p :if={@inventory_error} role="alert">Host inventory unavailable: {@inventory_error}</p>
+    <.simple_form for={@form} id="new-workspace" phx-submit="create" phx-change="validate">
+      <.input field={@form[:name]} label="Project name" />
+      <.input field={@form[:description]} label="Description" />
+      <.input
+        field={@form[:backend]}
+        type="select"
+        label="Execution backend"
+        options={
+          Enum.map(Application.get_env(:rawpair, :backends, [:docker]), &{to_string(&1), &1})
+        }
+      />
+      <%= if to_string(@form[:backend].value) == "host" do %>
+        <.input
+          field={@form[:host_slot]}
+          type="select"
+          label="Provisioned account and project directory"
+          prompt="Choose an available slot"
+          options={
+            Enum.filter(@slots, &is_nil(&1["workspace_id"])) |> Enum.map(&{&1["label"], &1["id"]})
+          }
+        />
+        <p>
+          Slots keep existing project files when reused. The operator provisions native toolchains.
+        </p>
+      <% else %>
+        <.input
+          field={@form[:docker_image]}
+          label="Docker image"
+          placeholder="ghcr.io/rawpair/..."
+        />
+      <% end %>
+      <.input
+        field={@form[:cpu_limit]}
+        label="CPU cores (blank uses backend default)"
+        placeholder="2"
+      />
+      <.input
+        field={@form[:mem_limit]}
+        label="Memory (blank uses backend default)"
+        placeholder="2g"
+      />
+      <.input field={@form[:tasks_limit]} type="number" label="Maximum tasks" />
+      <:actions>
+        <.button>Create workspace</.button>
+        <.link patch={~p"/workspaces"}>Cancel</.link>
+      </:actions>
+    </.simple_form>
   </div>
 </div>
-
-<.modal :if={@live_action in [:new, :edit]} id="workspace-modal" show on_cancel={JS.patch(~p"/workspaces")}>
-  <.live_component
-    module={RawPairWeb.WorkspaceLive.FormComponent}
-    id={@workspace.id || :new}
-    title={@page_title}
-    action={@live_action}
-    workspace={@workspace}
-    default_cpu={@default_cpu}
-    default_mem={@default_mem}
-    default_swap={@default_swap}
-    patch={~p"/workspaces"}
-  />
-</.modal>

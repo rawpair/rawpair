@@ -1,0 +1,117 @@
+# Installed inside nginx's http context (sites-enabled on Ubuntu).
+map $http_upgrade $rawpair_connection_upgrade { default upgrade; '' close; }
+limit_req_zone $binary_remote_addr zone=rawpair_login:10m rate=5r/m;
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name __MANAGEMENT_HOST__;
+    ssl_certificate /etc/rawpair/tls/cert.pem;
+    ssl_certificate_key /etc/rawpair/tls/key.pem;
+    include /etc/rawpair/nginx-secrets.conf;
+    client_max_body_size 16m;
+
+    location /internal/ { return 404; }
+    location = /enter {
+        limit_req zone=rawpair_login burst=5 nodelay;
+        proxy_pass http://127.0.0.1:4000;
+        include /etc/nginx/proxy_params;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location = /__rawpair_terminal_auth {
+        internal;
+        proxy_pass http://127.0.0.1:4000/internal/terminal/$rawpair_terminal_id;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header X-Rawpair-Gateway $rawpair_gateway_token;
+    }
+    location ~ ^/terminal/(?<rawpair_terminal_id>ws-[a-f0-9]+)(?<rawpair_terminal_tail>/.*)$ {
+        auth_request /__rawpair_terminal_auth;
+        auth_request_set $rawpair_terminal_target $upstream_http_x_orqos_target;
+        proxy_pass http://127.0.0.1:9080$rawpair_terminal_target$rawpair_terminal_tail$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Authorization "Bearer $orqos_host_token";
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $rawpair_connection_upgrade;
+        proxy_read_timeout 86400s;
+        proxy_buffering off;
+    }
+    location ~ ^/terminal/(?<rawpair_terminal_id>docker-[0-9]+)(?<rawpair_docker_tail>/.*)$ {
+        auth_request /__rawpair_terminal_auth;
+        auth_request_set $rawpair_docker_port $upstream_http_x_docker_terminal_port;
+        proxy_pass http://127.0.0.1:$rawpair_docker_port$rawpair_docker_tail$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $rawpair_connection_upgrade;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_read_timeout 86400s;
+        proxy_buffering off;
+    }
+    location /terminal/ { return 404; }
+    location /collaboration/ {
+        proxy_pass http://127.0.0.1:1234;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $rawpair_connection_upgrade;
+        proxy_set_header Origin $http_origin;
+        proxy_set_header Cookie "";
+        proxy_read_timeout 86400s;
+        proxy_buffering off;
+        access_log off;
+    }
+    location / {
+        proxy_pass http://127.0.0.1:4000;
+        include /etc/nginx/proxy_params;
+        proxy_http_version 1.1;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $rawpair_connection_upgrade;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name *.__PREVIEW_DOMAIN__;
+    ssl_certificate /etc/rawpair/tls/cert.pem;
+    ssl_certificate_key /etc/rawpair/tls/key.pem;
+    include /etc/rawpair/nginx-secrets.conf;
+    client_max_body_size 16m;
+    add_header Referrer-Policy no-referrer always;
+
+    location = /__rawpair_preview_auth {
+        internal;
+        proxy_pass http://127.0.0.1:4000/internal/previews/authorize;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header X-Preview-Host $host;
+        proxy_set_header X-Rawpair-Gateway $rawpair_gateway_token;
+        proxy_set_header Cookie $http_cookie;
+    }
+    location = /_rawpair/claim {
+        proxy_pass http://127.0.0.1:4000/internal/previews/claim;
+        proxy_set_header X-Preview-Host $host;
+        proxy_set_header X-Rawpair-Gateway $rawpair_gateway_token;
+        access_log off;
+    }
+    location / {
+        auth_request /__rawpair_preview_auth;
+        auth_request_set $rawpair_app_target $upstream_http_x_orqos_target;
+        error_page 401 = @rawpair_preview_login;
+        proxy_pass http://127.0.0.1:9080$rawpair_app_target$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Authorization "Bearer $orqos_host_token";
+        proxy_set_header X-Rawpair-App-Authorization $http_authorization;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $rawpair_connection_upgrade;
+        proxy_read_timeout 86400s;
+        proxy_buffering off;
+    }
+    location @rawpair_preview_login { return 302 https://__MANAGEMENT_HOST__/previews/$host; }
+}

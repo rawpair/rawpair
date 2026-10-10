@@ -70,7 +70,7 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/bandit/Bandit.html#t:options/0
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ip: if(System.get_env("PHX_BIND_IP") == "0.0.0.0", do: {0, 0, 0, 0}, else: {127, 0, 0, 1}),
       port: port
     ],
     secret_key_base: secret_key_base,
@@ -125,4 +125,28 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+end
+
+backends =
+  case System.get_env("RAWPAIR_BACKENDS", "docker") do
+    "host" -> [:host]
+    "docker" -> [:docker]
+    "host,docker" -> [:host, :docker]
+    value -> raise "Invalid RAWPAIR_BACKENDS: #{value}"
+  end
+
+config :rawpair,
+  backends: backends,
+  orqos_url: System.get_env("ORQOS_URL", "http://127.0.0.1:9080"),
+  orqos_token: System.get_env("ORQOS_HOST_TOKEN", ""),
+  gateway_token: System.get_env("RAWPAIR_GATEWAY_TOKEN", ""),
+  collaboration_token: System.get_env("RAWPAIR_COLLABORATION_TOKEN", ""),
+  collaboration_url: System.get_env("RAWPAIR_COLLABORATION_URL", "http://127.0.0.1:1234"),
+  preview_domain: System.get_env("RAWPAIR_PREVIEW_DOMAIN", "apps.rawpair.test")
+
+if :host in backends and config_env() == :prod do
+  for name <- ["ORQOS_HOST_TOKEN", "RAWPAIR_GATEWAY_TOKEN", "RAWPAIR_COLLABORATION_TOKEN"] do
+    if byte_size(System.get_env(name, "")) < 32,
+      do: raise("#{name} must contain at least 32 random bytes")
+  end
 end

@@ -1,9 +1,10 @@
-FROM node:18-alpine
-
+FROM node:22-alpine
 WORKDIR /app
-
-RUN npm install @y/websocket-server y-websocket
-
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY server.mjs ./
+RUN mkdir -p /var/lib/rawpair-collaboration && chown node:node /var/lib/rawpair-collaboration
+USER node
+ENV RAWPAIR_COLLABORATION_BIND=0.0.0.0
 EXPOSE 1234
-
-CMD ["npx", "y-websocket"]
+CMD ["node", "server.mjs"]

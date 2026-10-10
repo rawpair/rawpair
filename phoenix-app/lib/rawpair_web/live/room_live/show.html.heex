@@ -1,36 +1,49 @@
 <!-- SPDX-License-Identifier: MPL-2.0 -->
 <div class="grid grid-cols-4 w-full flex-1 space-x-1 px-1">
+  <div class="col-span-4 p-2">
+    <.link navigate={~p"/workspaces/#{@workspace}"}>Manage {@workspace.name}</.link>
+    · Start the workspace from its management page before opening the terminal.
+  </div>
   <div class="col-span-3 flex-1 flex flex-col">
     <!-- Monaco Editor -->
-    <div 
-      phx-hook="EditorHook" 
-      phx-update="ignore" 
-      id="react-container" 
+    <div
+      phx-hook="EditorHook"
+      phx-update="ignore"
+      id="react-container"
       class="w-full flex-1 border"
       data-slug={@slug}
-    ></div>
+    >
+    </div>
 
     <iframe
       id="ttyd-frame"
       phx-hook="TtydHook"
-      data-slug={@workspace.slug}
-      data-terminal-base-url={@terminal_base_url}
+      data-terminal-path={@terminal_path}
       phx-update="ignore"
       class="w-full flex-1 border rounded"
     />
-
   </div>
 
-  <!-- Chat UI -->
+<!-- Chat UI -->
   <div class="col-span-1 space-y-4 flex flex-col p-2 bg-background">
     <div class="flex-1 w-full overflow-y-auto border-border px-2 py-1">
       <%= for msg <- @messages do %>
-        <p><strong><%= msg.user %>:</strong> <%= msg.content %></p>
+        <p><strong>{msg.user}:</strong> {msg.content}</p>
       <% end %>
     </div>
     <form phx-submit="send_message" class="flex gap-2">
-      <input name="message" type="text" placeholder="Say something…" class="flex-1 p-2 rounded-md border outline-none" />
-      <button type="submit" class="px-4 py-2 rounded-md bg-primary text-primary-foreground shadow hover:bg-primary/90">Send</button>
+      <input
+        name="message"
+        type="text"
+        placeholder="Say something…"
+        class="flex-1 p-2 rounded-md border outline-none"
+      />
+      <button
+        type="submit"
+        class="px-4 py-2 rounded-md bg-primary text-primary-foreground shadow hover:bg-primary/90"
+      >
+        Send
+      </button>
     </form>
   </div>
 </div>

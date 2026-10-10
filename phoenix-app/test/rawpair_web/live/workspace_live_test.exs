@@ -1,115 +1,51 @@
-# SPDX-License-Identifier: MPL-2.0
-
 defmodule RawPairWeb.WorkspaceLiveTest do
   use RawPairWeb.ConnCase
-
   import Phoenix.LiveViewTest
-  import RawPair.WorkspacesFixtures
+  import RawPair.NativeFixtures
+  alias RawPair.{Accounts, Workspaces, Repo}
 
-  @create_attrs %{name: "some name", status: "some status", description: "some description", slug: "some slug", docker_image: "some docker_image", with_db: 'None', workspace_port: 42, postgres_port: 42, last_active_at: "2025-04-05T15:56:00Z"}
-  @update_attrs %{name: "some updated name", status: "some updated status", description: "some updated description", slug: "some updated slug", docker_image: "some updated docker_image", with_db: 'None', workspace_port: 43, postgres_port: 43, last_active_at: "2025-04-06T15:56:00Z"}
-  @invalid_attrs %{name: nil, status: nil, description: nil, slug: nil, docker_image: nil, with_db: 'None', workspace_port: nil, postgres_port: nil, last_active_at: nil}
-
-  defp create_workspace(_) do
-    workspace = workspace_fixture()
-    %{workspace: workspace}
+  test "unauthenticated browsers cannot enter workspace views", %{conn: conn} do
+    assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/workspaces")
   end
 
-  describe "Index" do
-    setup [:create_workspace]
-
-    test "lists all workspaces", %{conn: conn, workspace: workspace} do
-      {:ok, _index_live, html} = live(conn, ~p"/workspaces")
-
-      assert html =~ "Listing Workspaces"
-      assert html =~ workspace.name
-    end
-
-    test "saves new workspace", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/workspaces")
-
-      assert index_live |> element("a", "New Workspace") |> render_click() =~
-               "New Workspace"
-
-      assert_patch(index_live, ~p"/workspaces/new")
-
-      assert index_live
-             |> form("#workspace-form", workspace: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
-
-      assert index_live
-             |> form("#workspace-form", workspace: @create_attrs)
-             |> render_submit()
-
-      assert_patch(index_live, ~p"/workspaces")
-
-      html = render(index_live)
-      assert html =~ "Workspace created successfully"
-      assert html =~ "some name"
-    end
-
-    test "updates workspace in listing", %{conn: conn, workspace: workspace} do
-      {:ok, index_live, _html} = live(conn, ~p"/workspaces")
-
-      assert index_live |> element("#workspaces-#{workspace.id} a", "Edit") |> render_click() =~
-               "Edit Workspace"
-
-      assert_patch(index_live, ~p"/workspaces/#{workspace}/edit")
-
-      assert index_live
-             |> form("#workspace-form", workspace: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
-
-      assert index_live
-             |> form("#workspace-form", workspace: @update_attrs)
-             |> render_submit()
-
-      assert_patch(index_live, ~p"/workspaces")
-
-      html = render(index_live)
-      assert html =~ "Workspace updated successfully"
-      assert html =~ "some updated name"
-    end
-
-    test "deletes workspace in listing", %{conn: conn, workspace: workspace} do
-      {:ok, index_live, _html} = live(conn, ~p"/workspaces")
-
-      assert index_live |> element("#workspaces-#{workspace.id} a", "Delete") |> render_click()
-      refute has_element?(index_live, "#workspaces-#{workspace.id}")
-    end
+  test "list, room and management expose only explicitly joined workspaces", %{conn: conn} do
+    owner = user()
+    project = workspace(owner)
+    stranger = user()
+    other = workspace(stranger)
+    conn = init_test_session(conn, session_token: Accounts.create_session(owner))
+    {:ok, _, html} = live(conn, ~p"/workspaces")
+    assert html =~ project.name
+    refute html =~ other.name
+    {:ok, _, html} = live(conn, ~p"/rooms/#{project.slug}")
+    assert html =~ "data-terminal-path"
+    {:ok, _, html} = live(conn, ~p"/workspaces/#{project.id}")
+    assert html =~ "Remove workspace, preserve files"
+    assert html =~ "Delete project contents"
+    assert_raise Ecto.NoResultsError, fn -> Workspaces.get_authorized!(stranger, project.id) end
   end
 
-  describe "Show" do
-    setup [:create_workspace]
+  test "a member cannot publish applications, remove the workspace or manage membership" do
+    owner = user()
+    member = user()
+    project = workspace(owner)
+    assert {:ok, _} = Workspaces.add_member(owner, project, member.username, "member")
+    assert Workspaces.permitted?(member, project)
+    refute Workspaces.permitted?(member, project, :owner)
+    assert_raise Ecto.NoResultsError, fn -> Workspaces.remove(member, project) end
 
-    test "displays workspace", %{conn: conn, workspace: workspace} do
-      {:ok, _show_live, html} = live(conn, ~p"/workspaces/#{workspace}")
-
-      assert html =~ "Show Workspace"
-      assert html =~ workspace.name
+    assert_raise Ecto.NoResultsError, fn ->
+      Workspaces.add_member(member, project, owner.username, "owner")
     end
 
-    test "updates workspace within modal", %{conn: conn, workspace: workspace} do
-      {:ok, show_live, _html} = live(conn, ~p"/workspaces/#{workspace}")
+    assert {:error, "A workspace needs at least one owner"} =
+             Workspaces.remove_member(owner, project, owner.id)
 
-      assert show_live |> element("a", "Edit") |> render_click() =~
-               "Edit Workspace"
+    assert {:error, "A workspace needs at least one owner"} =
+             Workspaces.add_member(owner, project, owner.username, "member")
 
-      assert_patch(show_live, ~p"/workspaces/#{workspace}/show/edit")
-
-      assert show_live
-             |> form("#workspace-form", workspace: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
-
-      assert show_live
-             |> form("#workspace-form", workspace: @update_attrs)
-             |> render_submit()
-
-      assert_patch(show_live, ~p"/workspaces/#{workspace}")
-
-      html = render(show_live)
-      assert html =~ "Workspace updated successfully"
-      assert html =~ "some updated name"
-    end
+    assert {:ok, _} = Workspaces.add_member(owner, project, member.username, "owner")
+    assert Workspaces.permitted?(member, project, :owner)
+    assert Repo.get!(Workspaces.Workspace, project.id)
   end
 end

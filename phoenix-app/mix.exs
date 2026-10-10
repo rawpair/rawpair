@@ -7,7 +7,7 @@ defmodule RawPair.MixProject do
     [
       app: :rawpair,
       version: "0.0.1",
-      elixir: "~> 1.14",
+      elixir: "~> 1.16",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -21,7 +21,7 @@ defmodule RawPair.MixProject do
   def application do
     [
       mod: {RawPair.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :crypto]
     ]
   end
 
@@ -78,6 +78,7 @@ defmodule RawPair.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.copy": [
+        "cmd mkdir -p priv/static/assets",
         "cmd cp assets/node_modules/monaco-editor/min/vs/editor/editor.main.css priv/static/assets/monaco-editor.css",
         "cmd cp assets/node_modules/@xterm/xterm/css/xterm.css priv/static/assets/xterm.css"
       ],

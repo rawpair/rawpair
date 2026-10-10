@@ -1,0 +1,24 @@
+[Unit]
+Description=RawPair native workspace management
+After=network-online.target postgresql.service orqos-host.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rawpair
+Group=rawpair
+WorkingDirectory=/opt/rawpair
+EnvironmentFile=/etc/rawpair/rawpair.env
+ExecStart=/opt/rawpair/bin/rawpair start
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/rawpair
+StateDirectory=rawpair
+
+[Install]
+WantedBy=multi-user.target

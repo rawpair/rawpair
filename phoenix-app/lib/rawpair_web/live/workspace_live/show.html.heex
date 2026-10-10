@@ -1,35 +1,164 @@
-<!-- SPDX-License-Identifier: MPL-2.0 -->
-<.header>
-  Workspace {@workspace.id}
-  <:subtitle>This is a workspace record from your database.</:subtitle>
-  <:actions>
-    <.link patch={~p"/workspaces/#{@workspace}/show/edit"} phx-click={JS.push_focus()}>
-      <.button>Edit workspace</.button>
+<div class="p-8 space-y-8">
+  <.header>
+    {@workspace.name}
+    <:subtitle>{@workspace.description}</:subtitle>
+  </.header>
+  <p :if={@workspace.status == :failed}>
+    Initial configuration may have failed. Start retries registration with the saved account and limits.
+  </p>
+  <p>
+    {@workspace.backend} · {@observed["status"]}
+    <span :if={@observed["error"]}>· {@observed["error"]}</span>
+  </p>
+  <div class="flex gap-6">
+    <.link navigate={~p"/rooms/#{@workspace.slug}"}>Open editor and shared terminal</.link>
+    <.link href={RawPair.Runtime.terminal_path(@workspace)} target="_blank">
+      Open terminal in a tab
     </.link>
-  </:actions>
-</.header>
+    <button phx-click="start">Start / reconnect</button>
+    <button
+      phx-click="stop"
+      data-confirm="Stop this workspace and all its processes? Files will remain."
+    >
+      Stop workspace
+    </button>
+  </div>
+  <p :if={@workspace.backend == :host}>
+    Account: {@observed["user"]} · Project: {@observed["project"]} · Runtime ID: {@workspace.runtime_id}
+  </p>
 
-<.list>
-  <:item title="Name">{@workspace.name}</:item>
-  <:item title="Slug">{@workspace.slug}</:item>
-  <:item title="Description">{@workspace.description}</:item>
-  <:item title="Docker image">{@workspace.docker_image}</:item>
-  <:item title="With postgres">{@workspace.with_db}</:item>
-  <:item title="Workspace port">{@workspace.workspace_port}</:item>
-  <:item title="Postgres port">{@workspace.postgres_port}</:item>
-  <:item title="Status">{@workspace.status}</:item>
-  <:item title="Last active at">{@workspace.last_active_at}</:item>
-</.list>
+  <section class="space-y-4">
+    <h2 class="text-xl font-bold">Applications</h2>
+    <div :for={app <- @applications} class="border p-4 rounded space-y-2">
+      <p>
+        {app.name} · localhost:{app.port} · {if app.public,
+          do: "Public",
+          else: "Private to workspace members"}
+      </p>
+      <.link href={RawPair.Applications.url(app)} target="_blank">
+        {RawPair.Applications.url(app)}
+      </.link>
+      <p>{Map.get(@connection_status, app.id, "Connection not checked")}</p>
+      <button phx-click="check_application" phx-value-id={app.id}>Check connection</button>
+      <button
+        :if={@owner}
+        phx-click="visibility"
+        phx-value-id={app.id}
+        phx-value-public={to_string(!app.public)}
+        data-confirm={
+          if app.public,
+            do: "Make this preview private?",
+            else:
+              "Publish this application to anyone with its URL? Terminal and editor remain private."
+        }
+      >
+        {if app.public, do: "Make private", else: "Share publicly"}
+      </button>
+      <button
+        :if={@owner}
+        phx-click="remove_application"
+        phx-value-id={app.id}
+        data-confirm="Remove this preview route? Files and server processes will remain."
+      >
+        Remove route
+      </button>
+    </div>
+    <form
+      :if={@owner and @workspace.backend == :host}
+      phx-submit="add_application"
+      class="flex gap-4"
+    >
+      <input
+        name="application[name]"
+        required
+        pattern="[a-z][a-z0-9-]{0,31}"
+        placeholder="web"
+        aria-label="Application name"
+        class="border p-2"
+      />
+      <input
+        name="application[port]"
+        type="number"
+        required
+        min="1024"
+        max="65535"
+        placeholder="3000"
+        aria-label="Internal HTTP port"
+        class="border p-2"
+      />
+      <.button>Register private application</.button>
+    </form>
+  </section>
 
-<.back navigate={~p"/workspaces"}>Back to workspaces</.back>
+  <section class="space-y-4">
+    <h2 class="text-xl font-bold">Workspace members</h2>
+    <div :for={member <- @members} class="flex gap-4">
+      <span>{member.username} · {member.role}</span>
+      <button
+        :if={@owner}
+        phx-click="remove_member"
+        phx-value-id={member.id}
+        data-confirm="Remove this member's workspace access?"
+      >
+        Remove
+      </button>
+    </div>
+    <form :if={@owner} phx-submit="add_member" class="flex gap-4">
+      <input
+        name="username"
+        required
+        placeholder="Existing account username"
+        aria-label="Member username"
+        class="border p-2"
+      />
+      <select name="role" aria-label="Role">
+        <option value="member">Member</option>
+        <option value="owner">Owner (can manage access and public sharing)</option>
+      </select>
+      <.button>Add member</.button>
+    </form>
+  </section>
 
-<.modal :if={@live_action == :edit} id="workspace-modal" show on_cancel={JS.patch(~p"/workspaces/#{@workspace}")}>
-  <.live_component
-    module={RawPairWeb.WorkspaceLive.FormComponent}
-    id={@workspace.id}
-    title={@page_title}
-    action={@live_action}
-    workspace={@workspace}
-    patch={~p"/workspaces/#{@workspace}"}
-  />
-</.modal>
+  <section :if={@owner} class="max-w-xl space-y-4">
+    <h2 class="text-xl font-bold">Configuration</h2>
+    <p>
+      Stop the workspace before changing limits. The project account and URL identity are fixed after creation.
+    </p>
+    <.simple_form for={@form} id="configure-workspace" phx-submit="configure">
+      <.input field={@form[:name]} label="Project name" />
+      <.input field={@form[:description]} label="Description" />
+      <.input field={@form[:cpu_limit]} label="CPU cores" />
+      <.input field={@form[:mem_limit]} label="Memory (for example 2g)" />
+      <.input field={@form[:tasks_limit]} type="number" label="Maximum tasks" />
+      <:actions>
+        <.button>Save configuration</.button>
+      </:actions>
+    </.simple_form>
+    <form
+      :if={@workspace.backend == :host}
+      phx-submit="delete_files"
+      class="border border-red-600 p-4 space-y-4"
+    >
+      <p>
+        Delete all project contents while stopped. Home files and account remain. Type {@workspace.runtime_id} to confirm.
+      </p>
+      <input
+        name="confirmation"
+        required
+        autocomplete="off"
+        aria-label="Confirm workspace ID for file deletion"
+        class="border p-2"
+      />
+      <button data-confirm="Permanently delete this workspace's project files? This cannot be undone.">
+        Delete project contents
+      </button>
+    </form>
+    <button
+      phx-click="remove"
+      data-confirm="Stop and remove this workspace registration? Project and home files will remain in the account slot."
+    >
+      Remove workspace, preserve files
+    </button>
+  </section>
+  <.back navigate={~p"/workspaces"}>All workspaces</.back>
+</div>

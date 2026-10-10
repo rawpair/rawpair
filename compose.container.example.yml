@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rawpair
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: rawpair
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [rawpair]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U rawpair']
+      interval: 5s
+      retries: 10
+  rawpair:
+    build: ./phoenix-app
+    environment:
+      DATABASE_URL: ecto://rawpair:${DB_PASSWORD}@postgres/rawpair
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE}
+      PHX_HOST: ${PHX_HOST:-rawpair.localhost}
+      CHECK_ORIGIN: https://${PHX_HOST:-rawpair.localhost}
+      PHX_BIND_IP: 0.0.0.0
+      PHX_SERVER: 'true'
+      RAWPAIR_BACKENDS: docker
+      RAWPAIR_COLLABORATION_URL: http://yjs:1234
+      RAWPAIR_GATEWAY_TOKEN: ${RAWPAIR_GATEWAY_TOKEN:?Set RAWPAIR_GATEWAY_TOKEN}
+      RAWPAIR_COLLABORATION_TOKEN: ${RAWPAIR_COLLABORATION_TOKEN:?Set RAWPAIR_COLLABORATION_TOKEN}
+    group_add: ['${DOCKER_GID:?Set DOCKER_GID to the host Docker socket group}']
+    volumes: [/var/run/docker.sock:/var/run/docker.sock]
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [rawpair]
+  yjs:
+    build: ./yjs-server
+    environment:
+      RAWPAIR_AUTH_URL: http://rawpair:4000/internal/collaboration/authorize
+      RAWPAIR_COLLABORATION_TOKEN: ${RAWPAIR_COLLABORATION_TOKEN}
+      RAWPAIR_ORIGIN: https://${PHX_HOST:-rawpair.localhost}
+      RAWPAIR_COLLABORATION_BIND: 0.0.0.0
+    volumes: [collaboration-data:/var/lib/rawpair-collaboration]
+    networks: [rawpair]
+  nginx:
+    image: nginx:stable
+    environment:
+      PHX_HOST: ${PHX_HOST:-rawpair.localhost}
+      RAWPAIR_GATEWAY_TOKEN: ${RAWPAIR_GATEWAY_TOKEN}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+    ports: ['443:443']
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro
+      - ${RAWPAIR_TLS_DIR:?Set RAWPAIR_TLS_DIR to the certificate directory}:/etc/rawpair/tls:ro
+    depends_on: [rawpair, yjs]
+    networks: [rawpair]
+networks:
+  rawpair: {name: rawpair}
+volumes:
+  postgres-data:
+  collaboration-data:

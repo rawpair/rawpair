@@ -1,0 +1,5 @@
+# RawPair collaboration transport
+
+`npm ci && npm start` runs the authenticated Yjs server. Native mode binds loopback by default; `RAWPAIR_COLLABORATION_BIND=0.0.0.0` is an explicit container-network setting. Configure `RAWPAIR_COLLABORATION_TOKEN` (32+ random bytes), `RAWPAIR_AUTH_URL`, `RAWPAIR_ORIGIN`, and a writable private `RAWPAIR_COLLABORATION_DIR`. See [native setup](../docs/NATIVE_SETUP.md).
+
+WebSocket rooms require a file-scoped Phoenix ticket from `/api/workspaces/:slug/collaboration?path=...`. The server authorizes before upgrade, initializes once from the workspace file, saves Yjs snapshots, and rechecks the original session/membership every 15 seconds. `PUT /internal/documents/:document` reloads a confirmed file from disk for all participants. `DELETE /internal/workspaces/:id/documents` clears a workspace's snapshots. Both administrative HTTP operations require the service bearer secret and are never exposed by nginx. `npm test` checks real WebSocket convergence, independent files, persistence, reload, rejection and cleanup using an isolated authorization fixture.

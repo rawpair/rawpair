@@ -22,24 +22,23 @@ RUN mix deps.get --only prod
 COPY . .
 
 # Compile and build assets
+RUN cd assets && npm ci
 RUN MIX_ENV=prod mix compile
 
 RUN MIX_ENV=prod mix assets.deploy
 
 WORKDIR /app
 
-RUN MIX_ENV=prod mix phx.gen.release
 
 RUN MIX_ENV=prod mix release
 
 RUN ls -l /app/_build/prod/rel/rawpair
 
-# ---- Final minimal image ----
-FROM alpine:3.19 AS app
+# Use the same runtime base as the builder so bundled ERTS has matching libraries.
+FROM elixir:1.18-alpine AS app
 
 ENV MIX_ENV=prod
 
-RUN echo "DATABASE_URL=$DATABASE_URL"
 
 RUN apk add --no-cache libstdc++ openssl ncurses-libs bash postgresql-client docker-cli
 
@@ -48,14 +47,16 @@ WORKDIR /app
 # Copy release from build stage
 COPY --from=build /app/_build/prod/rel/rawpair ./
 
-ENV PHX_SERVER=true \
+ENV PHX_BIND_IP=0.0.0.0 \
+    PHX_SERVER=true \
     MIX_ENV=prod \
     LANG=en_US.UTF-8
 
 EXPOSE 4000
 
 COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+RUN chmod +x /app/start.sh && addgroup -g 10000 rawpair && adduser -D -u 10000 -G rawpair rawpair && chown -R rawpair:rawpair /app
+USER rawpair
 
 CMD ["/app/start.sh"]
-    
+

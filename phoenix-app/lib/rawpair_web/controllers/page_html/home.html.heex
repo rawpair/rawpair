@@ -8,7 +8,7 @@
     This is a fragile, experimental build. Features may change or stop working at any time.
   </p>
   <p class="mt-4 text-md">
-    If you're ready to explore, start here:
+    Log in using an account created by your operator:
   </p>
 
   <.flash_group flash={@flash} />
@@ -26,8 +26,19 @@
         placeholder="Enter your username"
         required
         minlength="3"
-        maxlength="20"
+        maxlength="40"
         class="mt-1 w-full max-w-xs mx-auto rounded-md border border-border px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none"
+      />
+    </div>
+    <div>
+      <label for="password" class="block text-sm font-medium">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        required
+        autocomplete="current-password"
+        class="mt-1 rounded-md border px-3 py-2"
       />
     </div>
     <div>
@@ -35,9 +46,8 @@
         type="submit"
         class="inline-block rounded-md px-4 py-2 text-sm font-semibold shadow-sm bg-primary text-primary-foreground shadow hover:bg-primary/90"
       >
-        Enter Workspaces &rarr;
+        Log in &rarr;
       </button>
     </div>
   </form>
-
 </div>

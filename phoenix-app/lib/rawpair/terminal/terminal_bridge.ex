@@ -13,15 +13,22 @@ defmodule RawPair.TerminalBridge do
     port =
       Port.open(
         {:spawn_executable, "/usr/bin/docker"},
-        [:binary, :exit_status,
-        args: [
-          "exec", "-i", container,
-          "script", "-qfc", "stty -echo; sh", "/dev/null"
-        ]]
+        [
+          :binary,
+          :exit_status,
+          args: [
+            "exec",
+            "-i",
+            container,
+            "script",
+            "-qfc",
+            "stty -echo; sh",
+            "/dev/null"
+          ]
+        ]
       )
 
-      Port.command(port, "export TERM=xterm\n")
-
+    Port.command(port, "export TERM=xterm\n")
 
     {:ok, %{port: port, slug: slug}}
   end
@@ -37,6 +44,11 @@ defmodule RawPair.TerminalBridge do
   end
 
   def handle_info({port_id, {:exit_status, _}}, %{port: port_id} = state) do
-    {:noreply, state}
+    {:stop, :normal, state}
+  end
+
+  def terminate(_, %{port: port}) do
+    if Port.info(port), do: Port.close(port)
+    :ok
   end
 end

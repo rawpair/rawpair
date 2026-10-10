@@ -1,0 +1,24 @@
+[Unit]
+Description=RawPair authenticated collaborative documents
+After=network-online.target rawpair-host.service
+
+[Service]
+Type=simple
+User=rawpair-collab
+Group=rawpair-collab
+WorkingDirectory=/opt/rawpair-collaboration
+EnvironmentFile=/etc/rawpair/collaboration.env
+ExecStart=/usr/bin/node /opt/rawpair-collaboration/server.mjs
+Restart=on-failure
+RestartSec=3
+UMask=0077
+StateDirectory=rawpair-collaboration
+StateDirectoryMode=0700
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/rawpair-collaboration
+
+[Install]
+WantedBy=multi-user.target

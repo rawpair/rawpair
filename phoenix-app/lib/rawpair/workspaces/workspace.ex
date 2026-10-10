@@ -7,6 +7,11 @@ defmodule RawPair.Workspaces.Workspace do
   @device_regex ~r|^/dev/[a-zA-Z0-9._/-]+(:/dev/[a-zA-Z0-9._/-]+)?$|
 
   schema "workspaces" do
+    field :backend, Ecto.Enum, values: [:host, :docker], default: :docker
+    field :runtime_id, :string
+    field :collaboration_version, :integer, default: 0
+    field :host_slot, :string
+    field :tasks_limit, :integer, default: 512
     field :name, :string
     field :slug, :string
     field :description, :string
@@ -18,7 +23,11 @@ defmodule RawPair.Workspaces.Workspace do
     field :cpu_limit, :string
     field :mem_limit, :string
     field :mem_swap, :string
-    field :status, Ecto.Enum, values: [:pending, :starting, :running, :stopped, :failed], default: :pending
+
+    field :status, Ecto.Enum,
+      values: [:pending, :starting, :running, :stopped, :failed],
+      default: :pending
+
     field :last_active_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
@@ -27,6 +36,10 @@ defmodule RawPair.Workspaces.Workspace do
   def changeset(workspace, attrs) do
     workspace
     |> cast(attrs, [
+      :backend,
+      :runtime_id,
+      :host_slot,
+      :tasks_limit,
       :name,
       :slug,
       :description,
@@ -42,12 +55,25 @@ defmodule RawPair.Workspaces.Workspace do
       :mem_swap
     ])
     |> maybe_generate_slug()
-    |> validate_required([:name, :docker_image])
+    |> validate_required([:name, :backend])
+    |> validate_backend()
+    |> validate_format(:slug, ~r/^[a-z0-9][a-z0-9-]{0,47}$/)
+    |> validate_number(:tasks_limit, greater_than_or_equal_to: 32, less_than_or_equal_to: 65536)
+    |> unique_constraint(:host_slot)
+    |> unique_constraint(:runtime_id)
     |> unique_constraint(:slug)
     |> validate_devices()
     |> validate_format(:cpu_limit, ~r/^\d+(\.\d+)?$/, message: "Invalid CPU format")
     |> validate_format(:mem_limit, ~r/^\d+(\.\d+)?[gm]$/i, message: "Invalid memory format")
     |> validate_format(:mem_swap, ~r/^\d+(\.\d+)?[gm]$/i, message: "Invalid swap format")
+  end
+
+  defp validate_backend(changeset) do
+    case get_field(changeset, :backend) do
+      :host -> validate_required(changeset, [:host_slot])
+      :docker -> validate_required(changeset, [:docker_image])
+      _ -> changeset
+    end
   end
 
   defp maybe_generate_slug(changeset) do
@@ -59,7 +85,8 @@ defmodule RawPair.Workspaces.Workspace do
           changeset
         end
 
-      _ -> changeset
+      _ ->
+        changeset
     end
   end
 

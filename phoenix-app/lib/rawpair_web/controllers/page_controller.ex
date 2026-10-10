@@ -1,48 +1,36 @@
-# SPDX-License-Identifier: MPL-2.0
-
 defmodule RawPairWeb.PageController do
   use RawPairWeb, :controller
 
-  def home(conn, _params) do
-    # The home page is often custom made,
-    # so skip the default app layout.
-    render(conn, :home, layout: false)
-  end
+  def home(conn, _params), do: render(conn, :home, layout: false)
 
-  def enter(conn, %{"username" => username}) do
-    username = String.trim(username)
+  def enter(conn, %{"username" => username, "password" => password}) do
+    case RawPair.Accounts.authenticate(String.trim(username), password) do
+      {:ok, user} ->
+        RawPair.Accounts.delete_session(get_session(conn, :session_token))
+        preview_host = get_session(conn, :preview_login_host)
 
-    cond do
-      username == "" ->
+        destination =
+          if preview_host, do: "/previews/" <> URI.encode(preview_host), else: "/workspaces"
+
+        token = RawPair.Accounts.create_session(user)
+
         conn
-        |> put_flash(:error, "Username is required.")
-        |> redirect(to: ~p"/")
+        |> configure_session(renew: true)
+        |> clear_session()
+        |> put_session(:session_token, token)
+        |> put_session(:live_socket_id, "session:#{RawPair.Accounts.hash(token)}")
+        |> redirect(to: destination)
 
-      String.length(username) < 3 ->
-        conn
-        |> put_flash(:error, "Username must be at least 3 characters.")
-        |> redirect(to: ~p"/")
-
-      String.length(username) > 20 ->
-        conn
-        |> put_flash(:error, "Username must be at most 20 characters.")
-        |> redirect(to: ~p"/")
-
-      username =~ ~r/[^a-zA-Z0-9_-]/ ->
-        conn
-        |> put_flash(:error, "Username can only contain letters, numbers, hyphens, and underscores.")
-        |> redirect(to: ~p"/")
-
-      true ->
-        conn
-        |> put_session(:username, username)
-        |> redirect(to: ~p"/dashboard")
+      {:error, _} ->
+        conn |> put_flash(:error, "Invalid username or password.") |> redirect(to: ~p"/")
     end
   end
 
+  def enter(conn, _),
+    do: conn |> put_flash(:error, "Username and password are required.") |> redirect(to: ~p"/")
+
   def logout(conn, _params) do
-    conn
-    |> configure_session(drop: true)
-    |> redirect(to: ~p"/")
+    RawPair.Accounts.delete_session(get_session(conn, :session_token))
+    conn |> configure_session(drop: true) |> redirect(to: ~p"/")
   end
 end

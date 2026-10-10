@@ -2,6 +2,7 @@
 
 defmodule RawPair.DockerClient do
   @moduledoc false
+  require Logger
   @docker_api_version "v1.41"
   @sock "/var/run/docker.sock"
 
@@ -22,10 +23,10 @@ defmodule RawPair.DockerClient do
           _ -> false
         end
 
-      _ -> false
+      _ ->
+        false
     end
   end
-
 
   def list_containers(opts \\ []) do
     query =
@@ -81,7 +82,13 @@ defmodule RawPair.DockerClient do
         "Devices" =>
           devices
           |> Enum.filter(fn path ->
-            if File.exists?(path), do: true, else: (Logger.warning("Skipping missing device: #{path}"); false)
+            if File.exists?(path),
+              do: true,
+              else:
+                (
+                  Logger.warning("Skipping missing device: #{path}")
+                  false
+                )
           end)
           |> Enum.map(fn path ->
             %{
@@ -90,7 +97,13 @@ defmodule RawPair.DockerClient do
               "CgroupPermissions" => "rwm"
             }
           end),
+        "PortBindings" => %{
+          "7681/tcp" => [
+            %{"HostIp" => "127.0.0.1", "HostPort" => to_string(launch_spec[:terminal_port])}
+          ]
+        },
         "NetworkMode" => network,
+        "PidsLimit" => launch_spec[:tasks] || 512,
         "CpuQuota" => trunc(cpu * 100_000),
         "Memory" => memory,
         "MemorySwap" => swap
@@ -133,7 +146,7 @@ defmodule RawPair.DockerClient do
     query = URI.encode_query(%{"name" => container_name})
 
     with {:ok, %{"Id" => id}} <- post_json("/containers/create?#{query}", body),
-        :ok <- post_empty("/containers/#{id}/start") do
+         :ok <- post_empty("/containers/#{id}/start") do
       :ok
     else
       {:error, reason} -> {:error, reason}
@@ -162,24 +175,35 @@ defmodule RawPair.DockerClient do
           {:error, {:http_error, 404, _}} -> :ok
           {:error, reason} -> {:error, {:remove_failed, reason}}
         end
-      error -> error
+
+      error ->
+        error
     end
   end
 
   def list_files(container_name, base_dir) do
     find_cmd = [
-      "find", base_dir,
-      "-type", "f",
-      "-not", "-path", "*/node_modules/*",
-      "-not", "-path", "*/.git/*",
-      "-not", "-path", "*/_build/*",
-      "-not", "-path", "*/*.swp"
+      "find",
+      base_dir,
+      "-type",
+      "f",
+      "-not",
+      "-path",
+      "*/node_modules/*",
+      "-not",
+      "-path",
+      "*/.git/*",
+      "-not",
+      "-path",
+      "*/_build/*",
+      "-not",
+      "-path",
+      "*/*.swp"
     ]
 
     with {:ok, %{"Id" => exec_id}} <- create_exec(container_name, find_cmd),
-        {:ok, output} <- start_exec(exec_id),
-        {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
-
+         {:ok, output} <- start_exec(exec_id),
+         {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
       files =
         output
         |> String.trim()
@@ -187,16 +211,15 @@ defmodule RawPair.DockerClient do
         |> Enum.map(&String.replace_prefix(&1, base_dir <> "/", ""))
 
       {:ok, files}
-
     else
       {:ok, %{"ExitCode" => code}} -> {:error, "Command failed with exit code #{code}"}
       {:error, reason} -> {:error, reason}
     end
-
   end
 
   def get_file_stat(container, path) do
     cmd = ["stat", "-c", "%s", path]
+
     with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
          {:ok, output} <- start_exec(exec_id),
          {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
@@ -208,6 +231,7 @@ defmodule RawPair.DockerClient do
 
   def get_file_mime(container, path) do
     cmd = ["file", "--brief", "--mime-type", path]
+
     with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
          {:ok, output} <- start_exec(exec_id),
          {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
@@ -219,6 +243,7 @@ defmodule RawPair.DockerClient do
 
   def read_file(container, path) do
     cmd = ["cat", path]
+
     with {:ok, %{"Id" => exec_id}} <- create_exec(container, cmd),
          {:ok, output} <- start_exec(exec_id),
          {:ok, %{"ExitCode" => 0}} <- exec_inspect(exec_id) do
@@ -233,9 +258,9 @@ defmodule RawPair.DockerClient do
     dirname = Path.dirname(path)
 
     with {:ok, tar_binary} <- MemoTar.create([{basename, content}]),
-      :ok <- put_archive(container, dirname, tar_binary),
-      :ok <- fix_ownership(container, path),
-      :ok <- fix_permissions(container, path) do
+         :ok <- put_archive(container, dirname, tar_binary),
+         :ok <- fix_ownership(container, path),
+         :ok <- fix_permissions(container, path) do
       :ok
     else
       {:error, reason} -> {:error, reason}
@@ -243,12 +268,19 @@ defmodule RawPair.DockerClient do
   end
 
   defp put_archive(container, dest_path, tar_binary) do
-    url = "http://docker/#{@docker_api_version}/containers/#{container}/archive?path=#{URI.encode(dest_path)}"
+    url =
+      "http://docker/#{@docker_api_version}/containers/#{container}/archive?path=#{URI.encode(dest_path)}"
 
-    Finch.build(:put, url, [
-      {"Content-Type", "application/x-tar"},
-      {"host", "docker"}
-    ], tar_binary, unix_socket: @sock)
+    Finch.build(
+      :put,
+      url,
+      [
+        {"Content-Type", "application/x-tar"},
+        {"host", "docker"}
+      ],
+      tar_binary,
+      unix_socket: @sock
+    )
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: code}} when code in 200..299 -> :ok
@@ -282,20 +314,26 @@ defmodule RawPair.DockerClient do
     end
   end
 
-
   defp create_exec(container, cmd, user \\ nil) do
-    body = %{
-      "AttachStdout" => true,
-      "AttachStderr" => true,
-      "Cmd" => cmd
-    }
-    |> then(fn base ->
-      if user, do: Map.put(base, "User", user), else: base
-    end)
+    body =
+      %{
+        "AttachStdout" => true,
+        "AttachStderr" => true,
+        "Cmd" => cmd
+      }
+      |> then(fn base ->
+        if user, do: Map.put(base, "User", user), else: base
+      end)
 
     url = "http://docker/#{@docker_api_version}/containers/#{container}/exec"
 
-    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(body), unix_socket: @sock)
+    Finch.build(
+      :post,
+      url,
+      [{"Content-Type", "application/json"}, {"host", "docker"}],
+      Jason.encode!(body),
+      unix_socket: @sock
+    )
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: 201, body: body}} -> Jason.decode(body)
@@ -308,7 +346,13 @@ defmodule RawPair.DockerClient do
     body = %{"Detach" => false, "Tty" => false}
     url = "http://docker/v1.41/exec/#{exec_id}/start"
 
-    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(body), unix_socket: "/var/run/docker.sock")
+    Finch.build(
+      :post,
+      url,
+      [{"Content-Type", "application/json"}, {"host", "docker"}],
+      Jason.encode!(body),
+      unix_socket: "/var/run/docker.sock"
+    )
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: 200, body: raw_output}} ->
@@ -332,7 +376,6 @@ defmodule RawPair.DockerClient do
     end
   end
 
-
   defp exec_inspect(exec_id) do
     url = "http://docker/#{@docker_api_version}/exec/#{exec_id}/json"
 
@@ -350,11 +393,16 @@ defmodule RawPair.DockerClient do
     end
   end
 
-
   defp post_json(path, data) do
     url = "http://docker/#{@docker_api_version}#{path}"
 
-    Finch.build(:post, url, [{"Content-Type", "application/json"}, {"host", "docker"}], Jason.encode!(data), unix_socket: @sock)
+    Finch.build(
+      :post,
+      url,
+      [{"Content-Type", "application/json"}, {"host", "docker"}],
+      Jason.encode!(data),
+      unix_socket: @sock
+    )
     |> Finch.request(RawPair.Finch)
     |> case do
       {:ok, %Finch.Response{status: code, body: body}} when code in 200..299 -> Jason.decode(body)
@@ -397,6 +445,7 @@ defmodule RawPair.DockerClient do
   defp parse_float(val) when is_number(val), do: val
 
   defp parse_bytes("0"), do: 0
+
   defp parse_bytes(val) when is_binary(val) do
     case Regex.run(~r/^(\d+(?:\.\d+)?)([kmgtp]?)(b?)$/i, val) do
       [_, number, unit, _] ->
@@ -415,7 +464,8 @@ defmodule RawPair.DockerClient do
 
         trunc(base * multiplier)
 
-      _ -> raise ArgumentError, "invalid byte string: #{inspect(val)}"
+      _ ->
+        raise ArgumentError, "invalid byte string: #{inspect(val)}"
     end
   end
 

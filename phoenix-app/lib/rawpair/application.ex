@@ -9,7 +9,8 @@ defmodule RawPair.Application do
 
   @impl true
   def start(_type, _args) do
-    platform = platform_from_env()
+    docker? = :docker in Application.get_env(:rawpair, :backends, [:docker])
+    platform = if docker?, do: platform_from_env(), else: :native
 
     :persistent_term.put(:rawpair_platform, platform)
 
@@ -24,12 +25,12 @@ defmodule RawPair.Application do
       # Start a worker by calling: RawPair.Worker.start_link(arg)
       # {RawPair.Worker, arg},
       # Start to serve requests, typically the last entry
-      RawPairWeb.Endpoint,
-      RawPair.Stacks
+      RawPairWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
+    children = children ++ if(docker?, do: [RawPair.Stacks], else: [])
     opts = [strategy: :one_for_one, name: RawPair.Supervisor]
     Supervisor.start_link(children, opts)
   end
@@ -44,16 +45,23 @@ defmodule RawPair.Application do
 
   defp platform_from_env do
     case System.get_env("RAWPAIR_DOCKER_PLATFORM") do
-      "linux/amd64" = plat -> plat
-      "linux/arm64" = plat -> plat
+      "linux/amd64" = plat ->
+        plat
+
+      "linux/arm64" = plat ->
+        plat
+
       nil ->
         IO.warn("""
         [RawPair] ⚠️  RAWPAIR_DOCKER_PLATFORM not set — falling back to local host architecture.
         This may be incorrect if you're targeting a remote Docker daemon or using emulation.
         Set RAWPAIR_DOCKER_PLATFORM=linux/amd64 or linux/arm64 to suppress this warning.
         """)
+
         detect_local_platform()
-      other -> raise "Invalid RAWPAIR_DOCKER_PLATFORM: #{inspect(other)}"
+
+      other ->
+        raise "Invalid RAWPAIR_DOCKER_PLATFORM: #{inspect(other)}"
     end
   end
 

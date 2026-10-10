@@ -1,44 +1,48 @@
 defmodule RawPairWeb.RoomLive.Show do
   use RawPairWeb, :live_view
+  alias RawPair.{Workspaces, Chat, Accounts}
 
-  alias RawPair.Workspaces
-  alias RawPair.Chat
+  def mount(%{"slug" => slug}, _, socket) do
+    workspace = Workspaces.by_slug_authorized!(socket.assigns.current_user, slug)
 
-  @impl true
-  def mount(%{"slug" => slug} = params, session, socket) do
-    username = session["username"]
-    workspace = Workspaces.get_workspace_by_slug!(slug)
-    topic = "room:#{slug}"
-    messages = Chat.get_history(slug) |> Enum.reverse()
-    Phoenix.PubSub.subscribe(RawPair.PubSub, topic)
-
-    terminal_base_url = RawPair.Env.terminal_base_url()
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(RawPair.PubSub, "room:#{slug}")
+      :timer.send_interval(15_000, :check_access)
+    end
 
     {:ok,
-     socket
-     |> assign(:slug, slug)
-     |> assign(:user, username)
-     |> assign(:page_title, "Room: #{slug}")
-     |> assign(:topic, topic)
-     |> assign(:terminal_base_url, terminal_base_url)
-     |> assign(:messages, messages)
-     |> assign(:username, username)
-     |> assign(:workspace, workspace)}
+     assign(socket,
+       slug: slug,
+       user: socket.assigns.current_user.username,
+       page_title: workspace.name,
+       workspace: workspace,
+       terminal_path: RawPair.Runtime.terminal_path(workspace),
+       messages: Enum.reverse(Chat.get_history(slug))
+     )}
   end
 
-  @impl true
   def handle_event("send_message", %{"message" => content}, socket) do
-    Chat.broadcast_message(socket.assigns.slug, socket.assigns.user, content)
+    Workspaces.authorize!(socket.assigns.current_user, socket.assigns.workspace)
+
+    Chat.broadcast_message(
+      socket.assigns.slug,
+      socket.assigns.user,
+      String.slice(content, 0, 4000)
+    )
+
     {:noreply, socket}
   end
 
-  @impl true
-  def handle_info({:new_message, msg}, socket) do
-    messages =
-      socket.assigns.messages
-      |> Enum.concat([msg])
-      |> Enum.take(-100)
+  def handle_info(:check_access, socket) do
+    if Accounts.user_for_session(socket.assigns.session_token) &&
+         Workspaces.permitted?(socket.assigns.current_user, socket.assigns.workspace),
+       do: {:noreply, socket},
+       else: {:noreply, push_navigate(socket, to: ~p"/workspaces")}
+  end
 
-    {:noreply, assign(socket, :messages, messages)}
+  def handle_info({:new_message, msg}, socket) do
+    if Workspaces.permitted?(socket.assigns.current_user, socket.assigns.workspace),
+      do: {:noreply, assign(socket, messages: Enum.take(socket.assigns.messages ++ [msg], -100))},
+      else: {:noreply, push_navigate(socket, to: ~p"/workspaces")}
   end
 end

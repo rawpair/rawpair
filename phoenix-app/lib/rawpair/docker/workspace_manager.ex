@@ -3,7 +3,6 @@
 defmodule RawPair.Docker.WorkspaceManager do
   alias RawPair.Workspaces
   alias RawPair.Workspaces.Workspace
-  alias RawPair.Repo
 
   @docker_network "rawpair"
 
@@ -25,7 +24,6 @@ defmodule RawPair.Docker.WorkspaceManager do
   def default_cpu, do: @default_cpu
   def default_mem, do: @default_mem
   def default_swap, do: @default_swap
-
 
   def start_workspace(%Workspace{} = workspace) do
     # generate container name
@@ -59,18 +57,21 @@ defmodule RawPair.Docker.WorkspaceManager do
 
   defp launch_container(workspace, container_name) do
     with :ok <- RawPair.DockerClient.stop_and_remove(container_name),
-      :ok <- RawPair.DockerClient.launch(%{
-        image: workspace.docker_image,
-        volume: "#{container_name}_volume",
-        container_name: container_name,
-        devices: workspace.devices,
-        network: @docker_network,
-        cpu: effective_cpu(workspace),
-        memory: effective_mem(workspace),
-        swap: effective_swap(workspace),
-        slug: workspace.slug,
-        target: @app_dir
-      }) do
+         :ok <-
+           RawPair.DockerClient.launch(%{
+             image: workspace.docker_image,
+             volume: "#{container_name}_volume",
+             container_name: container_name,
+             devices: workspace.devices,
+             network: @docker_network,
+             cpu: effective_cpu(workspace),
+             memory: effective_mem(workspace),
+             swap: effective_swap(workspace),
+             slug: workspace.slug,
+             terminal_port: workspace.workspace_port,
+             tasks: workspace.tasks_limit || 512,
+             target: @app_dir
+           }) do
       :ok
     else
       {:error, reason} -> {:error, reason}
@@ -83,20 +84,21 @@ defmodule RawPair.Docker.WorkspaceManager do
     {image, internal_port, env} =
       case workspace.with_db do
         :postgres -> {"postgres:15", 5432, ["POSTGRES_PASSWORD=postgres"]}
-        :mysql    -> {"mysql:8",     3306, ["MYSQL_ROOT_PASSWORD=mysql"]}
-        :mariadb  -> {"mariadb:10",  3306, ["MARIADB_ROOT_PASSWORD=mariadb"]}
+        :mysql -> {"mysql:8", 3306, ["MYSQL_ROOT_PASSWORD=mysql"]}
+        :mariadb -> {"mariadb:10", 3306, ["MARIADB_ROOT_PASSWORD=mariadb"]}
       end
 
     with :ok <- RawPair.DockerClient.stop_and_remove(db_container_name),
-      :ok <-RawPair.DockerClient.launch_db(%{
-        container_name: db_container_name,
-        image: image,
-        env: env,
-        container_port: internal_port,
-        host_port: workspace.postgres_port,
-        network: @docker_network,
-        slug: "#{workspace.slug}_db",
-      }) do
+         :ok <-
+           RawPair.DockerClient.launch_db(%{
+             container_name: db_container_name,
+             image: image,
+             env: env,
+             container_port: internal_port,
+             host_port: workspace.postgres_port,
+             network: @docker_network,
+             slug: "#{workspace.slug}_db"
+           }) do
       :ok
     else
       {:error, reason} -> {:error, reason}

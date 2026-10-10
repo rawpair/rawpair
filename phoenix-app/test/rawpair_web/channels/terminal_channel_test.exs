@@ -1,29 +1,25 @@
-# SPDX-License-Identifier: MPL-2.0
-
 defmodule RawPairWeb.TerminalChannelTest do
   use RawPairWeb.ChannelCase
+  import RawPair.NativeFixtures
+  alias RawPair.Accounts
 
-  setup do
-    {:ok, _, socket} =
-      RawPairWeb.UserSocket
-      |> socket("user_id", %{some: :assign})
-      |> subscribe_and_join(RawPairWeb.TerminalChannel, "terminal:lobby")
-
-    %{socket: socket}
+  test "anonymous sockets and forged session parameters are refused" do
+    assert :error =
+             connect(RawPairWeb.UserSocket, %{"username" => "operator"},
+               connect_info: %{session: %{}}
+             )
   end
 
-  test "ping replies with status ok", %{socket: socket} do
-    ref = push(socket, "ping", %{"hello" => "there"})
-    assert_reply ref, :ok, %{"hello" => "there"}
-  end
+  test "host terminals cannot bypass the authorized ttyd gateway" do
+    account = user()
+    project = workspace(account)
 
-  test "shout broadcasts to terminal:lobby", %{socket: socket} do
-    push(socket, "shout", %{"hello" => "all"})
-    assert_broadcast "shout", %{"hello" => "all"}
-  end
+    {:ok, socket} =
+      connect(RawPairWeb.UserSocket, %{},
+        connect_info: %{session: %{"session_token" => Accounts.create_session(account)}}
+      )
 
-  test "broadcasts are pushed to the client", %{socket: socket} do
-    broadcast_from!(socket, "broadcast", %{"some" => "data"})
-    assert_push "broadcast", %{"some" => "data"}
+    assert {:error, %{reason: "Use the authorized ttyd terminal gateway"}} =
+             subscribe_and_join(socket, RawPairWeb.TerminalChannel, "terminal:#{project.slug}")
   end
 end
