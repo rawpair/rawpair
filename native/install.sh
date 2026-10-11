@@ -1,38 +1,53 @@
 #!/usr/bin/env bash
+# Source installations use the same setup helper as the prebuilt packages.
 set -euo pipefail
-if [[ $EUID != 0 || $# -lt 2 ]]; then
-  echo 'Usage: sudo native/install.sh CERT_PEM KEY_PEM [MANAGEMENT_HOST] [PREVIEW_DOMAIN]' >&2; exit 1
-fi
-cert=$(realpath -- "$1")
-key=$(realpath -- "$2")
-management_host=${3:-rawpair.localhost}
-preview_domain=${4:-apps.rawpair.localhost}
-if [[ ! $management_host =~ ^[a-z0-9][a-z0-9.-]+$ || ! $preview_domain =~ ^[a-z0-9][a-z0-9.-]+$ || $management_host == "$preview_domain" ]]; then
-  echo 'Use distinct, valid management and preview hostnames.' >&2; exit 1
+if [[ $EUID != 0 || $# -gt 1 ]]; then
+  echo 'Usage: sudo native/install.sh [PROTECTED_SETUP_JSON]' >&2; exit 1
 fi
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+if [[ -f /var/lib/rawpair/package-owner ]]; then
+  echo 'Package installation detected. Use sudo rawpair setup.' >&2; exit 1
+fi
+if [[ ! -f /var/lib/rawpair/source-owner ]]; then
+  for path in /opt/rawpair /etc/rawpair/rawpair.env /etc/systemd/system/rawpair-host.service /usr/local/bin/rawpair; do
+    if [[ -e $path || -L $path ]]; then echo "Existing installation at $path; see docs/PACKAGES.md migration instructions." >&2; exit 1; fi
+  done
+  for account in rawpair rawpair-collab; do
+    if getent passwd "$account" >/dev/null || getent group "$account" >/dev/null; then
+      echo "Existing $account identity; see docs/PACKAGES.md migration instructions." >&2; exit 1
+    fi
+  done
+fi
 if [[ ! -x phoenix-app/_build/prod/rel/rawpair/bin/rawpair || ! -d yjs-server/node_modules ]]; then
   echo 'Run native/build.sh first.' >&2; exit 1
 fi
-if [[ ! -f /etc/orqos/host.env ]]; then echo 'Install Orqos native host mode first.' >&2; exit 1; fi
+install -d -o root -g root -m 0755 /opt/rawpair /opt/rawpair-collaboration /etc/rawpair /usr/lib/rawpair /var/lib/rawpair
+printf '%s\n' rawpair-native-v1 > /var/lib/rawpair/source-owner
 for account in rawpair rawpair-collab; do
   if ! getent passwd "$account" >/dev/null; then
-    useradd --system --user-group --home-dir "/var/lib/$account" --shell /usr/sbin/nologin "$account"
+    if getent group "$account" >/dev/null; then
+      useradd --system --gid "$account" --home-dir "/var/lib/$account" --shell /usr/sbin/nologin "$account"
+    else
+      useradd --system --user-group --home-dir "/var/lib/$account" --shell /usr/sbin/nologin "$account"
+    fi
   fi
 done
-install -d -o root -g root -m 0755 /opt/rawpair /opt/rawpair-collaboration /etc/rawpair
-install -d -o root -g root -m 0700 /etc/rawpair/tls
-install -d -o rawpair -g rawpair -m 0700 /var/lib/rawpair
+install -d -o rawpair -g rawpair -m 0700 /var/lib/rawpair/tmp
 install -d -o rawpair-collab -g rawpair-collab -m 0700 /var/lib/rawpair-collaboration
+install -m 0600 /dev/null /var/lib/rawpair/setup-required
+for unit in rawpair-host rawpair-collaboration; do
+  if systemctl cat "$unit" >/dev/null 2>&1; then systemctl stop "$unit"; fi
+done
 cp -a phoenix-app/_build/prod/rel/rawpair/. /opt/rawpair/
+python3 -c 'from pathlib import Path; Path("/opt/rawpair/releases/COOKIE").unlink(missing_ok=True)'
 cp -a yjs-server/server.mjs yjs-server/package.json yjs-server/package-lock.json yjs-server/node_modules /opt/rawpair-collaboration/
 chown -R root:root /opt/rawpair /opt/rawpair-collaboration
-install -o root -g root -m 0644 "$cert" /etc/rawpair/tls/cert.pem
-install -o root -g root -m 0600 "$key" /etc/rawpair/tls/key.pem
-python3 native/configure.py "$management_host" "$preview_domain"
-install -o root -g root -m 0644 native/rawpair-host.service native/rawpair-collaboration.service /etc/systemd/system/
+install -o root -g root -m 0644 native/setup.py native/configure.py native/nginx.conf.template packaging/compatibility.json /usr/lib/rawpair/
+awk '{print $2}' phoenix-app/_build/prod/rel/rawpair/releases/start_erl.data > /usr/lib/rawpair/version
+install -o root -g root -m 0644 native/rawpair-host.service native/rawpair-collaboration.service /usr/lib/systemd/system/
+printf '%s\n' '#!/bin/sh' 'exec /usr/bin/python3 /usr/lib/rawpair/setup.py "$@"' > /usr/local/bin/rawpair
+chmod 0755 /usr/local/bin/rawpair
 systemctl daemon-reload
-nginx -t
-printf '%s\n' 'Installed. Run migrations and create accounts as described in docs/NATIVE_SETUP.md, then:' \
-  '  systemctl enable --now rawpair-host rawpair-collaboration' \
-  '  systemctl reload nginx'
+arguments=(setup)
+if [[ $# == 1 ]]; then arguments+=(--config "$1"); fi
+exec /usr/bin/python3 /usr/lib/rawpair/setup.py "${arguments[@]}"

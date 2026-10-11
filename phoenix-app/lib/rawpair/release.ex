@@ -28,6 +28,31 @@ defmodule Rawpair.Release do
       end)
   end
 
+  # Retries after a crash must not create a duplicate or change an existing password.
+  def bootstrap_user do
+    load_app()
+
+    {:ok, _, _} =
+      Ecto.Migrator.with_repo(RawPair.Repo, fn _repo ->
+        username = System.fetch_env!("RAWPAIR_USERNAME")
+        password = System.fetch_env!("RAWPAIR_PASSWORD")
+
+        case RawPair.Accounts.by_username(username) do
+          nil ->
+            case RawPair.Accounts.create_user(username, password, true) do
+              {:ok, _user} -> :ok
+              {:error, _error} -> raise "Initial account creation failed"
+            end
+
+          _user ->
+            case RawPair.Accounts.authenticate(username, password) do
+              {:ok, _user} -> :ok
+              _ -> raise "Existing initial account does not match saved setup credentials"
+            end
+        end
+      end)
+  end
+
   def adopt_legacy do
     load_app()
 

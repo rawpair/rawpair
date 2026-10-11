@@ -1,71 +1,54 @@
-#!/bin/bash
-set -e
-ENV_FILE="/etc/rawpair/rawpair.env"
-DEFAULT_ENV_FILE="/etc/rawpair/rawpair.env.default"
-SERVICE_NAME="rawpair.service"
-RAWPAIR_USER="rawpair"
-RAWPAIR_GROUP="rawpair"
-
-if ! getent group "$RAWPAIR_GROUP" >/dev/null; then
-  echo "Creating group $RAWPAIR_GROUP" 
-  groupadd --system "$RAWPAIR_GROUP"
-fi
-
-if ! id -u "$RAWPAIR_USER" >/dev/null 2>&1; then
-  echo "Creating user $RAWPAIR_USER" 
-  useradd --system --no-create-home --shell /usr/sbin/nologin --gid "$RAWPAIR_GROUP" "$RAWPAIR_USER"
-fi
-
-mkdir -p /etc/rawpair
-chown "$RAWPAIR_USER:$RAWPAIR_GROUP" /etc/rawpair
-
-echo "Installing default environment template at $DEFAULT_ENV_FILE"
-chown "$RAWPAIR_USER:$RAWPAIR_GROUP" "$DEFAULT_ENV_FILE"
-chmod 644 "$DEFAULT_ENV_FILE"
-
-if [ ! -f "$ENV_FILE" ]; then
-  echo "Generating initial environment config at $ENV_FILE"
-  cp "$DEFAULT_ENV_FILE" "$ENV_FILE"
-
-  arch=$(uname -m)
-  case "$arch" in
-    x86_64) docker_platform="linux/amd64" ;;
-    aarch64) docker_platform="linux/arm64" ;;
-    *) echo "Unsupported architecture: $arch" >&2; exit 1 ;;
-  esac
-
-  sed -i "s|^SECRET_KEY_BASE=.*|SECRET_KEY_BASE=$(openssl rand -hex 64)|" "$ENV_FILE"
-  sed -i "s|^RAWPAIR_DOCKER_PLATFORM=.*|RAWPAIR_DOCKER_PLATFORM=$docker_platform|" "$ENV_FILE"
-  chown "$RAWPAIR_USER:$RAWPAIR_GROUP" "$ENV_FILE"
-  chmod 640 "$ENV_FILE"
-else
-  echo "Environment file already exists, preserving values"
-  NEW_KEYS=$(grep -E '^[A-Z0-9_]+=' "$DEFAULT_ENV_FILE" | cut -d= -f1)
-  for key in $NEW_KEYS; do
-    if ! grep -q "^$key=" "$ENV_FILE"; then
-      echo "WARNING: Missing key '$key' in your rawpair.env"
+#!/bin/sh
+set -eu
+[ "${1:-}" = configure ] || exit 0
+install -d -o root -g root -m 0755 /etc/rawpair /var/lib/rawpair
+# Write before account creation so interrupted configure can safely retry.
+printf '%s\n' rawpair-native-v1 > /var/lib/rawpair/package-owner
+chmod 0600 /var/lib/rawpair/package-owner
+for account in rawpair rawpair-collab; do
+  if ! getent passwd "$account" >/dev/null; then
+    if getent group "$account" >/dev/null; then
+      useradd --system --gid "$account" --home-dir "/var/lib/$account" --shell /usr/sbin/nologin "$account"
+    else
+      useradd --system --user-group --home-dir "/var/lib/$account" --shell /usr/sbin/nologin "$account"
     fi
-  done
-fi
-
-mkdir -p /opt/rawpair/tmp
-chown -R "$RAWPAIR_USER:$RAWPAIR_GROUP" /opt/rawpair/tmp
-# Ensure CLI is accessible in PATH
-if [ -f "/opt/rawpair-cli/bin/rawpair-cli" ]; then
-  # Remove existing symlink if it exists
-  if [ -L "/usr/local/bin/rawpair-cli" ]; then
-    rm -f /usr/local/bin/rawpair-cli
   fi
-  ln -sf /opt/rawpair-cli/bin/rawpair-cli /usr/local/bin/rawpair-cli
-  echo "Symlink created for rawpair-cli in /usr/local/bin"
-else
-  echo "Warning: rawpair-cli binary not found in /opt/rawpair-cli/bin"
+done
+# Refuse a replaced service identity rather than adopting an unrelated account.
+python3 - <<'PYTHON'
+import grp, json, os, pwd, tempfile
+from pathlib import Path
+path = Path('/var/lib/rawpair/service-accounts.json')
+accounts = {}
+for name in ('rawpair', 'rawpair-collab'):
+    user = pwd.getpwnam(name)
+    if not 0 < user.pw_uid < 1000 or not 0 < user.pw_gid < 1000 or user.pw_dir != '/var/lib/' + name or user.pw_shell != '/usr/sbin/nologin' or grp.getgrgid(user.pw_gid).gr_name != name:
+        raise SystemExit('Service identity differs from installer ownership; restore it before configuring packages')
+    if any(name in group.gr_mem and group.gr_gid != user.pw_gid for group in grp.getgrall()):
+        raise SystemExit('Service accounts must not have supplementary groups')
+    accounts[name] = [user.pw_uid, user.pw_gid, user.pw_dir, user.pw_shell]
+if path.exists():
+    if json.loads(path.read_text()) != accounts:
+        raise SystemExit('Service UID/GID ownership changed; restore the original accounts')
+else:
+    descriptor, temporary = tempfile.mkstemp(prefix='.service-accounts-', dir=path.parent)
+    with os.fdopen(descriptor, 'w') as stream:
+        json.dump(accounts, stream)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, path)
+    directory = os.open(path.parent, os.O_DIRECTORY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+PYTHON
+install -d -o rawpair -g rawpair -m 0700 /var/lib/rawpair/tmp
+install -d -o rawpair-collab -g rawpair-collab -m 0700 /var/lib/rawpair-collaboration
+# Prevent configured units restarting after a reboot before upgrade validation.
+install -o root -g root -m 0600 /dev/null /var/lib/rawpair/setup-required
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  systemctl stop rawpair-host.service rawpair-collaboration.service
 fi
-
-if getent group docker >/dev/null; then
-  usermod -aG docker "$RAWPAIR_USER"
-fi
-
-systemctl daemon-reexec
-systemctl daemon-reload
-systemctl enable "$SERVICE_NAME"
+printf '%s\n' 'RawPair installed and stopped. Complete configuration with: sudo rawpair setup'

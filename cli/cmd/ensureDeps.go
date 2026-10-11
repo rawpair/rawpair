@@ -42,8 +42,9 @@ var depCommands = map[string][]string{
 }
 
 var ensureDepsCmd = &cobra.Command{
-	Use:   "ensureDeps",
-	Short: "Install build dependencies required by Erlang and Elixir asdf plugins",
+	Use:        "ensureDeps",
+	Deprecated: "Legacy source/Docker setup; use sudo rawpair setup for native packages.",
+	Short:      "Install build dependencies required by Erlang and Elixir asdf plugins",
 	Long: `Installs system packages required to build Erlang and Elixir via asdf plugins.
 
 This command detects your Linux distribution and outputs

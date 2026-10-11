@@ -1,5 +1,7 @@
 # Native host MVP delivery handoff
 
+Native package/bootstrap/setup follow-on: [PACKAGE_HANDOFF.md](PACKAGE_HANDOFF.md) records the 2026-10-11 implementation and available checks; [PACKAGES.md](PACKAGES.md) is the package operator guide.
+
 Updated: 2026-10-11. The implementation and operator assets for [goal.txt](../goal.txt) are delivered across `~/dev/rawpair` and `~/dev/orqos`. No commits, pushes, merges, publication, system installation or live deployment were performed. The user owns those next steps. Builds and automated checks provide evidence; the complete privileged-host/browser workflow remains unverified.
 
 ## Implemented behavior

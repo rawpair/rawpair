@@ -1,6 +1,6 @@
 # Deployment
 
-Use [NATIVE_SETUP.md](docs/NATIVE_SETUP.md) for the implemented Linux systemd deployment through Orqos. It supplies the build/install scripts, service units, workspace accounts, database/login bootstrap, nginx gateway and local TLS instructions without Docker or Kubernetes.
+Use [PACKAGES.md](docs/PACKAGES.md) for prebuilt Ubuntu 24.04 packages, bootstrap, setup and upgrades. Use [NATIVE_SETUP.md](docs/NATIVE_SETUP.md) for the implemented Linux systemd deployment through Orqos. It supplies the build/install scripts, service units, workspace accounts, database/login bootstrap, nginx gateway and local TLS instructions without Docker or Kubernetes.
 
 Use [CONTAINER_SETUP.md](docs/CONTAINER_SETUP.md) with `compose.container.example.yml` for the separate Docker backend. It includes the authenticated collaboration and terminal gateway required by the current application. The [handoff](docs/HANDOFF.md) records available checks and operational limits.
 

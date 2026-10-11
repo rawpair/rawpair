@@ -14,7 +14,7 @@ builds:
     goarm:
       - 7
     ldflags:
-      - -s -w
+      - -s -w -X github.com/rawpair/rawpair/cli/cmd.Version={{.Version}}
     env:
       - CGO_ENABLED=0
 
@@ -24,6 +24,7 @@ archives:
       - none*
 
 release:
+  draft: true
   github:
     owner: rawpair
     name: rawpair

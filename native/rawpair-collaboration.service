@@ -2,6 +2,9 @@
 Description=RawPair authenticated collaborative documents
 After=network-online.target rawpair-host.service
 
+ConditionPathExists=/etc/rawpair/rawpair.env
+ConditionPathExists=!/var/lib/rawpair/setup-required
+
 [Service]
 Type=simple
 User=rawpair-collab

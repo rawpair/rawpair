@@ -1,4 +1,6 @@
-# Native RawPair setup
+# Native RawPair source setup
+
+For installation without build toolchains, use [prebuilt Ubuntu packages](PACKAGES.md). The source path below uses the same installed setup/provisioning helpers with separate source ownership. Older manual installations require the explicit migration described in PACKAGES.md.
 
 This is the native Linux path for RawPair and Orqos. It uses no Docker daemon, Kubernetes, stack images, or container startup/shutdown scripts. The existing container instructions remain in [DEPLOYMENT.md](../DEPLOYMENT.md). Native operations and the control contract are in [Orqos HOST_API.md](../../orqos/docs/HOST_API.md).
 
@@ -33,7 +35,7 @@ sudo systemctl enable --now orqos-host
 sudo journalctl -u orqos-host -n 50 --no-pager
 ```
 
-The example inventory already maps those two accounts to their home/project directories, distinct network indexes, and ceilings of 2 CPU cores, 2048 MiB RAM, and 512 tasks. Choose a different `subnet` before starting if `10.231.0.0/16` conflicts with LAN/VPN routes. Workspace `index` values allocate distinct /30s within that /16. DNS must use public IPv4 resolvers reachable through your router. The installer enables `net.ipv4.ip_forward=1` through its own sysctl file. Existing firewall tables/default policies are preserved. If another firewall drops forwarded packets, allow outbound traffic and established replies for the configured workspace range in that firewall; inspect `nft list ruleset`, never flush existing tables. Private LAN dependencies and IPv6 egress are not supported in this MVP.
+The provisioner adds inventory mappings for those two accounts to their home/project directories, distinct network indexes, and ceilings of 2 CPU cores, 2048 MiB RAM, and 512 tasks. Choose a different `subnet` before starting if `10.231.0.0/16` conflicts with LAN/VPN routes. Workspace `index` values allocate distinct /30s within that /16. DNS must use public IPv4 resolvers reachable through your router. The installer enables `net.ipv4.ip_forward=1` through its own sysctl file. Existing firewall tables/default policies are preserved. If another firewall drops forwarded packets, allow outbound traffic and established replies for the configured workspace range in that firewall; inspect `nft list ruleset`, never flush existing tables. Private LAN dependencies and IPv6 egress are not supported in this MVP.
 
 The daemon listens on loopback port 9080 and requires the random bearer secret in `/etc/orqos/host.env` for every host-control or forwarding request. Its root-owned helper accepts only the documented action vocabulary and operator inventory. Never publish this control port. The installer preserves existing inventory and secrets. It does not start workspace runtimes.
 
@@ -58,25 +60,17 @@ For collaborators on another machine, use hostnames resolving to the server's LA
 ```sh
 cd ~/dev/rawpair
 native/build.sh
-sudo native/install.sh /tmp/rawpair-local.pem /tmp/rawpair-local-key.pem
-sudo native/admin.sh migrate
-sudo native/admin.sh create-user
-sudo native/admin.sh create-user
-sudo systemctl enable --now rawpair-host rawpair-collaboration
-sudo systemctl reload nginx
+sudo native/install.sh
+# Follow the wizard, or pass a protected JSON config as the sole argument.
+sudo rawpair user add
+sudo rawpair doctor
 ```
 
 The account command prompts for username and password without echoing the password. Passwords need 12..1024 UTF-8 bytes. Accounts are operator-created; there is no open registration. Give each collaborator an individual account. Owners grant workspace membership through the UI.
 
-The installer places the Phoenix release in `/opt/rawpair`, the Node collaboration service in `/opt/rawpair-collaboration`, TLS in `/etc/rawpair/tls`, and systemd units in `/etc/systemd/system`. Phoenix runs as unprivileged `rawpair`; collaboration runs as `rawpair-collab`. On a fresh database it creates the ordinary PostgreSQL role/database `rawpair`, generates all secrets without printing them, and renders the nginx site. If that PostgreSQL role already exists, create `/etc/rawpair/rawpair.env` from [native/rawpair.env.example](../native/rawpair.env.example) with the existing database URL and fresh secrets, then rerun installation. Keep that file root-owned, mode 0640 with group `rawpair`. `ORQOS_HOST_TOKEN` must match Orqos's root-owned file. `SECRET_KEY_BASE` needs 64 random bytes, encoded as base64; other secrets need at least 32 random bytes. The installer derives collaboration/proxy secrets from this file and never overwrites an existing RawPair environment.
+The source installer installs Phoenix in `/opt/rawpair`, collaboration in `/opt/rawpair-collaboration`, and shared setup helpers under `/usr/lib/rawpair`. It installs a source administration wrapper as `/usr/local/bin/rawpair`; the prebuilt package uses the Go CLI as `/usr/bin/rawpair`. Both invoke the same setup helper. Units are installed in `/usr/lib/systemd/system`. Persistent state and protected configuration remain outside the payloads.
 
-For custom domains:
-
-```sh
-sudo native/install.sh /path/to/cert.pem /path/to/key.pem pair.example.test apps.example.test
-```
-
-On a later hostname change, first update `PHX_HOST`, `CHECK_ORIGIN`, and `RAWPAIR_PREVIEW_DOMAIN` in the existing environment, supply the replacement certificate, and rerun the installer to regenerate nginx and collaboration configuration. nginx must have its standard `auth_request` module (Ubuntu's package includes it). Its native site listens on 443 and leaves existing sites intact; resolve any hostname/listener conflicts before reload. There is no mandatory HTTP listener: use the HTTPS URL directly.
+The wizard configures PostgreSQL, secrets, nginx, certificates, the first login and both default account slots, runs migrations and starts validated services. Select local mode to use mkcert as the invoking browser user, or remote mode to reference existing certificate paths. JSON input, TLS renewal, upgrade backups, recovery and diagnostics are described in [PACKAGES.md](PACKAGES.md). The earlier `native/install.sh CERT KEY [HOST PREVIEW]` interface has been replaced with `native/install.sh [PROTECTED_JSON]`.
 
 ## First projects and collaboration
 
@@ -115,7 +109,7 @@ Workspace unit names and service errors appear in Orqos observations (`GET /host
 
 Use the UI/API Stop for each runtime before shutting down the entire deployment. `systemctl stop rawpair-host rawpair-collaboration orqos-host` stops control services and deliberately leaves independently managed workspaces running. Remove Workspace first stops that runtime and releases registration/membership/application routes while preserving its account/home/project files. Delete Project Contents is a separate, exact-ID confirmation while stopped; it preserves the home and project root and invalidates collaboration documents. Orqos removes only resources whose persisted ownership matches. Never use unit-name-prefix deletion or flush a shared firewall to clean up.
 
-For upgrades, rebuild both repositories, reinstall their assets, run migrations, and restart control services. Keep `/etc/{rawpair,orqos}`, `/var/lib/orqos/host`, PostgreSQL, workspace homes, and `/var/lib/rawpair-collaboration` in backups; the latter contains unsaved collaborative document copies. Do not remove inventory accounts or change their user/home/project/index mappings while registrations exist. After removal, an operator may archive/delete the preserved home and remove the account. Uninstalling services/files is an explicit operator operation; installers do not destroy data.
+For source upgrades, rebuild both repositories, reinstall their source assets, run `sudo rawpair migrate` and `sudo rawpair setup`. For package upgrades, use the coordinated bootstrap flow in [PACKAGES.md](PACKAGES.md). Keep `/etc/{rawpair,orqos}`, `/var/lib/orqos/host`, PostgreSQL, workspace homes, and `/var/lib/rawpair-collaboration` in backups; the latter contains unsaved collaborative document copies. Do not remove inventory accounts or change their user/home/project/index mappings while registrations exist. After removal, an operator may archive/delete the preserved home and remove the account. Uninstalling services/files is an explicit operator operation; installers do not destroy data.
 
 Expired login/preview credentials can be pruned in PostgreSQL with `DELETE FROM user_sessions WHERE expires_at < now(); DELETE FROM preview_credentials WHERE expires_at < now();`. Logout immediately revokes the originating login and dependent private-preview/collaboration checks. Established proxy WebSockets are authorized at handshake; visibility/membership changes apply on their next connection. Yjs connections additionally recheck authorization every 15 seconds. Stop a workspace to terminate its existing terminal/application connections immediately.
 

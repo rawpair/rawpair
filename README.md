@@ -7,7 +7,7 @@
 **RawPair™** is a self-hosted, real-time collaborative development environment.
 It provides persistent project workspaces with a shared terminal and collaborative code editor for pair or mob programming.
 
-Native Linux workspaces run through Orqos using systemd, dedicated Unix accounts, cgroup limits and per-workspace network namespaces. Follow [native setup](docs/NATIVE_SETUP.md) or the separate [Docker setup](docs/CONTAINER_SETUP.md). The [delivery handoff](docs/HANDOFF.md) records implementation details, checks and limitations; [goal.txt](goal.txt) remains the canonical scope.
+Native Linux workspaces run through Orqos using systemd, dedicated Unix accounts, cgroup limits and per-workspace network namespaces. Use [prebuilt Ubuntu packages](docs/PACKAGES.md), [native source setup](docs/NATIVE_SETUP.md) or the separate [Docker setup](docs/CONTAINER_SETUP.md). The [delivery handoff](docs/HANDOFF.md) records implementation details, checks and limitations; [goal.txt](goal.txt) remains the canonical scope.
 
 Built for fast, focused collaboration on your own infrastructure, RawPair also supports use cases like remote development, penetration testing, and red teaming, as long as it's done ethically and with proper authorization.
 
@@ -39,7 +39,7 @@ RawPair is built on a modern, production-grade foundation:
 - [Phoenix](https://github.com/phoenixframework/phoenix) ([Elixir](https://github.com/elixir-lang/elixir)) - handles real-time collaboration and session management
 - [Monaco](https://github.com/microsoft/monaco-editor) + [Yjs](https://github.com/yjs/yjs) - collaborative code editing in the browser
 - [ttyd](https://github.com/tsl0922/ttyd) + [tmux](https://github.com/tmux/tmux) - shared terminal sessions
-- [Orqos](https://github.com/rawpair/orqos) + Linux systemd/cgroups/network namespaces - native workspace execution
+- [Orqos](https://github.com/orqos-project/orqos) + Linux systemd/cgroups/network namespaces - native workspace execution
 - [Docker](https://github.com/docker) - optional container workspace backend
 - [Nginx](https://github.com/nginx/nginx) - reverse proxy and traffic routing for ttyd
 - [PostgreSQL](https://github.com/postgres/postgres) - workspace metadata persistence
@@ -56,9 +56,9 @@ See [rawpair/stacks](https://github.com/rawpair/stacks) for all supported dev en
 
 ## Setup
 
-Use [NATIVE_SETUP.md](docs/NATIVE_SETUP.md) for a normal Linux systemd host. It includes prerequisites, Orqos installation, workspace-account provisioning, PostgreSQL, Phoenix, collaboration, ttyd/tmux, nginx, local hostname/TLS trust, first login and operating instructions. Native mode needs no Docker, Kubernetes, image downloads or stack catalog. Host language tools are operator-installed or user-local.
+Use [PACKAGES.md](docs/PACKAGES.md) for prebuilt Ubuntu 24.04 installation, interactive/unattended setup, diagnostics and upgrades without build toolchains. Use [NATIVE_SETUP.md](docs/NATIVE_SETUP.md) to build from source on a normal Linux systemd host. It includes prerequisites, Orqos installation, workspace-account provisioning, PostgreSQL, Phoenix, collaboration, ttyd/tmux, nginx, local hostname/TLS trust, first login and operating instructions. Native mode needs no Docker, Kubernetes, image downloads or stack catalog. Host language tools are operator-installed or user-local.
 
-Use [CONTAINER_SETUP.md](docs/CONTAINER_SETUP.md) and `compose.container.example.yml` for the retained Docker backend, including authenticated terminals and collaboration. Existing stack images still provide container toolchains. This recipe replaces the old generic Yjs and unauthenticated proxy setup. The CLI, Ansible recipes and older compose files remain legacy container helpers; they do not install the current native services or secure gateway configuration.
+Use [CONTAINER_SETUP.md](docs/CONTAINER_SETUP.md) and `compose.container.example.yml` for the retained Docker backend, including authenticated terminals and collaboration. Existing stack images still provide container toolchains. This recipe replaces the old generic Yjs and unauthenticated proxy setup. The CLI quickStart/ensureDeps commands, Ansible recipes and older compose files remain legacy container helpers; they do not install the current native services or secure gateway configuration.
 
 Accounts are operator-created. Workspace owners add collaborators and control application visibility. The intended initial deployment is one Linux host for trusted collaborators. See [HANDOFF.md](docs/HANDOFF.md) for build/test evidence and live paths still unverified.
 

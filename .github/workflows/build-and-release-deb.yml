@@ -1,83 +1,114 @@
-name: Build and release RawPair .deb for amd64 and arm64
-
+name: Native Ubuntu packages (draft release)
 on:
   push:
-    tags:
-      - 'v*'
-
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: native-release-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  build-amd64:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Set up Elixir + Erlang
-        uses: erlef/setup-beam@v1
-        with:
-          elixir-version: '1.18.3'
-          otp-version: '27.3.2'
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24
-
-      - name: Build RawPair CLI
-        run: |
-          cd cli
-          go build -o ../rawpair-cli
-
-      - name: Install packaging dependencies
-        run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm
-
-      - name: Build RawPair .deb for amd64
-        run: make ARCH=amd64 RAW_VERSION=${{ github.ref_name }}
-
-      - name: Upload .deb to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            *.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-  build-arm64:
-    runs-on: [self-hosted, linux, arm64]
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     env:
-      ImageOS: ubuntu22
-
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Set up Elixir + Erlang
-        uses: erlef/setup-beam@v1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18.3'
           otp-version: '27.3.2'
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
-          go-version: 1.24
-
-      - name: Build RawPair CLI
+          go-version: '1.24.2'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+      - name: Install build and test dependencies
         run: |
-          cd cli
-          go build -o ../rawpair-cli
-
-      - name: Install packaging dependencies
-        run: sudo apt-get install -y ruby ruby-dev build-essential libssl-dev && sudo gem install --no-document fpm
-
-      - name: Build RawPair .deb for arm64
-        run: make ARCH=arm64 RAW_VERSION=${{ github.ref_name }}
-
-      - name: Upload .deb to GitHub Release
-        uses: softprops/action-gh-release@v2
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev libncurses-dev dpkg-dev python3 postgresql postgresql-client
+      - name: Check installer and setup behavior
+        run: |
+          go test ./cli/...
+          python3 -m unittest discover -s packaging/tests -v
+          npm --prefix yjs-server ci
+          npm --prefix yjs-server test
+      - name: Phoenix tests with an isolated temporary database
+        run: |
+          /usr/lib/postgresql/16/bin/initdb -D "$RUNNER_TEMP/rawpair-test-db" -U rawpairtest -A trust -E UTF8 --no-locale
+          /usr/lib/postgresql/16/bin/pg_ctl -D "$RUNNER_TEMP/rawpair-test-db" -l "$RUNNER_TEMP/rawpair-test-db.log" -o "-h 127.0.0.1 -p 55432 -k $RUNNER_TEMP" start
+          trap '/usr/lib/postgresql/16/bin/pg_ctl -D "$RUNNER_TEMP/rawpair-test-db" stop' EXIT
+          cd phoenix-app
+          mix deps.get
+          PGHOST=127.0.0.1 PGPORT=55432 PGUSER=rawpairtest RAWPAIR_BACKENDS=host mix test
+      - name: Build native runtime and package set
+        run: |
+          make RAW_VERSION="$RELEASE_TAG" ARCH=${{ matrix.arch }}
+          python3 packaging/release.py orqos --arch ${{ matrix.arch }} --output dist
+          python3 packaging/validate.py dist/*.deb
+      - name: Resolve package dependencies and install
+        run: |
+          sudo apt-get -s install "$PWD"/dist/*.deb
+          sudo apt-get install -y "$PWD"/dist/*.deb
+          sudo -H env GITHUB_ACTIONS=true SUDO_UID=0 SUDO_GID=0 SUDO_USER=root python3 packaging/host-smoke.py --tag "$RELEASE_TAG"
+      - name: Upgrade, resume, remove and preserve data
+        run: sudo -H env GITHUB_ACTIONS=true SUDO_UID=0 SUDO_GID=0 SUDO_USER=root python3 packaging/lifecycle-smoke.py --tag "$RELEASE_TAG" --dist "$PWD/dist"
+      - uses: actions/upload-artifact@v4
         with:
-          files: |
-            *.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          name: packages-${{ matrix.arch }}
+          path: dist/*.deb
+          if-no-files-found: error
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          path: dist
+          merge-multiple: true
+      - name: Assemble complete release
+        run: python3 packaging/release.py assemble --tag "$RELEASE_TAG" --output dist
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.deb
+            dist/manifest.json
+            dist/SHA256SUMS
+            dist/install.sh
+      - name: Create draft for operator review
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "$RELEASE_TAG" --notes-file packaging/RELEASE_NOTES.md
+          fi
+          gh release upload "$RELEASE_TAG" dist/*.deb dist/manifest.json dist/SHA256SUMS dist/install.sh --clobber

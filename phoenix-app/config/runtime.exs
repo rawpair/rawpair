@@ -34,10 +34,44 @@ if config_env() == :prod do
       For example: ecto://USER:PASS@HOST/DATABASE
       """
 
+  # Accept libpq TLS URI options used by setup's pg_dump/psql checks as well as
+  # Ecto's ssl=true spelling. Remove libpq-only keys before Ecto parses its URL.
+  database_uri = URI.parse(database_url)
+  database_query = URI.decode_query(database_uri.query || "")
+
+  database_ssl =
+    case database_query["sslmode"] do
+      nil ->
+        if database_query["ssl"] == "true", do: [verify: :verify_none], else: false
+
+      "disable" ->
+        false
+
+      "require" ->
+        [verify: :verify_none]
+
+      "verify-full" ->
+        case database_query["sslrootcert"] do
+          nil -> [verify: :verify_peer, cacerts: :public_key.cacerts_get()]
+          path -> [verify: :verify_peer, cacertfile: String.to_charlist(path)]
+        end
+
+      _ ->
+        raise "Unsupported DATABASE_URL sslmode"
+    end
+
+  ecto_query = Map.drop(database_query, ["sslmode", "sslrootcert", "ssl"])
+
+  database_url =
+    URI.to_string(%{
+      database_uri
+      | query: if(map_size(ecto_query) == 0, do: nil, else: URI.encode_query(ecto_query))
+    })
+
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :rawpair, RawPair.Repo,
-    # ssl: true,
+    ssl: database_ssl,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6

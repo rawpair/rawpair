@@ -5,6 +5,7 @@ export MIX_ENV=prod
 export RAWPAIR_BACKENDS=host
 mix deps.get
 (cd assets && npm ci)
+mix assets.setup
 mix assets.deploy
 mix release --overwrite
 cd ../yjs-server

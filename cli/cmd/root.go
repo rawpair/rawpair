@@ -8,16 +8,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version is injected by the release build.
+var Version = "dev"
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: "0.0.1",
+	Version: Version,
 	Use:     "rawpair",
 	Short:   "CLI tool for RawPair development environments",
-	Long: `RawPair CLI provides utilities to help set up and manage
-development environments for RawPair applications.
-
-Use the quickStart command to interactively choose architecture
-and stacks to pull Docker images for your environment.`,
+	Long: `Install, configure and diagnose RawPair native development workspaces.
+Start with sudo rawpair setup. Docker source setup commands are legacy.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
