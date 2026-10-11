@@ -42,6 +42,7 @@ def validate(path):
                 assert all(x in files for x in ('usr/bin/rawpair', 'usr/bin/rawpair-cli', 'usr/lib/rawpair/setup.py',
                                                'usr/lib/rawpair/configure.py', 'usr/lib/rawpair/compatibility.json',
                                                'usr/lib/systemd/system/rawpair-host.service',
+                                               'etc/needrestart/conf.d/rawpair.conf',
                                                'opt/rawpair-collaboration/server.mjs'))
                 assert any(re.fullmatch(r'opt/rawpair/erts-[^/]+/bin/beam.smp', x) for x in files)
                 assert any(x.endswith('/priv/static/cache_manifest.json') for x in files)

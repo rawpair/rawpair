@@ -80,6 +80,9 @@ def build(tag, arch, output, release, cli, collaboration):
     (stage / 'usr/lib/rawpair/version').write_text(tag[1:] + '\n')
     for name in ('rawpair-host.service', 'rawpair-collaboration.service'):
         copy(ROOT / 'native' / name, stage / 'usr/lib/systemd/system' / name)
+    copy(ROOT / 'packaging/needrestart.conf', stage / 'etc/needrestart/conf.d/rawpair.conf')
+    (stage / 'DEBIAN').mkdir(parents=True, exist_ok=True)
+    (stage / 'DEBIAN/conffiles').write_text('/etc/needrestart/conf.d/rawpair.conf\n')
     for name in ('preinst', 'postinst', 'prerm', 'postrm'):
         copy(ROOT / 'packaging' / (name + '.sh'), stage / 'DEBIAN' / name)
         (stage / 'DEBIAN' / name).chmod(0o755)

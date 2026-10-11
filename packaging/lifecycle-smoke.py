@@ -26,6 +26,8 @@ def main():
     inventory = Path('/etc/orqos/host.json').read_bytes()
     records = {p.name: json.loads(p.read_text()) for p in Path('/var/lib/orqos/host').glob('*.json')}
     running = next(record for record in records.values() if record['slot'] == 'project-b')
+    workspace_pid = subprocess.check_output(['systemctl', 'show', '-p', 'MainPID', '--value', running['unit']], text=True).strip()
+    assert int(workspace_pid) > 0
     orqos_version = json.loads(Path('/usr/lib/rawpair/compatibility.json').read_text())['orqos_version']
     current = args.tag[1:].replace('-', '~')
     upgrade = current + '+ci1'
@@ -61,6 +63,7 @@ def main():
     assert Path('/var/lib/rawpair/setup-required').exists()
     assert subprocess.run(['systemctl', 'is-active', '--quiet', 'rawpair-host']).returncode != 0
     assert subprocess.run(['systemctl', 'is-active', '--quiet', running['unit']]).returncode == 0
+    assert subprocess.check_output(['systemctl', 'show', '-p', 'MainPID', '--value', running['unit']], text=True).strip() == workspace_pid, 'Package upgrade restarted the workspace'
     assert Path('/etc/rawpair/rawpair.env').read_bytes() == original
     run('rawpair', 'setup')
     assert Path('/etc/rawpair/rawpair.env').read_bytes() == original
@@ -70,13 +73,17 @@ def main():
     # Upgrade must preserve every ownership token and independent workspace unit.
     assert json.loads(Path('/var/lib/orqos/host', running['id'] + '.json').read_text())['token'] == running['token']
     assert subprocess.run(['systemctl', 'is-active', '--quiet', running['unit']]).returncode == 0
+    assert subprocess.check_output(['systemctl', 'show', '-p', 'MainPID', '--value', running['unit']], text=True).strip() == workspace_pid, 'Setup restarted the workspace'
     run('rawpair', 'doctor', '--json')
     run('apt-get', 'remove', '-y', 'rawpair-native', 'rawpair', 'orqos-host')
     for record in records.values():
         assert subprocess.run(['systemctl', 'is-active', '--quiet', record['unit']]).returncode != 0
         assert Path(record['home'], 'project/smoke.txt').exists()
         assert Path('/var/lib/orqos/host', record['id'] + '.json').exists()
-    run('apt-get', 'purge', '-y', 'rawpair-native', 'rawpair', 'orqos-host')
+    # A removed metapackage has no files/configuration left, so apt no longer
+    # knows its locally installed name. dpkg handles that state and purges the
+    # remaining package hooks/configuration without needing an APT repository.
+    run('dpkg', '--purge', 'rawpair-native', 'rawpair', 'orqos-host')
     assert Path('/etc/rawpair/rawpair.env').read_bytes() == original
     assert Path('/etc/orqos/host.json').read_bytes() == inventory
     assert Path('/var/lib/rawpair-collaboration').is_dir()
