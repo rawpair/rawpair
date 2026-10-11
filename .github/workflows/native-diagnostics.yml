@@ -1,0 +1,45 @@
+name: Native account diagnostics
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  account:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+      - name: Prepare disposable runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y strace mkcert
+          curl -fL https://github.com/orqos-project/orqos/releases/download/v0.2.0/orqos-host_0.2.0_amd64.deb -o /tmp/orqos.deb
+          sudo apt-get install -y /tmp/orqos.deb
+          sudo useradd --system --user-group --home-dir /var/lib/rawpair --shell /usr/sbin/nologin rawpair
+          sudo useradd --system --user-group --home-dir /var/lib/rawpair-collab --shell /usr/sbin/nologin rawpair-collab
+          make build-cli RAW_VERSION=v0.0.2
+          sudo mkdir -p /usr/lib/rawpair
+          sudo cp native/configure.py /usr/lib/rawpair/
+          sudo cp native/setup.py /usr/lib/rawpair/original_setup.py
+      - name: Probe nested account creation
+        run: |
+          cat > /tmp/setup-probe.py <<'PY'
+          import fcntl, os, subprocess
+          import original_setup as setup
+          os.umask(0o077)
+          subprocess.run(['mkcert', '-cert-file', '/tmp/test-cert.pem', '-key-file', '/tmp/test-key.pem', 'rawpair.localhost', '*.apps.rawpair.localhost'], check=True)
+          with open('/tmp/rawpair-setup.lock', 'a') as lock:
+              fcntl.flock(lock, fcntl.LOCK_EX)
+              setup.run(['orqos-host-admin', 'init'])
+              setup.run(['strace', '-f', '-e', 'trace=process,flock,fcntl,poll,clock_nanosleep', '-o', '/tmp/provision.trace', 'orqos-host-admin', 'provision', 'project-a'])
+          PY
+          sudo cp /tmp/setup-probe.py /usr/lib/rawpair/setup.py
+          sudo -H env GITHUB_ACTIONS=true SUDO_UID=0 SUDO_GID=0 SUDO_USER=root dist/rawpair setup
+      - name: Diagnostic output
+        if: always()
+        run: |
+          sudo tail -150 /tmp/provision.trace || true
+          sudo ps -eo pid,ppid,stat,wchan:32,comm
+          sudo ls -l /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock || true
