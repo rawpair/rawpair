@@ -12,6 +12,7 @@ import socket
 import ssl
 import subprocess
 import sys
+import tempfile
 import time
 from urllib.parse import urlencode, urlsplit
 
@@ -71,11 +72,14 @@ def main():
     fixture = Path('/var/lib/rawpair/acceptance.json')
     config = {'mode': 'local', 'first_user': {'username': 'acceptance', 'password': password}}
     setup.write(fixture, json.dumps(config))
-    subprocess.run(['rawpair', 'setup', '--config', str(fixture)], check=True)
-    assert Path('/var/lib/rawpair/setup.json').stat().st_uid == 0
-    original = Path('/etc/rawpair/rawpair.env').read_bytes()
-    subprocess.run(['rawpair', 'setup', '--config', str(fixture)], check=True)
-    assert Path('/etc/rawpair/rawpair.env').read_bytes() == original
+    # Ubuntu homes and installer download folders can be private. The runtime
+    # account must not inherit that inaccessible directory for release tasks.
+    with tempfile.TemporaryDirectory(prefix='rawpair-private-cwd-', dir='/root') as private:
+        subprocess.run(['rawpair', 'setup', '--config', str(fixture)], check=True, cwd=private)
+        assert Path('/var/lib/rawpair/setup.json').stat().st_uid == 0
+        original = Path('/etc/rawpair/rawpair.env').read_bytes()
+        subprocess.run(['rawpair', 'setup', '--config', str(fixture)], check=True, cwd=private)
+        assert Path('/etc/rawpair/rawpair.env').read_bytes() == original
     subprocess.run(['rawpair', 'doctor', '--json'], check=True)
     member_password = secrets.token_urlsafe(32)
     setup.release('create_user', {'username': 'collaborator', 'password': member_password})

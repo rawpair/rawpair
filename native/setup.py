@@ -31,8 +31,8 @@ HERE = Path(__file__).resolve().parent
 UNITS = ['rawpair-host', 'rawpair-collaboration']
 
 
-def run(args, *, env=None, input=None, visible=False):
-    result = subprocess.run(args, input=input, env=env, text=True, capture_output=True)
+def run(args, *, env=None, input=None, visible=False, cwd=None):
+    result = subprocess.run(args, input=input, env=env, text=True, capture_output=True, cwd=cwd)
     if result.returncode:
         # Neither database URLs nor supplied passwords belong in error output.
         detail = ': ' + result.stderr.strip() if Path(args[0]).name in ('orqos-host-admin', 'nginx') else ''
@@ -351,13 +351,15 @@ def release(action, login=None):
         env.update(RAWPAIR_USERNAME=login['username'], RAWPAIR_PASSWORD=login['password'])
     args = ['runuser', '-u', 'rawpair', '--', '/opt/rawpair/bin/rawpair', 'eval',
             'Rawpair.Release.' + action + '()']
+    # The invoking user's home/download directory may be private. ERTS must
+    # start in a directory the unprivileged runtime account can traverse.
     if action == 'migrate':
-        result = subprocess.run(args, env=env, text=True, capture_output=True)
+        result = subprocess.run(args, env=env, text=True, capture_output=True, cwd='/opt/rawpair')
         write(STATE / 'migration.log', result.stdout + result.stderr)
         if result.returncode:
             raise RuntimeError('Migration failed; inspect /var/lib/rawpair/migration.log, recover if needed and rerun setup')
         return result.stdout.strip()
-    return run(args, env=env)
+    return run(args, env=env, cwd='/opt/rawpair')
 
 
 def backup(state):

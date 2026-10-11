@@ -61,3 +61,9 @@ RawPair v0.0.3 pins Orqos v0.2.3 and supports Ubuntu 24.04 and 26.04 on amd64 an
 The schema-1 manifests retain `ubuntu: "24.04"` for the build baseline and declare runtime support in `ubuntu_versions: ["24.04", "26.04"]`. The bootstrap and installed setup both enforce the selected package's platform support. Legacy manifests without the list remain 24.04-only. Do not replace or relabel older published assets.
 
 Local follow-up validation passed 29 RawPair Python tests, including both OS/CPU selections, invalid compatibility metadata, legacy release refusal on 26.04 and installed setup checks. Orqos's 3 file-boundary and 9 administration/release tests passed. Published release notes record the hosted workflow results; the earlier delivery table and limits above describe their original point in time. Full visual Monaco and interactive wizard acceptance remain hands-on checks.
+
+## Private-directory setup recovery
+
+Local dogfooding exposed an Erlang startup failure when a release task inherited an operator's private working directory. The unprivileged `rawpair` account cannot traverse a mode-0700 installer folder or a mode-0750 user home. Release migrations and account tasks now explicitly start from `/opt/rawpair`. The installed acceptance script runs fresh and repeated setup from a root-only temporary directory on all four Ubuntu/CPU runners to cover this case.
+
+On v0.0.3, an affected setup can be resumed without reinstalling or changing directory permissions: run `cd /opt/rawpair` followed by `sudo rawpair setup`. Saved configuration and the initial account credentials are reused. The permanent fix is included starting with v0.0.4. The local Python regression suite still passes all 29 tests.
