@@ -71,6 +71,16 @@ class SetupValidation(unittest.TestCase):
         self.assertIn('listen [::1]:443 ssl;', local)
         self.assertIn('ssl_certificate /etc/letsencrypt/live/pair/fullchain.pem;', remote)
 
+    def test_tls_hostname_check_requires_positive_result_even_with_zero_exit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            key = Path(directory) / 'key.pem'
+            key.write_text('not reached: hostname validation must fail first')
+            key.chmod(0o600)
+            for output in ('Hostname missing.example.com does NOT match certificate', '', 'unexpected output'):
+                with self.subTest(output=output), patch.object(setup, 'run', return_value=output):
+                    with self.assertRaisesRegex(ValueError, 'does not cover management hostname'):
+                        setup.tls_validate('/cert.pem', str(key), 'missing.example.com', 'apps.example.com')
+
     def test_tls_checks_mismatch_wildcard_expiry_and_key_permissions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

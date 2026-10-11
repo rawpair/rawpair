@@ -191,9 +191,13 @@ def tls_validate(cert, key, management, preview):
     except RuntimeError as error:
         raise ValueError('Certificate is unreadable, expired or expires within 24 hours; renew it') from error
     try:
-        run(['openssl', 'x509', '-in', cert, '-noout', '-checkhost', management])
+        hostname_check = run(['openssl', 'x509', '-in', cert, '-noout', '-checkhost', management])
     except RuntimeError as error:
         raise ValueError('Certificate does not cover management hostname ' + management) from error
+    # Some supported OpenSSL versions print a mismatch but still exit zero.
+    # Accept only an explicit positive result, rather than the exit code alone.
+    if hostname_check != f'Hostname {management} does match certificate':
+        raise ValueError('Certificate does not cover management hostname ' + management)
     # checkhost alone would accept one explicit app name. Require wildcard SAN.
     sans = run(['openssl', 'x509', '-in', cert, '-noout', '-ext', 'subjectAltName'])
     if 'DNS:*.' + preview not in [part.strip() for part in sans.replace('\n', ',').split(',')]:
