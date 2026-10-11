@@ -1,8 +1,9 @@
 {
   "schema": 1,
   "ubuntu": "24.04",
+  "ubuntu_versions": ["24.04", "26.04"],
   "orqos_repository": "orqos-project/orqos",
-  "orqos_tag": "v0.2.2",
-  "orqos_version": "0.2.2",
+  "orqos_tag": "v0.2.3",
+  "orqos_version": "0.2.3",
   "architectures": ["amd64", "arm64"]
 }

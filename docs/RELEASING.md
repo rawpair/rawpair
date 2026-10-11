@@ -1,10 +1,12 @@
 # Release native RawPair packages
 
-1. Follow the [Orqos release procedure](https://github.com/orqos-project/orqos/blob/main/docs/PACKAGES.md#releases) and release Orqos `v0.2.2` first. Its pipeline checks Cargo/tag/lock versions, builds both native architectures and packages helpers alongside the retained binary downloads, validates packages and uploads a draft. Review and publish that release.
+1. Follow the [Orqos release procedure](https://github.com/orqos-project/orqos/blob/main/docs/PACKAGES.md#releases) and release Orqos `v0.2.3` first. Its pipeline checks Cargo/tag/lock versions, builds both native architectures and packages helpers alongside the retained binary downloads, validates packages and uploads a draft. Review and publish that release.
 2. Update [`packaging/compatibility.json`](../packaging/compatibility.json) deliberately whenever changing Orqos compatibility. Never substitute its latest release. Set a RawPair `vMAJOR.MINOR.PATCH` tag. The tag supplies the Phoenix, CLI and Debian versions; inconsistent or missing metadata fails packaging.
 3. RawPair's workflow builds on fixed GitHub-hosted `ubuntu-24.04` and `ubuntu-24.04-arm` runners with Go 1.24.2, Elixir 1.18.3, OTP 27.3.2 and Node 22.14.0. These are standard public-repository runners; no self-hosted runner is needed. See [GitHub runner documentation](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
-4. CI verifies unit tests, package payloads/metadata/permissions, dependency resolution, fresh/repeated unattended setup, two installed workspaces, shared files/editor/terminal, private previews, independent stop, control restarts, coordinated upgrades and data-preserving removal/purge on disposable architecture runners. `packaging/host-smoke.py` and `lifecycle-smoke.py` refuse ordinary hosts. Privileged browser/network acceptance is a CI check, not something package builds silently deploy on the operator's workstation.
-5. After both architecture jobs pass, CI assembles the package sets, metapackage, version/artifact manifest, `SHA256SUMS`, bootstrap and GitHub build-provenance attestations, then creates a draft release. It uses repository-scoped `github.token` permissions; no PAT/signing-key service is needed. Review and publish manually. It refuses to overwrite an already-published release.
+4. CI verifies unit tests, package payloads/metadata/permissions, dependency resolution, fresh/repeated unattended setup, two installed workspaces, shared files/editor/terminal, private previews, independent stop, control restarts, coordinated upgrades and data-preserving removal/purge on disposable runners for Ubuntu 24.04 and 26.04, each on amd64 and arm64. The 26.04 jobs download and install the exact packages produced on 24.04; they do not rebuild them. `packaging/host-smoke.py` and `lifecycle-smoke.py` refuse ordinary hosts. Privileged browser/network acceptance is a CI check, not something package builds silently deploy on the operator's workstation.
+5. After both architecture builds and both Ubuntu 26.04 compatibility jobs pass, CI assembles the package sets, metapackage, version/artifact manifest, `SHA256SUMS`, bootstrap and GitHub build-provenance attestations, then creates a draft release. It uses repository-scoped `github.token` permissions; no PAT/signing-key service is needed. Review and publish manually. It refuses to overwrite an already-published release.
+
+The schema-1 manifest retains `ubuntu: "24.04"` as the build baseline and adds `ubuntu_versions: ["24.04", "26.04"]` as the supported runtime versions. Consumers treat a legacy manifest without that list as supporting only its scalar `ubuntu` version. Change this list only alongside matching installer/setup checks and runtime CI coverage. Ubuntu 26.04 support starts with RawPair v0.0.3 and Orqos v0.2.3; do not change existing published assets.
 
 ## Triggering and reviewing the release
 
@@ -18,7 +20,7 @@ git push origin "$RAWPAIR_TAG"
 
 The tag must contain the reviewed implementation and compatibility manifest. To retry an existing tag, open **Actions → Native Ubuntu packages (draft release) → Run workflow**, select the intended workflow branch, and enter that exact existing tag. The workflow checks out the tag's contents.
 
-Wait for both architecture builds and the release job. Review the draft in [RawPair Releases](https://github.com/rawpair/rawpair/releases):
+Wait for both architecture builds, both Ubuntu 26.04 compatibility jobs and the release job. Review the draft in [RawPair Releases](https://github.com/rawpair/rawpair/releases):
 
 - Both `amd64` and `arm64` sets contain `rawpair` and the unchanged pinned `orqos-host` packages, plus the `rawpair-native` `all` metapackage.
 - `manifest.json` names the intended RawPair and Orqos versions and package filenames; `SHA256SUMS` covers the published assets.

@@ -6,7 +6,7 @@ This is the native Linux path for RawPair and Orqos. It uses no Docker daemon, K
 
 ## Host prerequisites
 
-Use an Ubuntu 24.04 systemd host (the setup helper enforces this version), with cgroup v2, Linux 5.6+ (`openat2`), a nonconflicting private IPv4 /16, and administrative access for installation. The native files API supports x86_64 and aarch64 Linux. Workspace homes live under `/srv/rawpair`, outside `/home`. Accounts are dedicated to workspaces: do not grant them sudo, shared groups, host SSH login, or control-plane secrets. The provisioner sets a locked password, nologin shell and expired account date, preventing SSH sessions and forwarding outside Orqos. Orqos validates these restrictions; systemd launches `/bin/bash` explicitly without PAM login.
+Use an Ubuntu 24.04 or 26.04 systemd host (the setup helper enforces these versions), with cgroup v2, Linux 5.6+ (`openat2`), a nonconflicting private IPv4 /16, and administrative access for installation. The native files API supports x86_64 and aarch64 Linux. Workspace homes live under `/srv/rawpair`, outside `/home`. Accounts are dedicated to workspaces: do not grant them sudo, shared groups, host SSH login, or control-plane secrets. The provisioner sets a locked password, nologin shell and expired account date, preventing SSH sessions and forwarding outside Orqos. Orqos validates these restrictions; systemd launches `/bin/bash` explicitly without PAM login.
 
 Install OS services and build prerequisites:
 
@@ -18,7 +18,7 @@ sudo apt install -y build-essential pkg-config libssl-dev git curl unzip python3
 sudo systemctl enable --now postgresql nginx
 ```
 
-Install Erlang/OTP 27 and Elixir 1.18 using your normal package source or version manager, and Rust stable with Cargo. The locked Phoenix dependencies require at least Elixir 1.16; Ubuntu 24.04's stock Elixir package is older, so use your existing asdf/mise installation or a suitable Elixir package source. Node 18+ is sufficient for collaboration; Node 20+ is a suitable operator choice. Verify `erl -version`, `elixir --version`, `mix --version`, `node --version`, and `cargo --version` before building. The delivery checks used OTP 27, Elixir 1.18.3, Node 24.21.0, Rust 1.99.0, and PostgreSQL 18; PostgreSQL 16 is the Ubuntu recipe's database. Confirm `ttyd --help` includes `--writable`, `--base-path`, and Unix socket support. No automatic workspace-language installer is included.
+Install Erlang/OTP 27 and Elixir 1.18 using your normal package source or version manager, and Rust stable with Cargo. The locked Phoenix dependencies require at least Elixir 1.16; Ubuntu 24.04's stock Elixir package is older, so use your existing asdf/mise installation or a suitable Elixir package source. Node 18+ is sufficient for collaboration; Node 20+ is a suitable operator choice. Verify `erl -version`, `elixir --version`, `mix --version`, `node --version`, and `cargo --version` before building. The delivery checks used OTP 27, Elixir 1.18.3, Node 24.21.0, Rust 1.99.0, and PostgreSQL 18. The distribution database is PostgreSQL 16 on Ubuntu 24.04 and PostgreSQL 18 on Ubuntu 26.04. Confirm `ttyd --help` includes `--writable`, `--base-path`, and Unix socket support. No automatic workspace-language installer is included.
 
 ## Get both repositories and install Orqos
 
@@ -74,7 +74,7 @@ Follow [Your first shared workspace](FIRST_WORKSPACE.md) after setup prints your
 
 ## Development databases
 
-Install a database toolchain on the host as operator (for example `sudo apt install postgresql-16`). In each workspace's terminal, use its own data and socket directory, not the control-plane PostgreSQL database:
+Install a database toolchain on the host as operator (`sudo apt install postgresql`). The example below uses version 16 on Ubuntu 24.04; use `/usr/lib/postgresql/18/bin` on Ubuntu 26.04. In each workspace's terminal, use its own data and socket directory, not the control-plane PostgreSQL database:
 
 ```sh
 mkdir -p "$HOME/.data/postgres" "$HOME/.data/pgsocket"

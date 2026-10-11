@@ -10,7 +10,7 @@ Jump to [installation](#install-and-open-rawpair), [remote access](#remote-setup
 
 ## What you need
 
-- A fresh Ubuntu **24.04** host, **amd64** or **arm64**, booted with systemd and cgroup v2. A normal Ubuntu installation or VM is the intended host.
+- A fresh Ubuntu **24.04 or 26.04** host, **amd64** or **arm64**, booted with systemd and cgroup v2. A normal Ubuntu installation or VM is the intended host.
 - An ordinary user with sudo access, internet access to GitHub and Ubuntu package repositories, and a browser.
 - Available TCP ports **443, 4000, 1234 and 9080**. Setup refuses conflicting listeners; use a fresh host if you already run another deployment.
 - A private IPv4 `/16` that does not overlap LAN/VPN routes. Setup defaults to `10.231.0.0/16`, checks it, and enables IPv4 forwarding. Existing forwarding firewalls may need an outbound/reply rule for this range; setup preserves them.
@@ -21,6 +21,8 @@ Jump to [installation](#install-and-open-rawpair), [remote access](#remote-setup
 | **Remote** | Friends/coworkers on other computers, including a LAN server | Management DNS, wildcard preview DNS, reachable HTTPS and a matching certificate/key; [details below](#remote-setup-dns-and-certificates) |
 
 The current release is for people you trust with a shared workspace. Use [the Docker recipe](CONTAINER_SETUP.md) if you want the separate container backend. Existing manual/legacy installations need the [migration procedure](#legacy-migration).
+
+Ubuntu 26.04 requires RawPair **v0.0.3 or later** with explicit `ubuntu_versions` compatibility metadata. The installer checks the selected release before downloading packages or invoking apt. Legacy manifests declare only their `ubuntu` version; older releases remain Ubuntu 24.04-only. Packages are built on Ubuntu 24.04 and the exact same files are tested on both Ubuntu versions for each CPU.
 
 ## Install and open RawPair
 
@@ -207,7 +209,7 @@ Orqos upgrades stop only its control daemon while replacing code; existing works
 
 ## Legacy migration
 
-Older RawPair packages, manual installs and accounts without the new package's ownership marker are detected before unpacking over their files. Automatic migration is deferred. Back up PostgreSQL, `/etc/{rawpair,orqos}`, `/var/lib/{rawpair,orqos,rawpair-collaboration}` and `/srv/rawpair`. Stop the old deployment and its workspaces explicitly. Prefer a fresh Ubuntu 24.04 host for package setup and a planned restoration of compatible data. For a same-host migration, archive the old service units, code/config paths and identities under an operator-reviewed procedure; keep ownership records with their data. Older uninstall hooks may delete configuration/accounts, so inspect them before removing a legacy package. Do not create new ownership markers to bypass checks. Retain your backups and old binaries until the new installation is verified.
+Older RawPair packages, manual installs and accounts without the new package's ownership marker are detected before unpacking over their files. Automatic migration is deferred. Back up PostgreSQL, `/etc/{rawpair,orqos}`, `/var/lib/{rawpair,orqos,rawpair-collaboration}` and `/srv/rawpair`. Stop the old deployment and its workspaces explicitly. Prefer a fresh Ubuntu 24.04 or 26.04 host for package setup and a planned restoration of compatible data. For a same-host migration, archive the old service units, code/config paths and identities under an operator-reviewed procedure; keep ownership records with their data. Older uninstall hooks may delete configuration/accounts, so inspect them before removing a legacy package. Do not create new ownership markers to bypass checks. Retain your backups and old binaries until the new installation is verified.
 
 Source installation remains documented in [NATIVE_SETUP.md](NATIVE_SETUP.md) and uses these shared configuration/provisioning helpers with distinct source ownership. Conversion to package management requires an explicit migration.
 

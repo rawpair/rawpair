@@ -15,6 +15,36 @@ import configure
 
 
 class SetupValidation(unittest.TestCase):
+    def test_system_checks_accept_both_ubuntu_releases_and_require_declared_compatibility(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compatibility = root / 'compatibility.json'
+            metadata = {'ubuntu': '24.04', 'ubuntu_versions': ['24.04', '26.04'], 'orqos_version': '0.2.3'}
+            compatibility.write_text(json.dumps(metadata))
+            with patch.object(setup, 'HERE', root), patch.object(setup, 'STATE', root), \
+                 patch.object(setup, 'installed_version', return_value='0.0.3'), \
+                 patch.object(setup, 'run', side_effect=lambda args: '0.0.3' if args[-1] == 'rawpair' else '0.2.3') as run, \
+                 patch.object(setup.shutil, 'which', return_value='/bin/fixture'), \
+                 patch.object(Path, 'is_dir', return_value=True), \
+                 patch.object(Path, 'exists', autospec=True, side_effect=lambda path: str(path) == '/sys/fs/cgroup/cgroup.controllers'), \
+                 patch.object(setup.platform, 'release', return_value='7.0.0'), \
+                 patch.object(setup.platform, 'machine', return_value='x86_64'), \
+                 patch.object(setup, 'values') as values:
+                for ubuntu in ('24.04', '26.04'):
+                    values.return_value = {'ID': 'ubuntu', 'VERSION_ID': ubuntu}
+                    setup.system_checks()
+                self.assertEqual(run.call_count, 4)
+                run.reset_mock()
+                del metadata['ubuntu_versions']
+                compatibility.write_text(json.dumps(metadata))
+                with self.assertRaisesRegex(ValueError, 'Installed release does not support'):
+                    setup.system_checks()
+                run.assert_not_called()
+                for distro, ubuntu in [('ubuntu', '22.04'), ('ubuntu', '25.10'), ('debian', '26.04')]:
+                    values.return_value = {'ID': distro, 'VERSION_ID': ubuntu}
+                    with self.subTest(distro=distro, ubuntu=ubuntu), self.assertRaisesRegex(ValueError, 'Supported OS'):
+                        setup.system_checks()
+
     def test_accepts_documented_local_defaults(self):
         config = setup.validate_config({'mode': 'local', 'first_user': {'username': 'owner', 'password': 'abcdefghijkl'}})
         self.assertEqual(config['management_host'], 'rawpair.localhost')

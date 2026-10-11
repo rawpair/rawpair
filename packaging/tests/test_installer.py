@@ -10,13 +10,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class Installer(unittest.TestCase):
-    def run_installer(self, arch='amd64', tag='v1.2.3', corrupt=False, os_release='ubuntu:24.04', flags=('--download-only',), latest=False):
+    def run_installer(self, arch='amd64', tag='v1.2.3', corrupt=False, os_release='ubuntu:24.04', flags=('--download-only',), latest=False, ubuntu_versions=('24.04', '26.04')):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             assets = directory / 'assets'
             assets.mkdir()
             packages = {a: [f'rawpair_1.2.3_{a}.deb', f'orqos-host_0.2.0_{a}.deb', 'rawpair-native_1.2.3_all.deb'] for a in ['amd64', 'arm64']}
             manifest = {'schema': 1, 'ubuntu': '24.04', 'rawpair_tag': tag, 'orqos_version': '0.2.0', 'packages': packages}
+            if ubuntu_versions is not None:
+                manifest['ubuntu_versions'] = list(ubuntu_versions)
             (assets / 'manifest.json').write_text(json.dumps(manifest))
             for name in set(sum(packages.values(), [])):
                 (assets / name).write_bytes(name.encode())
@@ -69,6 +71,34 @@ else:
         self.assertEqual(urls.count('/releases/latest'), 1)
         self.assertTrue(all('/download/v1.2.3/' in line for line in urls.splitlines()[1:]))
 
+    def test_both_ubuntu_versions_install_both_architecture_sets(self):
+        for ubuntu in ('24.04', '26.04'):
+            for arch in ('amd64', 'arm64'):
+                with self.subTest(ubuntu=ubuntu, arch=arch):
+                    result, urls, apt, setup = self.run_installer(os_release='ubuntu:' + ubuntu, arch=arch, flags=())
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn(f'rawpair_1.2.3_{arch}.deb', urls)
+                    self.assertIn('install -y', apt)
+                    self.assertEqual(setup.strip(), 'setup')
+
+    def test_legacy_release_is_24_only_and_cannot_install_on_26(self):
+        result, _, _, _ = self.run_installer(ubuntu_versions=None)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result, urls, apt, setup = self.run_installer(ubuntu_versions=None, os_release='ubuntu:26.04', flags=())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('does not support Ubuntu 26.04', result.stderr)
+        self.assertNotIn('.deb', urls)
+        self.assertEqual(apt + setup, '')
+
+    def test_invalid_ubuntu_compatibility_prevents_package_download_and_install(self):
+        for platforms in ((), ('24.04', '24.04'), ('24.04', '22.04'), ('26.04',)):
+            with self.subTest(platforms=platforms):
+                result, urls, apt, setup = self.run_installer(ubuntu_versions=platforms, flags=())
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('Invalid Ubuntu compatibility metadata', result.stderr)
+                self.assertNotIn('.deb', urls)
+                self.assertEqual(apt + setup, '')
+
     def test_checksum_failure_prevents_apt(self):
         result, _, apt, setup = self.run_installer(corrupt=True, flags=())
         self.assertNotEqual(result.returncode, 0)
@@ -76,7 +106,7 @@ else:
         self.assertEqual(apt + setup, '')
 
     def test_unsupported_systems_and_invalid_tags_do_not_download(self):
-        for kwargs in ({'arch': 'riscv64'}, {'os_release': 'debian:12'}, {'tag': 'latest'}, {'tag': 'v1.2.3/../../bad'}):
+        for kwargs in ({'arch': 'riscv64'}, {'os_release': 'debian:12'}, {'os_release': 'ubuntu:22.04'}, {'os_release': 'ubuntu:25.10'}, {'tag': 'latest'}, {'tag': 'v1.2.3/../../bad'}):
             result, urls, apt, setup = self.run_installer(**kwargs)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(urls + apt + setup, '')

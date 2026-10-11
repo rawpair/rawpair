@@ -21,7 +21,7 @@ for command in curl python3 sha256sum dpkg; do
 done
 # Reading this file does not execute its shell contents.
 os=$(python3 -c 'import shlex; d=dict(line.rstrip().split("=",1) for line in open("/etc/os-release") if "=" in line); print(shlex.split(d.get("ID", ""))[0]+":"+shlex.split(d.get("VERSION_ID", ""))[0])')
-[[ $os == ubuntu:24.04 ]] || { echo 'Supported OS: Ubuntu 24.04' >&2; exit 1; }
+[[ $os == ubuntu:24.04 || $os == ubuntu:26.04 ]] || { echo 'Supported OS: Ubuntu 24.04 or 26.04' >&2; exit 1; }
 arch=$(dpkg --print-architecture)
 [[ $arch == amd64 || $arch == arm64 ]] || { echo "Unsupported architecture: $arch" >&2; exit 1; }
 repository=rawpair/rawpair
@@ -52,11 +52,19 @@ for line in (root / 'SHA256SUMS').read_text().splitlines():
 if hashlib.sha256((root / 'manifest.json').read_bytes()).hexdigest() != sums.get('manifest.json'):
     raise SystemExit('Manifest checksum mismatch')
 PY
-mapfile -t packages < <(python3 - "$download/manifest.json" "$version" "$arch" <<'PY'
+mapfile -t packages < <(python3 - "$download/manifest.json" "$version" "$arch" "${os#ubuntu:}" <<'PY'
 import json, re, sys
 manifest = json.load(open(sys.argv[1]))
-tag, arch = sys.argv[2:]
-assert manifest['schema'] == 1 and manifest['rawpair_tag'] == tag and manifest['ubuntu'] == '24.04'
+tag, arch, ubuntu = sys.argv[2:]
+assert manifest['schema'] == 1 and manifest['rawpair_tag'] == tag
+# Legacy schema-1 releases support only their declared Ubuntu build target.
+platforms = manifest.get('ubuntu_versions', [manifest['ubuntu']])
+if (not isinstance(platforms, list) or not platforms or
+        any(value not in ('24.04', '26.04') for value in platforms) or
+        len(platforms) != len(set(platforms)) or manifest['ubuntu'] not in platforms):
+    raise SystemExit('Invalid Ubuntu compatibility metadata')
+if ubuntu not in platforms:
+    raise SystemExit(f'Release {tag} does not support Ubuntu {ubuntu}')
 ver = tag[1:].replace('-', '~')
 expected = [f'rawpair_{ver}_{arch}.deb', f'orqos-host_{manifest["orqos_version"]}_{arch}.deb', f'rawpair-native_{ver}_all.deb']
 assert all(re.fullmatch(r'[a-zA-Z0-9_.~-]+', name) for name in expected)

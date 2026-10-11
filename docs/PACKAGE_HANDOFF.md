@@ -38,7 +38,7 @@ Checking the documented configuration exposed a validator that rejected its own 
 
 The temporary PostgreSQL test service was stopped. It was a scratch database under `/tmp/rawpair-easy-install`, not a deployment database. No host packages were installed or control/workspace services deployed.
 
-## Validation limits and next release
+## Original delivery validation limits and next release
 
 This workstation is Ubuntu 26.04 amd64. Locally assembled `.deb` files validate packaging structure; they are not supported Ubuntu 24.04 release binaries. The Orqos packaging smoke check used a pre-existing native debug binary, not a release build. Native Ubuntu 24.04 builds, arm64 Phoenix/Orqos packaging, apt dependency resolution, real package hooks/install/upgrade/removal, mkcert client trust, privileged systemd/cgroup/network behavior and the installed end-to-end workspace flow have not run here. The release workflows have been linted, not executed on GitHub.
 
@@ -53,3 +53,11 @@ Automatic legacy migration, ACME issuance, APT hosting, additional distributions
 The Orqos `v0.2.0` hosted builds and installation lifecycle checks passed on both architectures, and its downloads/checksums/provenance were verified before publication. RawPair’s first hosted build passed its unit suites and built both native packages, then exposed a provisioning timeout: hosted runners can have an 816 MB `/etc/skel`, which `useradd --create-home` copied into each workspace. Orqos `v0.2.1` provisions only the owned directories and checks that host skeleton files are not copied. RawPair now pins that patch. TLS hostname validation also requires OpenSSL’s explicit positive result, because Ubuntu’s supported OpenSSL can exit zero on a mismatch. Database URLs now populate separate libpq environment fields; putting a URI in `PGDATABASE` failed to select the requested server/user. An isolated PostgreSQL integration test covers encoded credentials/names, connection, password rejection and `pg_dump`. Hosted RawPair installation/lifecycle evidence is recorded in the published release notes; the table above remains the earlier workstation snapshot.
 
 The first installed workspace check also exposed a Phoenix controller handler named `action/2`, which overrode the framework dispatcher. The handler is now `transition/2`, preserving the public URL, with route regression tests. Orqos `v0.2.2` makes the root-owned workspace parent traversable under its restrictive umask and explicitly applies/verifies interface ownership labels. A focused hosted runtime check passed two workspaces, terminal pages, shared files, HTTP proxies, independent stop, control restart and data-preserving removal before the patch package build. Those checks now run in Orqos’s release pipeline as well. RawPair pins `v0.2.2`.
+
+## Ubuntu 26.04 support follow-up
+
+RawPair v0.0.3 pins Orqos v0.2.3 and supports Ubuntu 24.04 and 26.04 on amd64 and arm64. Both release pipelines keep the Ubuntu 24.04 build baseline and run the exact resulting packages on Ubuntu 26.04 runners of each architecture before creating a draft. RawPair repeats installed setup, collaboration, terminal/preview, coordinated upgrade and data-preserving removal checks on all four OS/CPU combinations. No workstation services are installed by these checks.
+
+The schema-1 manifests retain `ubuntu: "24.04"` for the build baseline and declare runtime support in `ubuntu_versions: ["24.04", "26.04"]`. The bootstrap and installed setup both enforce the selected package's platform support. Legacy manifests without the list remain 24.04-only. Do not replace or relabel older published assets.
+
+Local follow-up validation passed 29 RawPair Python tests, including both OS/CPU selections, invalid compatibility metadata, legacy release refusal on 26.04 and installed setup checks. Orqos's 3 file-boundary and 9 administration/release tests passed. Published release notes record the hosted workflow results; the earlier delivery table and limits above describe their original point in time. Full visual Monaco and interactive wizard acceptance remain hands-on checks.

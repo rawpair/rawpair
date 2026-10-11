@@ -26,7 +26,7 @@ Native workspaces run on Linux through [Orqos](https://github.com/orqos-project/
 
 ## Try it
 
-Start with a fresh **Ubuntu 24.04 amd64 or arm64** machine and an ordinary user with sudo access. The package installer installs the runtime dependencies and a matching RawPair/Orqos pair; you do not need a source checkout or build toolchains.
+Start with a fresh **Ubuntu 24.04 or 26.04, amd64 or arm64** machine and an ordinary user with sudo access. The package installer installs the runtime dependencies and a matching RawPair/Orqos pair; you do not need a source checkout or build toolchains.
 
 | You want to… | Start here |
 | --- | --- |
@@ -36,6 +36,8 @@ Start with a fresh **Ubuntu 24.04 amd64 or arm64** machine and an ordinary user 
 | Use Docker workspaces | [Separate Docker recipe](docs/CONTAINER_SETUP.md) |
 
 **Native release availability:** use a [published release](https://github.com/rawpair/rawpair/releases) containing `install.sh`, `manifest.json`, `SHA256SUMS` and the native `.deb` packages. The package pipeline is implemented; its assets require a reviewed, published release. If those assets are absent, use the source guide. Older CLI-only releases do not provide this installation path.
+
+Ubuntu 26.04 support starts with RawPair **v0.0.3**, paired with Orqos **v0.2.3**. Earlier native releases support Ubuntu 24.04 only. The same packages run on both supported Ubuntu versions.
 
 The [package guide](docs/PACKAGES.md) takes you through downloading the installer, answering the setup prompts, trusting local TLS and opening the login page. RawPair configures Orqos for you.
 

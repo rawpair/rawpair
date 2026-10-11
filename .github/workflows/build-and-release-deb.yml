@@ -76,8 +76,39 @@ jobs:
           name: packages-${{ matrix.arch }}
           path: dist/*.deb
           if-no-files-found: error
-  release:
+  compatibility:
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-26.04
+          - arch: arm64
+            runner: ubuntu-26.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-${{ matrix.arch }}
+          path: dist
+      - name: Install the Ubuntu 24.04 package set on Ubuntu 26.04
+        run: |
+          sudo apt-get update
+          python3 packaging/validate.py dist/*.deb
+          sudo apt-get -s install "$PWD"/dist/*.deb
+          sudo apt-get install -y "$PWD"/dist/*.deb
+          python3 -m unittest discover -s packaging/tests -v
+          sudo -H env GITHUB_ACTIONS=true SUDO_UID=0 SUDO_GID=0 SUDO_USER=root python3 packaging/host-smoke.py --tag "$RELEASE_TAG"
+      - name: Upgrade, resume, remove and preserve data on Ubuntu 26.04
+        run: sudo -H env GITHUB_ACTIONS=true SUDO_UID=0 SUDO_GID=0 SUDO_USER=root python3 packaging/lifecycle-smoke.py --tag "$RELEASE_TAG" --dist "$PWD/dist"
+  release:
+    needs: [build, compatibility]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

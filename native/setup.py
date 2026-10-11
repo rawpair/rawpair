@@ -141,8 +141,8 @@ def wizard():
 
 def system_checks():
     os_release = values('/etc/os-release')
-    if os_release.get('ID') != 'ubuntu' or os_release.get('VERSION_ID') != '24.04':
-        raise ValueError('Supported OS: Ubuntu 24.04')
+    if os_release.get('ID') != 'ubuntu' or os_release.get('VERSION_ID') not in ('24.04', '26.04'):
+        raise ValueError('Supported OS: Ubuntu 24.04 or 26.04')
     if platform.machine() not in ('x86_64', 'aarch64'):
         raise ValueError('Supported CPUs: amd64 and arm64')
     if not Path('/run/systemd/system').is_dir() or not Path('/sys/fs/cgroup/cgroup.controllers').exists():
@@ -157,6 +157,8 @@ def system_checks():
     if (STATE / 'source-owner').exists():
         return
     compatibility = json.loads((HERE / 'compatibility.json').read_text())
+    if os_release['VERSION_ID'] not in compatibility.get('ubuntu_versions', [compatibility['ubuntu']]):
+        raise ValueError('Installed release does not support this Ubuntu version; install a matching native release')
     for package, expected in [('rawpair', installed_version().replace('-', '~')), ('orqos-host', compatibility['orqos_version'])]:
         actual = run(['dpkg-query', '-W', '-f=${Version}', package])
         if actual != expected:
@@ -491,7 +493,7 @@ def diagnostics():
             checks.append({'check': name, 'ok': True, 'message': 'ok'})
         except Exception:
             checks.append({'check': name, 'ok': False, 'message': message})
-    check('platform and packages', system_checks, 'Install the matching package set on Ubuntu 24.04 with systemd/cgroup v2')
+    check('platform and packages', system_checks, 'Install the matching package set on Ubuntu 24.04 or 26.04 with systemd/cgroup v2')
     def permissions():
         for path, group in [(ETC / 'rawpair.env', 'rawpair'), (ETC / 'collaboration.env', 'rawpair-collab'),
                             (ETC / 'nginx-secrets.conf', None), (Path('/etc/orqos/host.env'), None)]:
