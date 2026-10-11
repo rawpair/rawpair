@@ -2,7 +2,7 @@
   "schema": 1,
   "ubuntu": "24.04",
   "orqos_repository": "orqos-project/orqos",
-  "orqos_tag": "v0.2.1",
-  "orqos_version": "0.2.1",
+  "orqos_tag": "v0.2.2",
+  "orqos_version": "0.2.2",
   "architectures": ["amd64", "arm64"]
 }
