@@ -19,7 +19,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from urllib.parse import urlsplit, unquote, parse_qsl, urlencode, urlunsplit
+from urllib.parse import urlsplit, unquote, parse_qsl
 
 from configure import environment, render, values, write
 
@@ -243,18 +243,30 @@ def database(url):
     parsed = urlsplit(url)
     if parsed.scheme not in ('ecto', 'postgres', 'postgresql') or not parsed.hostname or not parsed.path.strip('/'):
         raise ValueError('Use ecto://USER:PASSWORD@HOST:PORT/DATABASE for an existing database')
-    env = os.environ.copy()
-    env['PGPASSWORD'] = unquote(parsed.password or '')
-    query = dict(parse_qsl(parsed.query))
+    # Environment defaults do not expand a URI stored in PGDATABASE. Supply
+    # explicit libpq fields, keeping credentials out of command-line arguments.
+    env = {key: value for key, value in os.environ.items() if not key.startswith('PG')}
+    env.update(PGHOST=parsed.hostname, PGPORT=str(parsed.port or 5432),
+               PGUSER=unquote(parsed.username or ''), PGDATABASE=unquote(parsed.path[1:]),
+               PGPASSWORD=unquote(parsed.password or ''))
+    pairs = parse_qsl(parsed.query, keep_blank_values=True)
+    query = dict(pairs)
+    if len(query) != len(pairs):
+        raise ValueError('Duplicate database URL options')
     if 'ssl' in query:
         if query['ssl'] not in ('true', 'false'):
             raise ValueError('Database ssl option must be true or false')
         query.setdefault('sslmode', 'require' if query.pop('ssl') == 'true' else 'disable')
     if query.get('sslmode', 'disable') not in ('disable', 'require', 'verify-full'):
         raise ValueError('Supported database sslmode: disable, require, verify-full')
-    # libpq accepts connection URI options, including SSL settings, via PGDATABASE.
-    # Password stays in the process environment; no command-line credentials.
-    env['PGDATABASE'] = urlunsplit(('postgresql', parsed.netloc, parsed.path, urlencode(query), ''))
+    options = {'sslmode': 'PGSSLMODE', 'sslrootcert': 'PGSSLROOTCERT', 'sslcert': 'PGSSLCERT',
+               'sslkey': 'PGSSLKEY', 'sslcrl': 'PGSSLCRL', 'sslcrldir': 'PGSSLCRLDIR',
+               'connect_timeout': 'PGCONNECT_TIMEOUT', 'application_name': 'PGAPPNAME',
+               'options': 'PGOPTIONS', 'client_encoding': 'PGCLIENTENCODING'}
+    if set(query) - options.keys():
+        raise ValueError('Unsupported database URL options: ' + ', '.join(sorted(set(query) - options.keys())))
+    env['PGSSLMODE'] = 'disable'
+    env.update({options[key]: value for key, value in query.items()})
     return env
 
 

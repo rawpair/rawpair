@@ -55,11 +55,23 @@ class SetupValidation(unittest.TestCase):
     def test_database_credentials_never_appear_in_arguments(self):
         env = setup.database('ecto://owner:secret%21@db.example/db?sslmode=require')
         self.assertEqual(env['PGPASSWORD'], 'secret!')
-        self.assertTrue(env['PGDATABASE'].startswith('postgresql://'))
+        self.assertEqual(env['PGDATABASE'], 'db')
+        self.assertEqual(env['PGHOST'], 'db.example')
+        self.assertEqual(env['PGUSER'], 'owner')
+        self.assertEqual(env['PGSSLMODE'], 'require')
         with patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'password=secret!')):
             with self.assertRaisesRegex(RuntimeError, '^psql failed') as context:
                 setup.run(['psql'], env=env)
         self.assertNotIn('secret!', str(context.exception))
+
+    def test_database_tls_options_and_ambiguous_options(self):
+        env = setup.database('postgresql://owner:secret@db.example:5433/db?sslmode=verify-full&sslrootcert=%2Fetc%2Fprivate-ca.pem')
+        self.assertEqual(env['PGPORT'], '5433')
+        self.assertEqual(env['PGSSLMODE'], 'verify-full')
+        self.assertEqual(env['PGSSLROOTCERT'], '/etc/private-ca.pem')
+        for options in ('sslmode=require&sslmode=disable', 'unknown=value', 'ssl=maybe'):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                setup.database('ecto://owner:secret@db.example/db?' + options)
 
     def test_render_is_loopback_for_local_and_keeps_remote_cert_paths(self):
         environment = {'RAWPAIR_COLLABORATION_TOKEN': 'b' * 64, 'RAWPAIR_GATEWAY_TOKEN': 'c' * 64, 'ORQOS_HOST_TOKEN': 'd' * 64}
