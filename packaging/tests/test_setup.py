@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +18,23 @@ import configure
 
 
 class SetupValidation(unittest.TestCase):
+    def test_browser_discovery_handles_firefox_only_chromium_only_both_and_neither(self):
+        firefox = '.mozilla/firefox/only-profile'
+        chromium = '.local/share/pki/nssdb'
+        for paths, labels in [([], []), ([firefox], ['Firefox']), ([chromium], ['Chromium']),
+                              ([firefox, chromium], ['Chromium', 'Firefox'])]:
+            with self.subTest(paths=paths), tempfile.TemporaryDirectory() as directory:
+                home = Path(directory)
+                for relative in paths:
+                    database = home / relative
+                    database.mkdir(parents=True)
+                    (database / 'cert9.db').touch()
+                self.assertEqual([label for label, _ in setup.browser_trust_stores(home)], labels)
+        with tempfile.TemporaryDirectory() as directory, patch.object(setup, 'run') as run:
+            self.assertEqual(setup.trust_local_browsers([], directory, '/unused-certificate'), [])
+            run.assert_not_called()
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
     def test_local_ca_consent_explains_scope_defaults_no_and_requires_yes(self):
         for answers, expected in [([''], False), (['no'], False), (['yes'], True), (['maybe', 'yes'], True)]:
             output = io.StringIO()
@@ -45,17 +63,39 @@ class SetupValidation(unittest.TestCase):
                 (root / 'tls' / name).write_text('existing leaf')
             with patch.object(setup, 'ETC', root), patch.dict(os.environ, {'SUDO_UID': str(os.getuid())}), \
                  patch.object(setup, 'run', return_value=str(root)) as run, \
-                 patch.object(setup, 'trust_local_chromium') as browser_trust, contextlib.redirect_stdout(io.StringIO()):
+                 patch.object(setup, 'trust_local_browsers') as browser_trust, contextlib.redirect_stdout(io.StringIO()):
                 setup.local_tls({})
             self.assertFalse(any('-install' in call.args[0] for call in run.call_args_list))
             browser_trust.assert_not_called()
 
-    def test_chromium_current_nss_store_trusts_local_ca_and_repeat_preserves_other_cas(self):
+    def test_approved_ca_install_scopes_system_trust_and_handles_no_browsers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'tls').mkdir()
+            for name in ('cert.pem', 'key.pem', 'rootCA.pem'):
+                (root / 'tls' / name).write_text('fixture certificate')
+            user = SimpleNamespace(pw_name='fixture-user', pw_dir=str(root))
+            output = io.StringIO()
+            with patch.object(setup, 'ETC', root), patch.dict(os.environ, {'SUDO_UID': '1000'}), \
+                 patch.object(setup.pwd, 'getpwuid', return_value=user), \
+                 patch.object(setup, 'run', return_value=str(root)) as run, contextlib.redirect_stdout(output):
+                setup.local_tls({}, trust_local_ca=True)
+            install = [call.args[0] for call in run.call_args_list if '-install' in call.args[0]]
+            self.assertEqual(len(install), 1)
+            self.assertEqual(install[0][-4:], ['env', 'TRUST_STORES=system', 'mkcert', '-install'])
+            self.assertFalse(any('certutil' in call.args[0] for call in run.call_args_list))
+            self.assertIn('No browser stores found', output.getvalue())
+
+    def test_browser_nss_stores_trust_local_ca_and_repeat_preserves_other_cas(self):
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)
-            database = home / '.local/share/pki/nssdb'
-            database.mkdir(parents=True)
-            setup.run(['certutil', '-N', '-d', 'sql:' + str(database), '--empty-password'])
+            paths = ['.local/share/pki/nssdb', '.pki/nssdb', 'snap/chromium/current/.pki/nssdb',
+                     '.mozilla/firefox/default', 'snap/firefox/common/.mozilla/firefox/default',
+                     '.var/app/org.mozilla.firefox/.mozilla/firefox/default']
+            for path in paths:
+                database = home / path
+                database.mkdir(parents=True)
+                setup.run(['certutil', '-N', '-d', 'sql:' + str(database), '--empty-password'])
             def certificate(name):
                 pem, key = home / (name + '.pem'), home / (name + '.key')
                 setup.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2',
@@ -63,16 +103,19 @@ class SetupValidation(unittest.TestCase):
                            '-keyout', str(key), '-out', str(pem)])
                 return pem
             other, local = certificate('existing-ca'), certificate('rawpair-local-ca')
-            setup.run(['certutil', '-A', '-d', 'sql:' + str(database), '-n', 'Existing CA', '-t', 'C,,', '-i', str(other)])
-            setup.trust_local_chromium([], home, local)
-            setup.trust_local_chromium([], home, local)
-            listing = setup.run(['certutil', '-L', '-d', 'sql:' + str(database)])
-            self.assertEqual(listing.count('RawPair local CA '), 1)
-            self.assertIn('Existing CA', listing)
-            nickname = 'RawPair local CA ' + setup.hashlib.sha256(local.read_bytes()).hexdigest()[:16]
-            exported = setup.run(['certutil', '-L', '-d', 'sql:' + str(database), '-n', nickname, '-a'])
-            self.assertEqual(exported, local.read_text().strip())
-            setup.run(['certutil', '-V', '-d', 'sql:' + str(database), '-n', nickname, '-u', 'L'])
+            for path in paths:
+                setup.run(['certutil', '-A', '-d', 'sql:' + str(home / path), '-n', 'Existing CA', '-t', 'C,,', '-i', str(other)])
+            self.assertEqual(len(setup.trust_local_browsers([], home, local)), len(paths))
+            setup.trust_local_browsers([], home, local)
+            for path in paths:
+                database = home / path
+                listing = setup.run(['certutil', '-L', '-d', 'sql:' + str(database)])
+                self.assertEqual(listing.count('RawPair local CA '), 1)
+                self.assertIn('Existing CA', listing)
+                nickname = 'RawPair local CA ' + setup.hashlib.sha256(local.read_bytes()).hexdigest()[:16]
+                exported = setup.run(['certutil', '-L', '-d', 'sql:' + str(database), '-n', nickname, '-a'])
+                self.assertEqual(exported, local.read_text().strip())
+                setup.run(['certutil', '-V', '-d', 'sql:' + str(database), '-n', nickname, '-u', 'L'])
 
     def test_system_checks_accept_both_ubuntu_releases_and_require_declared_compatibility(self):
         with tempfile.TemporaryDirectory() as directory:

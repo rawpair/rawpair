@@ -216,15 +216,38 @@ def tls_validate(cert, key, management, preview):
         raise ValueError('Certificate and private key do not match')
 
 
-def trust_local_chromium(as_user, home, certificate):
-    # Since M146 Chromium uses this NSS location unless a legacy database exists.
-    # Ubuntu's mkcert 1.4.4 searches the legacy location only.
-    # https://chromium.googlesource.com/chromium/src/+/main/docs/linux/cert_management.md
-    database = Path(home) / '.local/share/pki/nssdb'
-    if (database / 'cert9.db').is_file():
+def browser_trust_stores(home):
+    # Discover existing databases, never require or launch browser executables.
+    home = Path(home)
+    candidates = [('Chromium', home / '.local/share/pki/nssdb'),
+                  ('Chromium', home / '.pki/nssdb'),
+                  ('Chromium (Snap)', home / 'snap/chromium/current/.pki/nssdb')]
+    for label, folder in [('Firefox', '.mozilla/firefox'),
+                          ('Firefox (Snap)', 'snap/firefox/common/.mozilla/firefox'),
+                          ('Firefox (Flatpak)', '.var/app/org.mozilla.firefox/.mozilla/firefox')]:
+        candidates.extend((label, path) for path in sorted((home / folder).glob('*')))
+    stores = []
+    seen = set()
+    for label, database in candidates:
+        resolved = database.resolve()
+        if resolved in seen:
+            continue
+        for filename, scheme in [('cert9.db', 'sql:'), ('cert8.db', 'dbm:')]:
+            if (database / filename).is_file():
+                stores.append((label, scheme + str(database)))
+                seen.add(resolved)
+                break
+    return stores
+
+
+def trust_local_browsers(as_user, home, certificate):
+    stores = browser_trust_stores(home)
+    if stores:
         nickname = 'RawPair local CA ' + hashlib.sha256(Path(certificate).read_bytes()).hexdigest()[:16]
-        run(as_user + ['certutil', '-A', '-d', 'sql:' + str(database), '-n', nickname,
-                       '-t', 'C,,', '-i', str(certificate)])
+        for _, database in stores:
+            run(as_user + ['certutil', '-A', '-d', database, '-n', nickname,
+                           '-t', 'C,,', '-i', str(certificate)])
+    return stores
 
 
 def local_ca_consent():
@@ -234,6 +257,9 @@ def local_ca_consent():
           'This CA can certify any hostname, not just RawPair. Keep rootCA-key.pem private.\n'
           'Choose no to leave trust stores unchanged and import rootCA.pem manually before browsing.\n'
           'Your sudo authentication does not choose this for you.')
+    user = pwd.getpwuid(int(os.environ.get('SUDO_UID', '0')))
+    stores = browser_trust_stores(user.pw_dir)
+    print('Existing browser stores: ' + (', '.join(label for label, _ in stores) or 'none; no browser is required on the host'))
     while True:
         answer = prompt('Install this local CA into system and browser trust stores? yes/no', 'no').lower()
         if answer in ('yes', 'no'):
@@ -249,7 +275,9 @@ def local_tls(config, trust_local_ca=False):
     user = pwd.getpwuid(invoking)
     as_user = ['runuser', '-u', user.pw_name, '--', 'env', '-u', 'CAROOT', '-u', 'XDG_DATA_HOME', 'HOME=' + user.pw_dir] if invoking else []
     if invoking and trust_local_ca:
-        run(as_user + ['mkcert', '-install'])
+        # Browser stores are handled explicitly below; do not touch Java stores
+        # or depend on mkcert's browser executable/path detection.
+        run(as_user + ['env', 'TRUST_STORES=system', 'mkcert', '-install'])
     if not cert.exists() or not key.exists():
         temporary = Path(tempfile.mkdtemp(prefix='rawpair-tls-'))
         try:
@@ -264,8 +292,10 @@ def local_tls(config, trust_local_ca=False):
     config.update(certificate=str(cert), private_key=str(key))
     ca = run(as_user + ['mkcert', '-CAROOT'])
     if invoking and trust_local_ca:
-        trust_local_chromium(as_user, user.pw_dir, Path(ca) / 'rootCA.pem')
-        print('Local CA installed for this user. Restart the browser to refresh certificate trust.')
+        stores = trust_local_browsers(as_user, user.pw_dir, Path(ca) / 'rootCA.pem')
+        print(f'Local CA installed in system trust and {len(stores)} existing browser store(s). Restart affected browsers.')
+        if not stores:
+            print('No browser stores found. Open your chosen browser once and rerun setup with approval, or import rootCA.pem manually.')
     else:
         print('Trust stores unchanged. Import rootCA.pem manually before browsing; see docs/PACKAGES.md.')
     print(f'Local CA: {ca}/rootCA.pem. Copy only rootCA.pem to additional clients; keep rootCA-key.pem private.')
