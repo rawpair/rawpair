@@ -17,7 +17,7 @@ const clients = tickets.map(({ document, ticket }) => {
   const provider = new WebsocketProvider('wss://rawpair.localhost/collaboration', document, doc, {
     params: { ticket }, disableBc: true,
     WebSocketPolyfill: class extends WebSocket {
-      constructor(url, protocols) { super(url, protocols, tlsOptions) }
+      constructor(url, protocols) { super(url, protocols, { ...tlsOptions, origin: 'https://rawpair.localhost' }) }
     },
   })
   return { doc, provider }
