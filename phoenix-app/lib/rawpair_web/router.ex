@@ -47,7 +47,7 @@ defmodule RawPairWeb.Router do
     post "/api/workspaces", WorkspaceController, :create
     get "/api/workspaces/:id", WorkspaceController, :show
     put "/api/workspaces/:id", WorkspaceController, :update
-    post "/api/workspaces/:id/actions", WorkspaceController, :action
+    post "/api/workspaces/:id/actions", WorkspaceController, :transition
     delete "/api/workspaces/:id", WorkspaceController, :remove
     delete "/api/workspaces/:id/project-files", WorkspaceController, :delete_files
     post "/api/workspaces/:id/members", WorkspaceController, :add_member

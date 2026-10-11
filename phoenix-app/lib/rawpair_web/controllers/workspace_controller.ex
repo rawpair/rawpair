@@ -17,12 +17,13 @@ defmodule RawPairWeb.WorkspaceController do
     do:
       respond(conn, Workspaces.configure(conn.assigns.current_user, authorized(conn, id), attrs))
 
-  def action(conn, %{"id" => id, "operation" => operation}) when operation in ["start", "stop"] do
+  def transition(conn, %{"id" => id, "operation" => operation})
+      when operation in ["start", "stop"] do
     action = if operation == "start", do: :start, else: :stop
     respond(conn, Workspaces.transition(conn.assigns.current_user, authorized(conn, id), action))
   end
 
-  def action(conn, _), do: conn |> put_status(422) |> json(%{error: "Use start or stop"})
+  def transition(conn, _), do: conn |> put_status(422) |> json(%{error: "Use start or stop"})
 
   def remove(conn, %{"id" => id}) do
     case Workspaces.remove(conn.assigns.current_user, authorized(conn, id)) do
