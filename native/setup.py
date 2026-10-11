@@ -67,11 +67,16 @@ def protected_json(path):
 def validate_config(config, need_login=True):
     if not isinstance(config, dict):
         raise ValueError('Setup configuration must be a JSON object')
-    allowed = {'mode', 'management_host', 'preview_domain', 'certificate', 'private_key', 'subnet', 'database_url', 'first_user'}
+    allowed = {'mode', 'management_host', 'preview_domain', 'certificate', 'private_key', 'subnet', 'database_url', 'first_user', 'trust_local_ca'}
     if set(config) - allowed:
         raise ValueError('Unknown setup fields: ' + ', '.join(sorted(set(config) - allowed)))
     if config.get('mode') not in ('local', 'remote'):
         raise ValueError('mode must be local or remote')
+    if 'trust_local_ca' in config:
+        if type(config['trust_local_ca']) is not bool:
+            raise ValueError('trust_local_ca must be true or false')
+        if config['mode'] != 'local':
+            raise ValueError('trust_local_ca applies only to local mode')
     config.setdefault('management_host', 'rawpair.localhost')
     config.setdefault('preview_domain', 'apps.rawpair.localhost')
     config.setdefault('subnet', '10.231.0.0/16')
@@ -222,19 +227,29 @@ def trust_local_chromium(as_user, home, certificate):
                        '-t', 'C,,', '-i', str(certificate)])
 
 
-def local_tls(config):
+def local_ca_consent():
+    print('\nLocal HTTPS certificate trust\n'
+          'RawPair creates a local certificate authority (CA) for HTTPS.\n'
+          'Installing it changes system trust and available browser trust stores for your Linux user.\n'
+          'This CA can certify any hostname, not just RawPair. Keep rootCA-key.pem private.\n'
+          'Choose no to leave trust stores unchanged and import rootCA.pem manually before browsing.\n'
+          'Your sudo authentication does not choose this for you.')
+    while True:
+        answer = prompt('Install this local CA into system and browser trust stores? yes/no', 'no').lower()
+        if answer in ('yes', 'no'):
+            return answer == 'yes'
+        print('Enter yes or no.')
+
+
+def local_tls(config, trust_local_ca=False):
     directory = ETC / 'tls'
     directory.mkdir(mode=0o700, exist_ok=True)
     cert, key = directory / 'cert.pem', directory / 'key.pem'
     invoking = int(os.environ.get('SUDO_UID', '0'))
     user = pwd.getpwuid(invoking)
     as_user = ['runuser', '-u', user.pw_name, '--', 'env', '-u', 'CAROOT', '-u', 'XDG_DATA_HOME', 'HOME=' + user.pw_dir] if invoking else []
-    if invoking:
-        # mkcert -install performs its documented sudo trust-store installation.
-        # Root's sudo invocation has already authorized setup's privileged work.
+    if invoking and trust_local_ca:
         run(as_user + ['mkcert', '-install'])
-    else:
-        print('Headless/root setup: install the generated CA on each browser/client as described in docs/PACKAGES.md.')
     if not cert.exists() or not key.exists():
         temporary = Path(tempfile.mkdtemp(prefix='rawpair-tls-'))
         try:
@@ -248,9 +263,11 @@ def local_tls(config):
             shutil.rmtree(temporary)
     config.update(certificate=str(cert), private_key=str(key))
     ca = run(as_user + ['mkcert', '-CAROOT'])
-    if invoking:
+    if invoking and trust_local_ca:
         trust_local_chromium(as_user, user.pw_dir, Path(ca) / 'rootCA.pem')
         print('Local CA installed for this user. Restart the browser to refresh certificate trust.')
+    else:
+        print('Trust stores unchanged. Import rootCA.pem manually before browsing; see docs/PACKAGES.md.')
     print(f'Local CA: {ca}/rootCA.pem. Copy only rootCA.pem to additional clients; keep rootCA-key.pem private.')
 
 
@@ -410,8 +427,11 @@ def setup(config_file):
     if not any((STATE / marker).exists() for marker in ('package-owner', 'source-owner')):
         raise ValueError('Installation is not managed by this installer; see docs/PACKAGES.md migration instructions')
     state = protected_json(PROGRESS) if PROGRESS.exists() else {'steps': []}
+    trust_local_ca = None
     if config_file:
         incoming = validate_config(protected_json(config_file), need_login=not state.get('completed_version'))
+        # Approval belongs to this invocation, never the saved configuration.
+        trust_local_ca = incoming.pop('trust_local_ca', False)
         if state.get('config'):
             old = dict(state['config'])
             supplied = dict(incoming)
@@ -434,6 +454,11 @@ def setup(config_file):
         state['local_database'] = not bool(state['config'].get('database_url'))
         save(state)
     config = state['config']
+    if config['mode'] == 'local':
+        if trust_local_ca is None:
+            trust_local_ca = local_ca_consent() if sys.stdin.isatty() else False
+        if trust_local_ca and not int(os.environ.get('SUDO_UID', '0')):
+            raise ValueError('To install local CA trust, run setup with sudo from the ordinary browser user')
     upgrading = bool(state.get('completed_version')) and state['completed_version'] != installed_version()
     stop_controls()
     # Stop the daemon only: existing workspace services remain independent.
@@ -447,7 +472,7 @@ def setup(config_file):
         save(state)
     try:
         if config['mode'] == 'local':
-            local_tls(config)
+            local_tls(config, trust_local_ca=trust_local_ca)
             save(state)
         tls_validate(config['certificate'], config['private_key'], config['management_host'], config['preview_domain'])
         run(['orqos-host-admin', 'init', '--subnet', config['subnet']])

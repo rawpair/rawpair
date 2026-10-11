@@ -47,7 +47,7 @@ The daemon listens on loopback port 9080 and requires the random bearer secret i
 
 ## Choose local or remote access
 
-Use **local** mode for a browser on the deployment host. The wizard runs mkcert trust installation and generates a certificate as your invoking ordinary user; you do not need to generate or pass certificates first. The management URL defaults to `https://rawpair.localhost`, with application URLs under `*.apps.rawpair.localhost`. If your browser/resolver needs an explicit mapping, follow [local TLS and hostname instructions](PACKAGES.md#local-tls-and-browser-trust).
+Use **local** mode for a browser on the deployment host. The wizard generates a certificate as your invoking ordinary user and explains system/browser CA trust before asking for approval. The choice defaults to no; you can import the CA manually instead. You do not need to generate or pass certificates first. The management URL defaults to `https://rawpair.localhost`, with application URLs under `*.apps.rawpair.localhost`. Read [local TLS and hostname instructions](PACKAGES.md#local-tls-and-browser-trust) before choosing trust installation or configuring hostname resolution.
 
 Use **remote** mode for friends/coworkers on another machine. Prepare server-resolving management/wildcard-preview DNS and a certificate/key covering those names, then enter their absolute paths in the wizard. [Remote setup](PACKAGES.md#remote-setup-dns-and-certificates) covers DNS, HTTPS reachability, free public certificate options and renewal. `.localhost` cannot name your server from another computer.
 

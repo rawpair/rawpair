@@ -58,8 +58,9 @@ For a first local installation, answer the wizard as follows:
 | Private subnet | Accept `10.231.0.0/16` if the check passes; choose another private `/16` if it overlaps |
 | Database | `local` |
 | First login | Choose your own username and a password of at least 12 bytes; the password is entered without echo |
+| Install local CA trust | Read the trust explanation. Enter `yes` to approve system/browser trust changes, or accept `no` and import the CA manually before browsing |
 
-Setup generates and trusts local TLS as the invoking ordinary user, creates the database and service secrets, prepares `project-a` and `project-b`, runs migrations and starts the services after validation. A slot is a dedicated account/project directory available to a workspace; it does not launch a workspace until you create and start one in the UI.
+Setup generates local TLS as the invoking ordinary user, creates the database and service secrets, prepares `project-a` and `project-b`, runs migrations and starts the services after validation. Installing the local CA into system/browser trust requires your separate approval; sudo authentication alone does not approve it. A slot is a dedicated account/project directory available to a workspace; it does not launch a workspace until you create and start one in the UI.
 
 When setup prints **Login: https://rawpair.localhost**, open it in a browser on this machine and sign in with the account you just created. Run `sudo rawpair doctor` to check the installation, then follow [Your first shared workspace](FIRST_WORKSPACE.md) to run a page, open its private preview and edit it together.
 
@@ -115,9 +116,11 @@ RawPair redistributes Orqos packages unchanged and verifies their original Orqos
 
 `sudo rawpair setup` offers local or remote installation, PostgreSQL defaults or an existing database URL, private subnet selection and a secure first-login prompt. It checks the platform, dependencies, protected installation ownership, port conflicts, routing overlap, certificate expiry/hostname/wildcard/key agreement, nginx syntax and service readiness. Overlapping routes are refused; choose another private /16 in the wizard. Two dedicated slots, `project-a` and `project-b`, receive separate accounts, project homes, network indexes and inventory resource ceilings. A slot is available for creating a workspace in the UI; provisioning alone does not launch a workspace.
 
-Local defaults are `https://rawpair.localhost` and `*.apps.rawpair.localhost`. nginx binds HTTPS only to `127.0.0.1` and `::1` in local mode. Setup runs `mkcert -install` and certificate generation as the invoking ordinary user, retaining that user's local CA. Trust installation may ask for the user's sudo password. It copies only the leaf certificate/key to root-owned `/etc/rawpair/tls`; it never copies the CA private key into service configuration. Repeated setup preserves the leaf certificate and service secrets.
+Local defaults are `https://rawpair.localhost` and `*.apps.rawpair.localhost`. nginx binds HTTPS only to `127.0.0.1` and `::1` in local mode. Setup generates certificates as the invoking ordinary user, retaining that user's local CA. Before changing trust stores, interactive setup explains that installing a CA changes system and available browser trust and that the CA can certify any hostname, not just RawPair. Keep its private key protected. The prompt defaults to **no**: setup leaves trust stores unchanged and prints the CA path for manual import. Enter **yes** to approve `mkcert -install` and the current Chromium-store import. Trust installation may also ask for your sudo password; that authentication is separate from this decision.
 
-Restart Chrome/Chromium after setup so it reloads certificate trust. Recent Chromium versions use `~/.local/share/pki/nssdb`; setup also imports the local CA there when that database exists, because Ubuntu's mkcert 1.4.4 searches the older `~/.pki/nssdb` location. If the browser has never been opened, open it once and rerun setup, or import the printed `rootCA.pem` through the browser's certificate settings. See [Chromium's Linux certificate documentation](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/cert_management.md). Do not bypass certificate warnings for each preview hostname.
+Approval applies only to the current setup invocation and is not stored as permanent consent. Interactive retries ask again; declining does not remove trust you previously approved or imported yourself. Noninteractive setup leaves trust unchanged unless its protected config explicitly requests installation. Setup copies only the leaf certificate/key to root-owned `/etc/rawpair/tls`; it never copies the CA private key into service configuration. Repeated setup preserves the leaf certificate and service secrets.
+
+Restart Chrome/Chromium after an approved trust installation so it reloads certificate trust. Recent Chromium versions use `~/.local/share/pki/nssdb`; with your approval, setup imports the local CA there when that database exists, because Ubuntu's mkcert 1.4.4 searches the older `~/.pki/nssdb` location. If the browser has never been opened, open it once and rerun setup, or import the printed `rootCA.pem` through the browser's certificate settings. See [Chromium's Linux certificate documentation](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/cert_management.md). Do not bypass certificate warnings for each preview hostname.
 
 For root-only/headless invocation, setup prints the CA path and leaves browser trust to the client operator. Copy only `rootCA.pem` to each client and import it into the OS/browser's trusted CAs, or run `CAROOT=/path/containing/rootCA.pem mkcert -install` there. Never distribute `rootCA-key.pem`. For a local server on another machine, use remote mode and names resolving to that machine rather than `.localhost`, which resolves to the client. If a local browser/resolver does not resolve nested `.localhost` names, add the displayed management/preview hosts to `/etc/hosts` or configure a local wildcard resolver.
 
@@ -174,6 +177,7 @@ Create a regular JSON file owned by root or the invoking sudo user, mode `0600`.
 ```json
 {
   "mode": "local",
+  "trust_local_ca": false,
   "management_host": "rawpair.localhost",
   "preview_domain": "apps.rawpair.localhost",
   "subnet": "10.231.0.0/16",
@@ -185,6 +189,8 @@ Create a regular JSON file owned by root or the invoking sudo user, mode `0600`.
 ```
 
 For remote mode, set `"mode": "remote"`, supply real management/preview domains and add absolute `"certificate"` and `"private_key"` paths. Optional `"database_url": "ecto://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"` selects a pre-existing database/role instead of creating the local `rawpair` database. Percent-encode URL credentials. Supplied database credentials must permit migrations and `pg_dump`; TLS options are used for backup/connectivity, and `sslmode=require` or `sslmode=verify-full` enables TLS for Phoenix. Use `sslmode=verify-full` to verify the database certificate/hostname, optionally with `sslrootcert=/absolute/path` for a private CA readable by the service account; `require` enables encryption without peer verification. There are no command-line password options. Unknown configuration fields are rejected.
+
+`trust_local_ca` is a local-mode boolean and defaults to `false` when omitted. Set it to `true` only to deliberately approve changing system/browser CA trust for this invocation, and run setup with sudo from the ordinary browser user. It is removed before configuration is saved, so a later resume without that config does not silently reuse approval. Omit this local-only field from remote configs. Root-only/headless setup prints the CA path for client-side manual import.
 
 ```sh
 chmod 600 ./rawpair-setup.json

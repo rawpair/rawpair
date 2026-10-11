@@ -1,4 +1,6 @@
 import importlib.util
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -15,6 +17,39 @@ import configure
 
 
 class SetupValidation(unittest.TestCase):
+    def test_local_ca_consent_explains_scope_defaults_no_and_requires_yes(self):
+        for answers, expected in [([''], False), (['no'], False), (['yes'], True), (['maybe', 'yes'], True)]:
+            output = io.StringIO()
+            with self.subTest(answers=answers), patch('builtins.input', side_effect=answers), contextlib.redirect_stdout(output):
+                self.assertEqual(setup.local_ca_consent(), expected)
+            self.assertIn('any hostname', output.getvalue())
+            self.assertIn('system trust', output.getvalue())
+            self.assertIn('browser trust', output.getvalue())
+            self.assertIn('manually', output.getvalue())
+
+    def test_unattended_ca_consent_requires_local_boolean(self):
+        for value in (True, False):
+            config = setup.validate_config({'mode': 'local', 'trust_local_ca': value}, need_login=False)
+            self.assertIs(config['trust_local_ca'], value)
+        for value in ('yes', 'false', 1, None):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'true or false'):
+                setup.validate_config({'mode': 'local', 'trust_local_ca': value}, need_login=False)
+        with self.assertRaisesRegex(ValueError, 'only to local mode'):
+            setup.validate_config({'mode': 'remote', 'trust_local_ca': True}, need_login=False)
+
+    def test_local_tls_does_not_install_trust_without_approval(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'tls').mkdir()
+            for name in ('cert.pem', 'key.pem'):
+                (root / 'tls' / name).write_text('existing leaf')
+            with patch.object(setup, 'ETC', root), patch.dict(os.environ, {'SUDO_UID': str(os.getuid())}), \
+                 patch.object(setup, 'run', return_value=str(root)) as run, \
+                 patch.object(setup, 'trust_local_chromium') as browser_trust, contextlib.redirect_stdout(io.StringIO()):
+                setup.local_tls({})
+            self.assertFalse(any('-install' in call.args[0] for call in run.call_args_list))
+            browser_trust.assert_not_called()
+
     def test_chromium_current_nss_store_trusts_local_ca_and_repeat_preserves_other_cas(self):
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)
@@ -190,7 +225,7 @@ class SetupRecovery(unittest.TestCase):
         self.config_file.chmod(0o600)
         self.mocks = {}
         for name in ('root', 'system_checks', 'installed_version', 'stop_controls', 'run', 'check_ports', 'tls_validate',
-                     'configure_database', 'service_config', 'release', 'diagnostics', 'backup', 'wait_ready'):
+                     'configure_database', 'service_config', 'release', 'diagnostics', 'backup', 'wait_ready', 'local_tls'):
             patcher = patch.object(setup, name)
             self.mocks[name] = patcher.start()
             self.addCleanup(patcher.stop)
@@ -212,6 +247,30 @@ class SetupRecovery(unittest.TestCase):
         setup.setup(str(self.config_file))
         self.assertEqual(self.mocks['release'].call_count, 2)
         self.assertEqual(json.loads(self.progress.read_text())['completed_version'], '1.0.0')
+
+    def test_explicit_ca_approval_is_not_saved_or_reused_on_noninteractive_resume(self):
+        self.config.update(mode='local', trust_local_ca=True)
+        self.config_file.write_text(json.dumps(self.config))
+        with patch.dict(os.environ, {'SUDO_UID': str(os.getuid() or 1)}), \
+             patch.object(setup, 'protected_json', side_effect=lambda path: json.loads(Path(path).read_text())), \
+             patch.object(setup.sys.stdin, 'isatty', return_value=False):
+            setup.setup(str(self.config_file))
+            self.assertTrue(self.mocks['local_tls'].call_args.kwargs['trust_local_ca'])
+            self.assertNotIn('trust_local_ca', json.loads(self.progress.read_text())['config'])
+            setup.setup(None)
+            self.assertFalse(self.mocks['local_tls'].call_args.kwargs['trust_local_ca'])
+
+    def test_interactive_ca_choice_precedes_control_and_trust_changes(self):
+        self.config['mode'] = 'local'
+        self.config_file.write_text(json.dumps(self.config))
+        setup.setup(str(self.config_file))
+        order = []
+        self.mocks['stop_controls'].side_effect = lambda: order.append('stop')
+        with patch.object(setup.sys.stdin, 'isatty', return_value=True), \
+             patch.object(setup, 'local_ca_consent', side_effect=lambda: order.append('choice') or False):
+            setup.setup(None)
+        self.assertEqual(order[:2], ['choice', 'stop'])
+        self.assertFalse(self.mocks['local_tls'].call_args.kwargs['trust_local_ca'])
 
     def test_interruption_resumes_without_second_migration(self):
         self.mocks['release'].side_effect = [None, RuntimeError('interrupted')]
