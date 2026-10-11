@@ -5,6 +5,7 @@ import base64
 import fcntl
 import getpass
 import grp
+import hashlib
 import ipaddress
 import json
 import os
@@ -210,6 +211,17 @@ def tls_validate(cert, key, management, preview):
         raise ValueError('Certificate and private key do not match')
 
 
+def trust_local_chromium(as_user, home, certificate):
+    # Since M146 Chromium uses this NSS location unless a legacy database exists.
+    # Ubuntu's mkcert 1.4.4 searches the legacy location only.
+    # https://chromium.googlesource.com/chromium/src/+/main/docs/linux/cert_management.md
+    database = Path(home) / '.local/share/pki/nssdb'
+    if (database / 'cert9.db').is_file():
+        nickname = 'RawPair local CA ' + hashlib.sha256(Path(certificate).read_bytes()).hexdigest()[:16]
+        run(as_user + ['certutil', '-A', '-d', 'sql:' + str(database), '-n', nickname,
+                       '-t', 'C,,', '-i', str(certificate)])
+
+
 def local_tls(config):
     directory = ETC / 'tls'
     directory.mkdir(mode=0o700, exist_ok=True)
@@ -236,6 +248,9 @@ def local_tls(config):
             shutil.rmtree(temporary)
     config.update(certificate=str(cert), private_key=str(key))
     ca = run(as_user + ['mkcert', '-CAROOT'])
+    if invoking:
+        trust_local_chromium(as_user, user.pw_dir, Path(ca) / 'rootCA.pem')
+        print('Local CA installed for this user. Restart the browser to refresh certificate trust.')
     print(f'Local CA: {ca}/rootCA.pem. Copy only rootCA.pem to additional clients; keep rootCA-key.pem private.')
 
 

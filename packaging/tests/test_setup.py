@@ -15,6 +15,30 @@ import configure
 
 
 class SetupValidation(unittest.TestCase):
+    def test_chromium_current_nss_store_trusts_local_ca_and_repeat_preserves_other_cas(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            database = home / '.local/share/pki/nssdb'
+            database.mkdir(parents=True)
+            setup.run(['certutil', '-N', '-d', 'sql:' + str(database), '--empty-password'])
+            def certificate(name):
+                pem, key = home / (name + '.pem'), home / (name + '.key')
+                setup.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2',
+                           '-subj', '/CN=' + name, '-addext', 'basicConstraints=critical,CA:TRUE',
+                           '-keyout', str(key), '-out', str(pem)])
+                return pem
+            other, local = certificate('existing-ca'), certificate('rawpair-local-ca')
+            setup.run(['certutil', '-A', '-d', 'sql:' + str(database), '-n', 'Existing CA', '-t', 'C,,', '-i', str(other)])
+            setup.trust_local_chromium([], home, local)
+            setup.trust_local_chromium([], home, local)
+            listing = setup.run(['certutil', '-L', '-d', 'sql:' + str(database)])
+            self.assertEqual(listing.count('RawPair local CA '), 1)
+            self.assertIn('Existing CA', listing)
+            nickname = 'RawPair local CA ' + setup.hashlib.sha256(local.read_bytes()).hexdigest()[:16]
+            exported = setup.run(['certutil', '-L', '-d', 'sql:' + str(database), '-n', nickname, '-a'])
+            self.assertEqual(exported, local.read_text().strip())
+            setup.run(['certutil', '-V', '-d', 'sql:' + str(database), '-n', nickname, '-u', 'L'])
+
     def test_system_checks_accept_both_ubuntu_releases_and_require_declared_compatibility(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

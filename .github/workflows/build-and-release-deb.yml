@@ -44,7 +44,7 @@ jobs:
       - name: Install build and test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev libncurses-dev dpkg-dev python3 postgresql postgresql-client
+          sudo apt-get install -y build-essential libssl-dev libncurses-dev libnss3-tools dpkg-dev python3 postgresql postgresql-client
       - name: Check installer and setup behavior
         run: |
           go test ./cli/...
