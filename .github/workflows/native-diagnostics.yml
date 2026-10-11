@@ -33,7 +33,7 @@ jobs:
           with open('/tmp/rawpair-setup.lock', 'a') as lock:
               fcntl.flock(lock, fcntl.LOCK_EX)
               setup.run(['orqos-host-admin', 'init'])
-              setup.run(['strace', '-f', '-e', 'trace=process,flock,fcntl,poll,clock_nanosleep', '-o', '/tmp/provision.trace', 'orqos-host-admin', 'provision', 'project-a'])
+              setup.run(['strace', '-f', '-yy', '-e', 'trace=process,openat,flock,fcntl,poll,clock_nanosleep', '-o', '/tmp/provision.trace', 'orqos-host-admin', 'provision', 'project-a'])
           PY
           sudo cp /tmp/setup-probe.py /usr/lib/rawpair/setup.py
           sudo -H env GITHUB_ACTIONS=true SUDO_UID=0 SUDO_GID=0 SUDO_USER=root dist/rawpair setup
@@ -41,5 +41,7 @@ jobs:
         if: always()
         run: |
           sudo tail -150 /tmp/provision.trace || true
-          sudo ps -eo pid,ppid,stat,wchan:32,comm
+          sudo head -100 /tmp/provision.trace || true
+          sudo cat /etc/default/useradd
+          sudo du -sh /etc/skel /srv/rawpair/project-a || true
           sudo ls -l /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock || true
