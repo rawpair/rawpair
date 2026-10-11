@@ -6,7 +6,7 @@ Use [CONTAINER_SETUP.md](docs/CONTAINER_SETUP.md) with `compose.container.exampl
 
 ## Legacy container deployment notes
 
-The material below preserves earlier operator recipes and optional infrastructure references. It has not been migrated to the current authentication and gateway configuration; start a new deployment from one of the two setup guides above. In particular, native mode uses `native/admin.sh` and dedicated service units, never `phoenix-app/stop.sh`, Docker infrastructure units or the older generic Yjs compose configuration.
+The material below preserves earlier operator recipes and optional infrastructure references. It has not been migrated to the current authentication and gateway configuration; start a new deployment from the package, source or container guide above. After native setup, follow [FIRST_WORKSPACE.md](docs/FIRST_WORKSPACE.md) to try a shared editor, terminal and private preview. In particular, native mode uses `native/admin.sh` and dedicated service units, never `phoenix-app/stop.sh`, Docker infrastructure units or the older generic Yjs compose configuration.
 
 ## Ubuntu Server 24.04
 

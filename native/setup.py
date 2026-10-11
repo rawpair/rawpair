@@ -78,7 +78,10 @@ def validate_config(config, need_login=True):
     management, preview = config['management_host'], config['preview_domain']
     if not all(isinstance(x, str) and hostname.fullmatch(x) for x in (management, preview)):
         raise ValueError('Use lowercase DNS hostnames without schemes, ports or trailing dots')
-    if management == preview or management.endswith('.' + preview) or preview.endswith('.' + management):
+    # Permit the documented local-only pair; custom and remote names stay non-nested.
+    local_defaults = config['mode'] == 'local' and (management, preview) == ('rawpair.localhost', 'apps.rawpair.localhost')
+    nested = management.endswith('.' + preview) or preview.endswith('.' + management)
+    if management == preview or (nested and not local_defaults):
         raise ValueError('Management and preview domains must be separate, non-nested origins')
     if config['mode'] == 'remote':
         if management.endswith('.localhost') or preview.endswith('.localhost'):

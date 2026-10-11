@@ -1,158 +1,87 @@
 # RawPair™
 
-[![Status: Pre-alpha](https://img.shields.io/badge/status-pre--alpha-orange)]()
+[![Status: Pre-alpha](https://img.shields.io/badge/status-pre--alpha-orange)](#project-status)
 [![License: MPL-2.0](https://img.shields.io/github/license/rawpair/rawpair)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/rawpair/rawpair?style=social)](https://github.com/rawpair/rawpair/stargazers)
 
-**RawPair™** is a self-hosted, real-time collaborative development environment.
-It provides persistent project workspaces with a shared terminal and collaborative code editor for pair or mob programming.
+**A shared editor, a shared terminal, and a place to build together. On your own server.**
 
-Native Linux workspaces run through Orqos using systemd, dedicated Unix accounts, cgroup limits and per-workspace network namespaces. Use [prebuilt Ubuntu packages](docs/PACKAGES.md), [native source setup](docs/NATIVE_SETUP.md) or the separate [Docker setup](docs/CONTAINER_SETUP.md). The [delivery handoff](docs/HANDOFF.md) records implementation details, checks and limitations; [goal.txt](goal.txt) remains the canonical scope.
+RawPair is a self-hosted development environment for pair and mob programming. Open a project in your browser, bring a coworker into the workspace, and work on the same files and terminal session. Run the app you are building and open its HTTPS preview beside the editor.
 
-Built for fast, focused collaboration on your own infrastructure, RawPair also supports use cases like remote development, penetration testing, and red teaming, as long as it's done ethically and with proper authorization.
+Use it to work through a bug together, show a teammate around a codebase, or build a small project with friends. Everyone works in the same environment, and the workspace keeps running when a browser disconnects.
 
----
+[Try RawPair](docs/PACKAGES.md) · [Walk through your first workspace](docs/FIRST_WORKSPACE.md) · [Source installation](docs/NATIVE_SETUP.md)
 
-![image](https://github.com/user-attachments/assets/f4c790d9-6db7-47ec-9778-39687755ea93)
+![RawPair browser workspace](https://github.com/user-attachments/assets/f4c790d9-6db7-47ec-9778-39687755ea93)
 
----
+## What you can do
 
-https://github.com/user-attachments/assets/fdbabd96-1bdf-4269-a408-7b6c11948443
+- **Edit together.** Share a file in the browser and see each other's changes. Save it to the project's actual filesystem.
+- **Use one terminal session.** Run Git commands, tests and development servers together through ttyd and tmux.
+- **Keep projects independent.** Native workspaces have separate Unix accounts, resource limits and networks. Two projects can both use port 3000.
+- **Show what you are building.** Register an HTTP application and get its own HTTPS preview URL. Keep it private to workspace members or deliberately share that application publicly.
+- **Come back to your work.** Disconnecting leaves processes running. Stopping a workspace stops its processes and keeps its files.
 
----
+Native workspaces run on Linux through [Orqos](https://github.com/orqos-project/orqos). Docker remains a separate backend option.
 
-## Features
+## Try it
 
-- Password login, workspace membership and multiple persistent projects per user
-- File-scoped collaborative editing and persistent shared tmux terminals in the browser
-- Native Linux workspaces through Orqos, with independent loopback ports and resource limits
-- Named HTTPS application previews with WebSocket support and private or deliberate public access
-- Retained Docker workspace backend as a separate deployment option
-- Licensed under MPL v2.0
+Start with a fresh **Ubuntu 24.04 amd64 or arm64** machine and an ordinary user with sudo access. The package installer installs the runtime dependencies and a matching RawPair/Orqos pair; you do not need a source checkout or build toolchains.
 
----
+| You want to… | Start here |
+| --- | --- |
+| Try it in a browser on the same machine | [Local package installation](docs/PACKAGES.md#install-and-open-rawpair) |
+| Work with someone on another computer | [Remote setup: DNS and certificates](docs/PACKAGES.md#remote-setup-dns-and-certificates), then the same installer |
+| Build from source | [Native source setup](docs/NATIVE_SETUP.md) |
+| Use Docker workspaces | [Separate Docker recipe](docs/CONTAINER_SETUP.md) |
 
-## Tech Stack
+**Native release availability:** use a [published release](https://github.com/rawpair/rawpair/releases) containing `install.sh`, `manifest.json`, `SHA256SUMS` and the native `.deb` packages. The package pipeline is implemented; its assets require a reviewed, published release. If those assets are absent, use the source guide. Older CLI-only releases do not provide this installation path.
 
-RawPair is built on a modern, production-grade foundation:
+The [package guide](docs/PACKAGES.md) takes you through downloading the installer, answering the setup prompts, trusting local TLS and opening the login page. RawPair configures Orqos for you.
 
-- [Phoenix](https://github.com/phoenixframework/phoenix) ([Elixir](https://github.com/elixir-lang/elixir)) - handles real-time collaboration and session management
-- [Monaco](https://github.com/microsoft/monaco-editor) + [Yjs](https://github.com/yjs/yjs) - collaborative code editing in the browser
-- [ttyd](https://github.com/tsl0922/ttyd) + [tmux](https://github.com/tmux/tmux) - shared terminal sessions
-- [Orqos](https://github.com/orqos-project/orqos) + Linux systemd/cgroups/network namespaces - native workspace execution
-- [Docker](https://github.com/docker) - optional container workspace backend
-- [Nginx](https://github.com/nginx/nginx) - reverse proxy and traffic routing for ttyd
-- [PostgreSQL](https://github.com/postgres/postgres) - workspace metadata persistence
-- [Vector](https://github.com/vectordotdev/vector) + [Loki](https://github.com/grafana/loki) + [Grafana](https://github.com/grafana/grafana) - observability for logs and metrics
-- [Portainer CE](https://github.com/portainer/portainer) - (optional) convenient docker management
+## Your first session
 
----
+The [first-workspace walkthrough](docs/FIRST_WORKSPACE.md) gives you a small working demo using the Python already installed with RawPair:
 
-## Supported Tech Stacks
+1. Log in and create a workspace in one of the two prepared account slots.
+2. Start it, open the shared terminal, and serve a small page on port 3000.
+3. Open its private HTTPS preview and edit the page in the browser.
+4. Add a teammate, make a change together, and refresh the preview.
+5. Try a second workspace on the same port. Stop either one and watch the other keep running.
 
-See [rawpair/stacks](https://github.com/rawpair/stacks) for all supported dev environments.
+Once that works, bring your own repository and its development tools. The operator installs host toolchains, or you install tools in the workspace's home; native mode does not download stack images.
 
----
+## Bring someone along
 
-## Setup
+An operator creates each person's login with `sudo rawpair user add`. A workspace owner adds that username under **Workspace members**, then sends the workspace's management URL. Your teammate opens it in their browser, signs in, and joins the same editor and terminal. There is no client application to install.
 
-Use [PACKAGES.md](docs/PACKAGES.md) for prebuilt Ubuntu 24.04 installation, interactive/unattended setup, diagnostics and upgrades without build toolchains. Use [NATIVE_SETUP.md](docs/NATIVE_SETUP.md) to build from source on a normal Linux systemd host. It includes prerequisites, Orqos installation, workspace-account provisioning, PostgreSQL, Phoenix, collaboration, ttyd/tmux, nginx, local hostname/TLS trust, first login and operating instructions. Native mode needs no Docker, Kubernetes, image downloads or stack catalog. Host language tools are operator-installed or user-local.
+Local mode is a first try on one machine. For a coworker on another computer, choose remote setup with server-resolving names and certificates trusted by both browsers. The walkthrough explains [sharing a workspace or just a preview](docs/FIRST_WORKSPACE.md#bring-a-friend-or-coworker).
 
-Use [CONTAINER_SETUP.md](docs/CONTAINER_SETUP.md) and `compose.container.example.yml` for the retained Docker backend, including authenticated terminals and collaboration. Existing stack images still provide container toolchains. This recipe replaces the old generic Yjs and unauthenticated proxy setup. The CLI quickStart/ensureDeps commands, Ansible recipes and older compose files remain legacy container helpers; they do not install the current native services or secure gateway configuration.
+If RawPair would help your next pairing session, send your teammate this README or the first-workspace guide and pick a small task to try together. [Tell us what worked and what got in your way](https://github.com/rawpair/rawpair/issues).
 
-Accounts are operator-created. Workspace owners add collaborators and control application visibility. The intended initial deployment is one Linux host for trusted collaborators. See [HANDOFF.md](docs/HANDOFF.md) for build/test evidence and live paths still unverified.
+## Project status
 
----
+RawPair is **pre-alpha**, intended for one Linux host and people you trust with the workspace. Native execution, collaboration, authentication and previews are implemented. Available automated checks and the remaining live installation/browser checks are recorded in the [package handoff](docs/PACKAGE_HANDOFF.md). Start with a small project you can restore from backup.
 
-## Environment Variables
+Workspace members share a Unix identity, files and processes within that workspace. Native execution shares the host kernel; this is not an isolation service for arbitrary untrusted users. Language installers, automatic public certificate issuance, automatic legacy migration and managed production application hosting are outside the current release.
 
-The setup guides contain the complete current service configuration. Native examples are in [native/rawpair.env.example](native/rawpair.env.example); Docker uses the root `.env` described in its setup guide. The historical variable reference below also includes options used only by legacy container helpers.
+## Documentation
 
-### Core Configuration
+| Guide | What it covers |
+| --- | --- |
+| [Install packages](docs/PACKAGES.md) | Download, local/remote setup, TLS, unattended installation, diagnostics, backups and upgrades |
+| [First workspace](docs/FIRST_WORKSPACE.md) | A working preview, shared editing and terminal, inviting collaborators, two independent projects |
+| [Build from source](docs/NATIVE_SETUP.md) | Toolchains, sibling checkouts, native installation and operating instructions |
+| [Docker option](docs/CONTAINER_SETUP.md) | The retained container backend and its authenticated gateway |
+| [Administration CLI](cli/README.md) | Installed commands and when to use them |
+| [Release procedure](docs/RELEASING.md) | Building the pinned pair, reviewing draft assets and publishing |
+| [Delivery evidence](docs/PACKAGE_HANDOFF.md) | Checks actually run and behavior awaiting live validation |
 
-| Variable                  | Description                                                                                                                                      | Default           |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| `RAWPAIR_STACKS_VERSION`  | Version of `stacks.json` to load from the [`rawpair/stacks`](https://github.com/rawpair/stacks) repository. Must match a Git tag or branch.      | `0.1.8`           |
-| `RAWPAIR_DOCKER_PLATFORM` | Target Docker platform (e.g. `linux/amd64`, `linux/arm64`). If unset, RawPair will detect the local platform using `uname -m` and log a warning. | *(auto-detected)* |
+The CLI `quickStart`/`ensureDeps` commands, older compose files and Ansible recipes are legacy container helpers. Start new installations from one of the guides above. Native configuration is generated by setup; [rawpair.env.example](native/rawpair.env.example) is an operator reference.
 
----
+## Built with
 
-### Database
-
-| Variable       | Description                 | Example                                              |
-| -------------- | --------------------------- | ---------------------------------------------------- |
-| `DATABASE_URL` | Postgres connection string. | `postgres://postgres:postgres@localhost/rawpair_dev` |
-
----
-
-### Secrets & Security
-
-| Variable          | Description                                                            | Example                          |
-| ----------------- | ---------------------------------------------------------------------- | -------------------------------- |
-| `SECRET_KEY_BASE` | Phoenix secret key for session encryption.                             | *(random 64-byte base64 string)* |
-| `CHECK_ORIGIN`    | Allowed CORS origins, comma-separated. Required for LiveView security. | `//localhost:4000`   |
-
----
-
-### Application Host
-
-| Variable                | Description                                                                                | Example     |
-| ----------------------- | ------------------------------------------------------------------------------------------ | ----------- |
-| `PHX_HOST`              | Public hostname used by Phoenix.                                                           | `localhost` |
-| `PORT`                  | Port Phoenix listens on.                                                                   | `4000`      |
-| `RAWPAIR_PROTOCOL`      | RawPair protocol (used for internal URL generation).                                       | `http`      |
-| `RAWPAIR_HOST`          | RawPair hostname (used internally).                                                        | `localhost` |
-| `RAWPAIR_PORT`          | RawPair application port.                                                                  | `4000`      |
-| `RAWPAIR_BASE_PATH`     | Root path prefix for RawPair (e.g. `/rawpair`). Useful if reverse-proxied under a subpath. | `/`         |
-| `RAWPAIR_TERMINAL_HOST` | Hostname of the terminal backend (e.g. `ttyd`).                                            | `localhost` |
-| `RAWPAIR_TERMINAL_PORT` | Port of the terminal backend.                                                              | `8080`      |
-
----
-
-### Grafana
-
-| Variable                | Description                                                  | Example     |
-| ----------------------- | ------------------------------------------------------------ | ----------- |
-| `RAWPAIR_GRAFANA_HOST`  | Hostname of Grafana (used for embedding metrics dashboards). | `localhost` |
-| `RAWPAIR_GRAFANA_PORT`  | Port of Grafana.                                             | `3000`      |
-
----
-
-
-## How to scroll the terminal?
-
-ttyd terminals run in the browser and don't support mouse scrollback.
-To scroll, press:
-
-`Ctrl-b` followed by `[`
-
-It is now possible to use the mouse wheel or the arrow keys. Press `q` to exit scroll mode.
-
----
-
-## Security considerations
-
-### Mounting /var/run/docker.sock
-
-RawPair does **not** require Docker socket access by default. However, the current Phoenix backend uses System.cmd/3 to invoke Docker directly via the CLI. For this to work, the process must have permission to run docker commands, typically by having access to the Docker daemon—either directly on the host or via a mounted socket.
-
-If you mount `/var/run/docker.sock` into the container running Phoenix (e.g., for local development), you're granting that container **full control over the host's Docker daemon**. This effectively means **root access to the host**. It's powerful, convenient, and generally unsafe in shared or exposed environments.
-
-For safer setups, consider using [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy), a minimal Go-based HTTP proxy that lets you expose only specific Docker API endpoints to containers. This allows for fine-grained access control, so you can limit what the Phoenix backend is allowed to do.
-
-Use socket access only if you understand the risks, and only in environments where trust boundaries are clear.
-
----
-
-## Security Considerations
-
-RawPair provides real-time terminal and editor access to others via containers. Please use responsibly.
-
-> - **Do not expose the service to the public internet without authentication**  
-> - **Do not allow unknown users into active sessions**  
-> - **Ensure Docker is secured on your host system**
-
----
+[Phoenix](https://www.phoenixframework.org/) and PostgreSQL provide the application and persistent metadata. [Monaco](https://github.com/microsoft/monaco-editor) and [Yjs](https://github.com/yjs/yjs) provide collaborative editing; [ttyd](https://github.com/tsl0922/ttyd) and [tmux](https://github.com/tmux/tmux) provide the shared terminal. Orqos supervises native execution through systemd, cgroups and network namespaces, with nginx serving the browser gateway.
 
 ## License
 
@@ -181,33 +110,4 @@ This project is licensed under the [Mozilla Public License 2.0](https://www.mozi
 
 ## Contributing
 
-Contributions are welcome. Please open issues and submit pull requests through GitHub.
-
-## Acknowledgments
-
-RawPair is made possible thanks to the following open-source libraries:
-
-| Library                                                    | Version           | Description                                         |
-|------------------------------------------------------------|-------------------|-----------------------------------------------------|
-| https://github.com/phoenixframework/phoenix                | ~> 1.7.21         | Core framework for building interactive web apps   |
-| https://github.com/phoenixframework/phoenix_ecto           | ~> 4.5            | Integration between Phoenix and Ecto               |
-| https://github.com/elixir-ecto/ecto_sql                    | ~> 3.10           | SQL-based persistence layer                        |
-| https://github.com/elixir-ecto/postgrex                    | >= 0.0.0          | PostgreSQL driver for Elixir                       |
-| https://github.com/phoenixframework/phoenix_html           | ~> 4.1            | HTML helpers for Phoenix                           |
-| https://github.com/phoenixframework/phoenix_live_reload    | ~> 1.2 (dev)      | Live reload support during development             |
-| https://github.com/phoenixframework/phoenix_live_view      | ~> 1.0            | Real-time UI with server-rendered DOM diffs        |
-| https://github.com/philss/floki                            | >= 0.30.0 (test)  | HTML parser used for testing                       |
-| https://github.com/phoenixframework/phoenix_live_dashboard | ~> 0.8.3          | Real-time monitoring dashboard                     |
-| https://github.com/evanw/esbuild                           | ~> 0.8 (dev)      | JavaScript bundler                                 |
-| https://github.com/tailwindlabs/tailwindcss                | ~> 0.3 (dev)      | Utility-first CSS framework                        |
-| https://github.com/tailwindlabs/heroicons                  | v2.1.1            | SVG icons from Tailwind Labs                       |
-| https://github.com/swoosh/swoosh                           | ~> 1.5            | Email composition and delivery                     |
-| https://github.com/sneako/finch                            | ~> 0.13           | HTTP client for Elixir                             |
-| https://github.com/beam-telemetry/telemetry_metrics        | ~> 1.0            | Metrics reporter for Telemetry                     |
-| https://github.com/beam-telemetry/telemetry_poller         | ~> 1.0            | Periodic Telemetry measurements                    |
-| https://github.com/elixir-gettext/gettext                  | ~> 0.26           | Internationalization (i18n) support                |
-| https://github.com/michalmuskala/jason                     | ~> 1.2            | JSON parser and encoder                            |
-| https://github.com/phoenixframework/dns_cluster            | ~> 0.1.1          | DNS-based clustering                               |
-| https://github.com/mtrudel/bandit                          | ~> 1.5            | HTTP server compatible with Plug and Phoenix       |
-| https://github.com/jayjun/slugify                          | ~> 1.3            | Slug generator for URLs and file names             |
-| https://github.com/akasprzok/memo_tar                      | ~> 0.1.0          | In-memory tar archive generation                   |
+Try a small project, invite someone to work with you, and share what you learn. [Bug reports, setup feedback and pull requests](https://github.com/rawpair/rawpair/issues) are welcome. Include the RawPair version, installation method and relevant diagnostics, with passwords and tokens removed.

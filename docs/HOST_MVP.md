@@ -2,7 +2,7 @@
 
 ## Delivery status
 
-Implemented on 2026-10-11. This document preserves the agreed design brief; use [NATIVE_SETUP.md](NATIVE_SETUP.md) for executable operator instructions and [HANDOFF.md](HANDOFF.md) for the final implementation, checks and limitations. The actual Orqos contract is [HOST_API.md](../../orqos/docs/HOST_API.md).
+Implemented on 2026-10-11. This document preserves the agreed design brief; use [PACKAGES.md](PACKAGES.md) or [NATIVE_SETUP.md](NATIVE_SETUP.md) for executable operator instructions and [HANDOFF.md](HANDOFF.md) for the final implementation, checks and limitations. The actual Orqos contract is [HOST_API.md](https://github.com/orqos-project/orqos/blob/main/docs/HOST_API.md).
 
 RawPair supports collaborative development directly on a Linux host through Orqos. A user can work on several projects, build and run them with native toolchains, and expose HTTP applications through controlled URLs. Docker remains an optional RawPair backend; Orqos also retains its Kubernetes API. Neither is a prerequisite for the host workflow.
 

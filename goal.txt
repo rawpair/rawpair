@@ -1,6 +1,6 @@
 /goal Deliver a real RawPair MVP for native Linux development workspaces through Orqos, without requiring Docker or Kubernetes. Users must be able to work on multiple projects, collaborate in the editor and terminal, build and run their projects, and expose applications through controlled browser URLs.
 
-Status: implementation delivered on 2026-10-11 across RawPair and Orqos. See docs/HANDOFF.md for the implemented paths, exact setup commands, passing checks, unverified live paths and limitations. No commits, pushes or deployment were performed.
+Status: implementation delivered on 2026-10-11 across RawPair and Orqos. See docs/HANDOFF.md for the implemented paths, exact setup commands, passing checks, unverified live paths and limitations. The runtime and package implementations were committed at the user's request. No push, release publication or deployment was performed during delivery.
 
 Read first
 Read docs/HANDOFF.md and docs/HOST_MVP.md in this repository, then ../orqos/AGENTS.md and ../orqos/docs/HOST_BACKEND.md. Inspect the current implementation and worktree changes before editing. This file is the canonical goal across the relevant repositories.

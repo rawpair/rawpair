@@ -1,6 +1,6 @@
 # Native installation delivery handoff
 
-Updated 2026-10-11. Changes are in `/home/andrea/dev/rawpair` and `/home/andrea/dev/orqos`, without commits, pushes, release creation/publication or service deployment. Use [PACKAGES.md](PACKAGES.md) for the operator installation and release procedure.
+Updated 2026-10-11. The package implementation was committed at the user's request as RawPair `242ffc0` and Orqos `45bda13`. No push, release creation/publication or service deployment was performed during that delivery. Use [PACKAGES.md](PACKAGES.md) for installation, [FIRST_WORKSPACE.md](FIRST_WORKSPACE.md) for the first shared session and [RELEASING.md](RELEASING.md) for the maintainer release procedure.
 
 ## Delivered
 
@@ -14,11 +14,17 @@ Both repositories now use native `ubuntu-24.04`/`ubuntu-24.04-arm` release jobs 
 
 The bootstrap resolves one immutable RawPair release, verifies matching downloads, supports explicit versions, download-only and no-setup, installs all three packages together through apt and invokes setup by default. The documentation covers unattended input, certificate renewal, database TLS, manual installation, legacy refusal/migration, backups, recovery, source installation, Docker separation and the release order.
 
+## Onboarding documentation follow-on
+
+The repository READMEs now lead to installation and a first working session. [FIRST_WORKSPACE.md](FIRST_WORKSPACE.md) covers a Python-served page, saved/shared edits, terminal access, a private preview, adding a coworker and two independent projects. The package guide includes actual download commands, local wizard choices, remote prerequisites and troubleshooting; [RELEASING.md](RELEASING.md) holds the maintainer procedure. Stale native-status claims and removed installer invocations have been corrected or explicitly marked as historical.
+
+Checking the documented configuration exposed a validator that rejected its own local `rawpair.localhost` / `apps.rawpair.localhost` pair. That exact local-only pair is now accepted; custom and remote nested domains remain refused. Two regression tests cover acceptance and retained rejection rules. The RawPair Python suite was rerun with 22 passing tests. Changed Markdown links/anchors and shell/JSON/embedded-Python examples were checked. The walkthrough's page/server commands served a page and reflected a saved edit on a temporary localhost port; this was not a full workspace, browser or package installation check. No additional live deployment or release validation was performed.
+
 ## Checks actually run
 
 | Check | Result |
 | --- | --- |
-| RawPair Python installer/setup/release suite | 20 tests passed: architecture selection, immutable downloads, checksum refusal, unsupported OS/tag, no-setup/download-only/default setup, protected input, TLS key/hostname/wildcard/expiry checks, secret-free arguments, retry/interruption handling, backup/migration failure behavior, unmanaged refusal and release manifests |
+| RawPair Python installer/setup/release suite | Rerun during the documentation follow-on: 22 tests passed, including the documented local defaults and custom/remote origin rejection, architecture selection, immutable downloads, checksum refusal, unsupported OS/tag, no-setup/download-only/default setup, protected input, TLS key/hostname/wildcard/expiry checks, secret-free arguments, retry/interruption handling, backup/migration failure behavior, unmanaged refusal and release manifests |
 | Orqos administrator suite | 8 tests passed: private subnet validation, conflicting routes, owned-route exception, unrelated account/group refusal, interrupted group creation and repeated provisioning |
 | RawPair Phoenix suite on isolated PostgreSQL 18 | 16 tests passed, including new first-login retry/password-preservation regression |
 | Orqos Rust suite | `cargo test --locked`: 16 passed; existing Docker/Kubernetes/native contracts retained |

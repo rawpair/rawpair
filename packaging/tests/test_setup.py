@@ -15,6 +15,20 @@ import configure
 
 
 class SetupValidation(unittest.TestCase):
+    def test_accepts_documented_local_defaults(self):
+        config = setup.validate_config({'mode': 'local', 'first_user': {'username': 'owner', 'password': 'abcdefghijkl'}})
+        self.assertEqual(config['management_host'], 'rawpair.localhost')
+        self.assertEqual(config['preview_domain'], 'apps.rawpair.localhost')
+
+    def test_rejects_nested_custom_and_remote_origins(self):
+        for mode, management, preview in [('local', 'pair.example.com', 'apps.pair.example.com'),
+                                          ('remote', 'pair.example.com', 'apps.pair.example.com'),
+                                          ('remote', 'rawpair.localhost', 'apps.rawpair.localhost')]:
+            with self.subTest(mode=mode, management=management), self.assertRaises(ValueError):
+                setup.validate_config({'mode': mode, 'management_host': management, 'preview_domain': preview,
+                                       'certificate': '/cert.pem', 'private_key': '/key.pem',
+                                       'first_user': {'username': 'owner', 'password': 'abcdefghijkl'}})
+
     def test_rejects_injection_conflicting_origins_and_credentials(self):
         for changes in ({'management_host': "foo;evil.test"}, {'preview_domain': 'rawpair.localhost'},
                         {'management_host': 'x.apps.rawpair.localhost'}, {'subnet': '8.8.0.0/16'},

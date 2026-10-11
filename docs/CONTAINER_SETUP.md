@@ -1,8 +1,16 @@
 # Container backend option
 
-The native MVP uses [NATIVE_SETUP.md](NATIVE_SETUP.md). Docker workspaces remain a separate backend; Orqos's Docker and Kubernetes APIs also remain unchanged. This recipe supersedes the older development compose snippets in README/DEPLOYMENT now that RawPair requires real login, membership and an authenticated collaboration gateway.
+For native workspaces, start with [package installation](PACKAGES.md) or [source setup](NATIVE_SETUP.md). Docker workspaces remain a separate backend; Orqos's Docker and Kubernetes APIs also remain unchanged. This recipe supersedes the older development compose snippets in README/DEPLOYMENT now that RawPair requires real login, membership and an authenticated collaboration gateway.
 
-1. Install Docker Engine and Compose, plus Elixir/Mix only if building a release outside the supplied Dockerfile. Obtain a TLS certificate and key for your management hostname. The local mkcert instructions in NATIVE_SETUP also work here.
+1. Install Docker Engine and Compose, plus Elixir/Mix only if building a release outside the supplied Dockerfile. Obtain a TLS certificate and key for your management hostname. For a local browser on the deployment host, install mkcert and generate/trust the local certificate as your ordinary browser user:
+
+```sh
+mkcert -install
+mkdir -p ./local-tls
+mkcert -cert-file ./local-tls/cert.pem -key-file ./local-tls/key.pem rawpair.localhost
+```
+
+Set `RAWPAIR_TLS_DIR` below to the absolute path of that directory. This local hostname points at the browser's own machine. Remote collaborators need a management hostname resolving to the server, a matching trusted certificate and reachable HTTPS.
 2. Create `.env` in the repository root (it is gitignored):
 
 ```dotenv
@@ -38,7 +46,7 @@ docker compose -f compose.container.example.yml exec \
 unset RAWPAIR_USERNAME RAWPAIR_PASSWORD
 ```
 
-Open `https://rawpair.localhost`. Create Docker workspaces with a compatible image from the existing stacks catalog, pulling that image on the host first if necessary (`docker pull <image>`). Project volumes retain their contents across runtime removal. Terminal ingress is checked against workspace membership and resolves only the registered container; there is no arbitrary container-name proxy. Collaborative documents use the same authenticated, file-scoped service as native mode. Stop/remove lifecycle uses the retained Docker backend. Named application previews are provided by the native backend in this MVP; the old unrestricted fixed-port application proxy has been removed.
+Open `https://rawpair.localhost`. Create Docker workspaces with a compatible image from the [existing stacks catalog](https://github.com/rawpair/stacks), pulling that image on the host first if necessary (`docker pull <image>`). Project volumes retain their contents across runtime removal. Terminal ingress is checked against workspace membership and resolves only the registered container; there is no arbitrary container-name proxy. Collaborative documents use the same authenticated, file-scoped service as native mode. Stop/remove lifecycle uses the retained Docker backend. Named application previews are provided by the native backend in this MVP; the old unrestricted fixed-port application proxy has been removed.
 
 For an existing database, assign previously ownerless workspace records to an operator-created account with `RawPair.Workspaces.adopt_legacy_workspaces("username")`, run through the release's `eval` with a Repo started (see `Rawpair.Release.adopt_legacy()`, which reads `RAWPAIR_USERNAME`). Previously issued chosen-username browser sessions do not authenticate.
 

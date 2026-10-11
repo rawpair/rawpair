@@ -1,43 +1,103 @@
-# Install native RawPair packages
+# Install RawPair and open your first workspace
 
-The native release pipeline produces Ubuntu 24.04 packages for amd64 and arm64. Installation uses prebuilt Phoenix/ERTS, browser assets, collaboration dependencies and Orqos; users need no source checkout, Go, Rust, Erlang, Elixir or build toolchains. The first native Orqos partner is pinned to `v0.2.0` in [compatibility.json](../packaging/compatibility.json). These changes prepare the release pipeline; binaries become available after the operator builds, reviews and publishes the corresponding releases.
+This guide takes a fresh Ubuntu host from package download to the login page. Then try a small working page and invite someone into the same editor and terminal with the [first-workspace walkthrough](FIRST_WORKSPACE.md).
 
-Use a normal Ubuntu 24.04 host booted with systemd and cgroup v2. Workspace networking needs a nonconflicting private IPv4 /16 and IPv4 forwarding. Local mode is intended for a browser on the deployment machine. Remote mode needs management DNS and wildcard preview DNS resolving to the server, plus an existing matching certificate/key. The separate [Docker recipe](CONTAINER_SETUP.md) remains available.
+The native packages include Phoenix/ERTS, browser assets, collaboration dependencies and a matching Orqos. You do not need a source checkout, Go, Rust, Erlang, Elixir or build toolchains, and you do not need to install Orqos separately.
 
-## Bootstrap
+Jump to [installation](#install-and-open-rawpair), [remote access](#remote-setup-dns-and-certificates), [troubleshooting](#if-something-does-not-work), [unattended setup](#unattended-configuration) or [upgrades and recovery](#packages-state-and-upgrades).
 
-From a published RawPair release, download its `install.sh`, inspect it, and run it as your ordinary browser user:
+**Choose a published native release.** Open [RawPair Releases](https://github.com/rawpair/rawpair/releases) and look for `install.sh`, `manifest.json`, `SHA256SUMS` and Ubuntu `.deb` assets. The package pipeline is implemented; these assets become available when the corresponding releases are built, reviewed and published. If they are absent, use [source setup](NATIVE_SETUP.md). Older CLI-only releases are not compatible with this guide.
+
+## What you need
+
+- A fresh Ubuntu **24.04** host, **amd64** or **arm64**, booted with systemd and cgroup v2. A normal Ubuntu installation or VM is the intended host.
+- An ordinary user with sudo access, internet access to GitHub and Ubuntu package repositories, and a browser.
+- Available TCP ports **443, 4000, 1234 and 9080**. Setup refuses conflicting listeners; use a fresh host if you already run another deployment.
+- A private IPv4 `/16` that does not overlap LAN/VPN routes. Setup defaults to `10.231.0.0/16`, checks it, and enables IPv4 forwarding. Existing forwarding firewalls may need an outbound/reply rule for this range; setup preserves them.
+
+| Installation mode | Use it for | Prepare before setup |
+| --- | --- | --- |
+| **Local** | A first try in a browser on the deployment machine | No domain purchase or supplied certificate; setup generates local TLS with mkcert |
+| **Remote** | Friends/coworkers on other computers, including a LAN server | Management DNS, wildcard preview DNS, reachable HTTPS and a matching certificate/key; [details below](#remote-setup-dns-and-certificates) |
+
+The current release is for people you trust with a shared workspace. Use [the Docker recipe](CONTAINER_SETUP.md) if you want the separate container backend. Existing manual/legacy installations need the [migration procedure](#legacy-migration).
+
+## Install and open RawPair
+
+Run the following in your ordinary user's terminal on the Ubuntu host. Install the small bootstrap prerequisites first:
 
 ```sh
-bash install.sh --version vX.Y.Z
+sudo apt update
+sudo apt install -y ca-certificates curl python3
 ```
 
-It detects Ubuntu/CPU, downloads the three matching packages from that immutable tag, verifies SHA256 checksums, invokes `apt-get` to resolve runtime dependencies, and runs `sudo rawpair setup`. Omitting `--version` resolves the latest published stable RawPair tag once; every subsequent asset download uses that tag. Orqos is always selected from the pinned compatibility manifest, never its latest release.
-
-Options:
+Ubuntu supplies Bash, `dpkg` and `sha256sum`. The installer gets the remaining runtime dependencies through apt. In a new directory, replace `vX.Y.Z` with the exact native release tag you chose:
 
 ```sh
-bash install.sh --version vX.Y.Z --download-only --output ./downloads
-bash install.sh --version vX.Y.Z --no-setup
-sudo rawpair setup
-sudo rawpair doctor
-sudo rawpair doctor --json
-sudo rawpair workspace add project-c
-sudo rawpair user add
-sudo rawpair migrate
+mkdir -p ~/rawpair-install
+cd ~/rawpair-install
+RAWPAIR_TAG=vX.Y.Z
+curl --fail --show-error --location --proto '=https' \
+  --output install.sh \
+  "https://github.com/rawpair/rawpair/releases/download/$RAWPAIR_TAG/install.sh"
+less install.sh
+bash install.sh --version "$RAWPAIR_TAG"
 ```
 
-`--download-only` verifies and saves assets without apt, sudo or setup. Each invocation creates a private download directory and prints its path. `--no-setup` installs the packages and leaves controls stopped. Re-running with a newer RawPair version upgrades the exact tested pair together, then resumes setup from saved configuration. `rawpair-cli` aliases the installed Go `rawpair` command; `quickStart` and `ensureDeps` are legacy source/Docker helpers.
+`less` lets you inspect the script before running it; press `q` to exit. If it is not installed, open the file in your text editor. The installer detects Ubuntu/CPU, downloads the three matching packages from that tag, verifies SHA256 checksums, installs them together through apt and runs `sudo rawpair setup`. Your sudo password may be requested.
+
+For a first local installation, answer the wizard as follows:
+
+| Prompt | First local try |
+| --- | --- |
+| Installation mode | `local` |
+| Management hostname | Accept `rawpair.localhost` |
+| Preview domain | Accept `apps.rawpair.localhost` |
+| Private subnet | Accept `10.231.0.0/16` if the check passes; choose another private `/16` if it overlaps |
+| Database | `local` |
+| First login | Choose your own username and a password of at least 12 bytes; the password is entered without echo |
+
+Setup generates and trusts local TLS as the invoking ordinary user, creates the database and service secrets, prepares `project-a` and `project-b`, runs migrations and starts the services after validation. A slot is a dedicated account/project directory available to a workspace; it does not launch a workspace until you create and start one in the UI.
+
+When setup prints **Login: https://rawpair.localhost**, open it in a browser on this machine and sign in with the account you just created. Run `sudo rawpair doctor` to check the installation, then follow [Your first shared workspace](FIRST_WORKSPACE.md) to run a page, open its private preview and edit it together.
+
+If setup is interrupted, run `sudo rawpair setup` to resume using saved configuration. It preserves service secrets and completed provisioning. For errors, use [troubleshooting](#if-something-does-not-work).
+
+## Installer options and daily commands
+
+Use the same downloaded installer and chosen tag:
+
+```sh
+bash install.sh --version "$RAWPAIR_TAG" --download-only --output ./downloads
+bash install.sh --version "$RAWPAIR_TAG" --no-setup
+```
+
+`--download-only` verifies and saves assets without apt, sudo or setup; each invocation prints its private download directory. `--no-setup` installs packages and leaves RawPair controls stopped until setup completes. Omitting `--version` resolves the latest published stable RawPair tag once, then uses that tag for all asset downloads; choose an explicit native tag when older stable releases lack packages. Orqos always comes from the pinned compatibility manifest, never its latest release.
+
+| Command | When to use it |
+| --- | --- |
+| `sudo rawpair setup` | Finish/resume setup, validate an existing installation, or complete a package upgrade |
+| `sudo rawpair doctor` | Run read-only checks with actionable errors; failures give a nonzero exit status |
+| `sudo rawpair doctor --json` | Get the same diagnostics as JSON |
+| `sudo rawpair user add` | Create an individual login, with a secure password prompt; owners then grant workspace membership |
+| `sudo rawpair workspace add project-c` | Add a dedicated account slot; create a workspace using it in the UI |
+| `sudo rawpair migrate` | Back up and run database migrations; controls stay stopped until `rawpair setup` validates and starts them |
+
+`rawpair-cli` is an alias for the installed `rawpair` command. `quickStart` and `ensureDeps` are legacy source/Docker helpers.
+
+To upgrade, download `install.sh` from the desired newer native release and rerun the install command with its tag. This upgrades the exact pair together and reruns setup with preserved configuration. Read [backup and recovery behavior](#packages-state-and-upgrades) before upgrading; avoid upgrading Orqos independently of the tested pair.
 
 ## Manual equivalent
+
+Here `VERSION`, `ORQOS_VERSION` and `ARCH` are placeholders: use the literal filenames from the chosen release (`amd64` or `arm64` for the CPU and `all` for the metapackage). You can check your CPU with `dpkg --print-architecture`.
 
 Download `manifest.json`, `SHA256SUMS`, `rawpair_VERSION_ARCH.deb`, `orqos-host_ORQOS_VERSION_ARCH.deb`, and `rawpair-native_VERSION_all.deb` from one RawPair release. Use the versions/architecture named in its manifest. In a directory containing only that matching package set:
 
 ```sh
-sha256sum --check --ignore-missing SHA256SUMS
-sudo apt update
-sudo apt install ./rawpair_VERSION_ARCH.deb ./orqos-host_ORQOS_VERSION_ARCH.deb ./rawpair-native_VERSION_all.deb
-sudo rawpair setup
+sha256sum --check --ignore-missing SHA256SUMS &&
+  sudo apt update &&
+  sudo apt install ./rawpair_VERSION_ARCH.deb ./orqos-host_ORQOS_VERSION_ARCH.deb ./rawpair-native_VERSION_all.deb &&
+  sudo rawpair setup
 ```
 
 All downloaded package entries must report `OK`. This is checksum verification, not signature verification. The installer trusts checksums delivered by HTTPS from the same GitHub release. Optional GitHub build-provenance verification is separate:
@@ -49,13 +109,25 @@ gh attestation verify orqos-host_ORQOS_VERSION_ARCH.deb --repo orqos-project/orq
 
 RawPair redistributes Orqos packages unchanged and verifies their original Orqos repository attestations when assembling a release.
 
-## Interactive setup and TLS
+## Local TLS and browser trust
 
 `sudo rawpair setup` offers local or remote installation, PostgreSQL defaults or an existing database URL, private subnet selection and a secure first-login prompt. It checks the platform, dependencies, protected installation ownership, port conflicts, routing overlap, certificate expiry/hostname/wildcard/key agreement, nginx syntax and service readiness. Overlapping routes are refused; choose another private /16 in the wizard. Two dedicated slots, `project-a` and `project-b`, receive separate accounts, project homes, network indexes and inventory resource ceilings. A slot is available for creating a workspace in the UI; provisioning alone does not launch a workspace.
 
 Local defaults are `https://rawpair.localhost` and `*.apps.rawpair.localhost`. nginx binds HTTPS only to `127.0.0.1` and `::1` in local mode. Setup runs `mkcert -install` and certificate generation as the invoking ordinary user, retaining that user's local CA. Trust installation may ask for the user's sudo password. It copies only the leaf certificate/key to root-owned `/etc/rawpair/tls`; it never copies the CA private key into service configuration. Repeated setup preserves the leaf certificate and service secrets.
 
 For root-only/headless invocation, setup prints the CA path and leaves browser trust to the client operator. Copy only `rootCA.pem` to each client and import it into the OS/browser's trusted CAs, or run `CAROOT=/path/containing/rootCA.pem mkcert -install` there. Never distribute `rootCA-key.pem`. For a local server on another machine, use remote mode and names resolving to that machine rather than `.localhost`, which resolves to the client. If a local browser/resolver does not resolve nested `.localhost` names, add the displayed management/preview hosts to `/etc/hosts` or configure a local wildcard resolver.
+
+## Remote setup: DNS and certificates
+
+For a friend or coworker to join from another computer, prepare these before running the installer and choose `remote` in the wizard:
+
+1. Choose separate, non-nested domains, for example `pair.example.com` for management and `apps.example.com` for previews.
+2. Point `pair.example.com` and `*.apps.example.com` at the server's reachable address using your public or LAN DNS. Each generated preview hostname must resolve there. Add IPv6 DNS only if the server is reachable over IPv6.
+3. Allow inbound TCP **443** to this host through the relevant firewall/router. Keep Orqos/Phoenix/collaboration ports **9080, 4000 and 1234** private. Existing firewall forwarding policy must also allow workspace outbound traffic and established replies.
+4. Obtain a PEM certificate/full chain covering `pair.example.com` and `*.apps.example.com`, plus its matching unencrypted private key. Keep the key protected from group/other access (`0600`) and provide absolute paths on the server. For a private LAN CA, trust it on every participant's client first.
+5. Run setup, enter the management domain and preview **base domain** (`apps.example.com`, without `*.`), then the certificate/key paths. Keep the local database default unless you have a pre-existing database to supply.
+
+Setup prints your management login URL. Open it from both computers, then [create a workspace and add your collaborator](FIRST_WORKSPACE.md#bring-a-friend-or-coworker). Remote mode makes nginx listen on the host's HTTPS interfaces; DNS/firewall access remains the operator's responsibility.
 
 Remote setup references the supplied certificate and private-key paths directly. The certificate needs the management hostname and wildcard SAN `*.PREVIEW_DOMAIN`, with more than 24 hours remaining validity; use an unencrypted key protected from group/other access. Management and preview names must be distinct and non-nested. Example: `pair.example.com` and `apps.example.com`. Keep the renewal paths stable and reload nginx after renewal:
 
@@ -64,6 +136,32 @@ sudo nginx -t && sudo systemctl reload nginx
 ```
 
 Free public certificates are available from [Let's Encrypt](https://letsencrypt.org/getting-started/). A wildcard certificate requires [DNS-01 validation](https://letsencrypt.org/docs/challenge-types/#dns-01-challenge); an ACME client such as Certbot can obtain one for the management name and wildcard preview name before setup. Configure its successful renewal deploy hook to run `nginx -t && systemctl reload nginx`. The installer does not issue public ACME certificates automatically. Do not use a local mkcert CA for public visitors.
+
+## If something does not work
+
+Start with these read-only checks on the host:
+
+```sh
+sudo rawpair doctor
+sudo systemctl status rawpair-host rawpair-collaboration orqos-host nginx --no-pager
+sudo journalctl -u rawpair-host -u rawpair-collaboration -u orqos-host -n 100 --no-pager
+```
+
+| Symptom | Next step |
+| --- | --- |
+| Release download returns 404 | Check the tag and native assets on [Releases](https://github.com/rawpair/rawpair/releases). A draft, unpublished partner or older CLI-only release cannot supply this package set. |
+| Browser cannot reach `.localhost` from another computer | Use remote mode with server-resolving DNS; `.localhost` refers to that client's machine and local mode listens only on loopback. |
+| Local certificate warning | Read [local TLS trust](#local-tls-and-browser-trust). Import only the printed `rootCA.pem` on the affected client; restart the browser if needed. |
+| Setup reports a port or subnet conflict | Stop/reconfigure the conflicting service before retrying, or choose another non-overlapping private `/16` when prompted. Keep existing firewall/VPN rules. |
+| Setup reports an unmanaged installation/account | Follow [legacy migration](#legacy-migration); do not delete ownership records or create markers to bypass the check. |
+| Preview returns an upstream error | Start the workspace and its development server; confirm the registered port, choose **Check connection**, and inspect the workspace's error/unit logs. |
+| Files created in the terminal are missing in the editor | Choose **Refresh files**. For an already shared file changed by Git/terminal, use confirmed **Reload from disk**; editor files must be supported UTF-8 text. |
+| Workspace cannot reach the internet | Check public IPv4 DNS and the host's forwarding firewall rules for the configured subnet. Never flush a shared firewall. |
+| Upgrade/migration fails and controls stay stopped | Retain the backup, inspect the protected migration log, fix the cause and rerun setup; see [recovery](#packages-state-and-upgrades). |
+
+For a failed workspace start, its management page shows the runtime error. The unit name in Orqos's observation selects `sudo journalctl -u UNIT_NAME` for that workspace. A reboot leaves workspaces stopped; use **Start / reconnect** and rerun development servers.
+
+If you need help, [open an issue](https://github.com/rawpair/rawpair/issues) with `rawpair --version`, your Ubuntu/CPU, installation method and relevant diagnostics. Remove passwords, tokens, database URLs and private keys before sharing logs or configuration.
 
 ## Unattended configuration
 
@@ -113,20 +211,6 @@ Older RawPair packages, manual installs and accounts without the new package's o
 
 Source installation remains documented in [NATIVE_SETUP.md](NATIVE_SETUP.md) and uses these shared configuration/provisioning helpers with distinct source ownership. Conversion to package management requires an explicit migration.
 
-## Build and release
+## For maintainers
 
-1. Release Orqos `v0.2.0` first. Its pipeline checks Cargo/tag/lock versions, builds both native architectures and packages helpers alongside the retained binary downloads, validates packages and uploads a draft. Review and publish that release.
-2. Update `packaging/compatibility.json` deliberately whenever changing Orqos compatibility. Never substitute its latest release. Set a RawPair `vMAJOR.MINOR.PATCH` tag. The tag supplies the Phoenix, CLI and Debian versions; inconsistent or missing metadata fails packaging.
-3. RawPair's workflow builds on fixed GitHub-hosted `ubuntu-24.04` and `ubuntu-24.04-arm` runners with Go 1.24.2, Elixir 1.18.3, OTP 27.3.2 and Node 22.14.0. These are standard public-repository runners; no self-hosted runner is needed. See [GitHub runner documentation](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
-4. CI verifies unit tests, package payloads/metadata/permissions, dependency resolution, fresh/repeated unattended setup, two installed workspaces, shared files/editor/terminal, private previews, independent stop, control restarts, coordinated upgrades and data-preserving removal/purge on disposable architecture runners. `packaging/host-smoke.py` and `lifecycle-smoke.py` refuse ordinary hosts. Privileged browser/network acceptance is a CI check, not something package builds silently deploy on the operator's workstation.
-5. After both architecture jobs pass, CI assembles the package sets, metapackage, version/artifact manifest, `SHA256SUMS`, bootstrap and GitHub build-provenance attestations, then creates a draft release. It uses repository-scoped `github.token` permissions; no PAT/signing-key service is needed. Review and publish manually. It refuses to overwrite an already-published release.
-
-Local packaging, after the required build toolchains are installed:
-
-```sh
-make RAW_VERSION=vX.Y.Z ARCH=amd64
-python3 packaging/validate.py dist/*.deb
-python3 -m unittest discover -s packaging/tests -v
-```
-
-Build each CPU natively on Ubuntu 24.04 for supported runtime ABI compatibility. Local payload validation on another OS does not establish that its binaries run on Ubuntu 24.04. APT hosting, other distributions, automatic ACME and automatic legacy migration remain deferred. See [PACKAGE_HANDOFF.md](PACKAGE_HANDOFF.md) for checks actually run for this implementation.
+Package users do not need to build either repository. Maintainers should follow [RELEASING.md](RELEASING.md) for the pinned Orqos release order, tag/workflow commands, draft review and publication. [PACKAGE_HANDOFF.md](PACKAGE_HANDOFF.md) records which checks have actually run.

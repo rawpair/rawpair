@@ -2,7 +2,7 @@
 
 Native package/bootstrap/setup follow-on: [PACKAGE_HANDOFF.md](PACKAGE_HANDOFF.md) records the 2026-10-11 implementation and available checks; [PACKAGES.md](PACKAGES.md) is the package operator guide.
 
-Updated: 2026-10-11. The implementation and operator assets for [goal.txt](../goal.txt) are delivered across `~/dev/rawpair` and `~/dev/orqos`. No commits, pushes, merges, publication, system installation or live deployment were performed. The user owns those next steps. Builds and automated checks provide evidence; the complete privileged-host/browser workflow remains unverified.
+Updated: 2026-10-11. The implementation and operator assets for [goal.txt](../goal.txt) are delivered across `~/dev/rawpair` and `~/dev/orqos`. The native runtime and package implementations were committed separately in both repositories at the user's request. Release publication, system installation and live deployment remain operator steps; the recorded checks below do not establish a live deployment. Builds and automated checks provide evidence; the complete privileged-host/browser workflow remains unverified.
 
 ## Implemented behavior
 
@@ -32,63 +32,22 @@ Paths are relative to their repository.
 | Namespace routing/DNS/firewall and localhost forwarding | Orqos `host/host.py`, `host/workspace.py`, ingress HTTP/WebSocket bridge in `src/host.rs`. |
 | Authentication and authorization on each access path | RawPair `Accounts`, `Auth`, authenticated router, `UserSocket`/`TerminalChannel`, file/collaboration/gateway/preview controllers. Native access through the alternative Docker terminal channel is rejected. |
 | Private/public applications and separate origins | RawPair `Applications`, application schema, owner UI/API, `PreviewController`, `native/nginx.conf.template`. |
-| Native install, build, start and operations | RawPair `native/`, [NATIVE_SETUP.md](NATIVE_SETUP.md); Orqos `packaging/` and [HOST_API.md](../../orqos/docs/HOST_API.md). |
+| Native install, build, start and operations | RawPair `native/`, [NATIVE_SETUP.md](NATIVE_SETUP.md); Orqos `packaging/` and [HOST_API.md](https://github.com/orqos-project/orqos/blob/main/docs/HOST_API.md). |
 | Retained container option and APIs | RawPair Docker adapter/client/manager, `compose.container.example.yml`, protected `nginx.conf`, [CONTAINER_SETUP.md](CONTAINER_SETUP.md); existing Orqos Docker/Kubernetes routes and backend choices retained. |
 
 RawPair owns policy, users, membership, collaboration and presentation. Orqos owns execution, files, networking and observation. Rezn, rezn-dsl, stacks and rawpair.dev received no implementation changes. The stacks repository remains the Docker image catalog. Preexisting worktree changes, including the user's dependency lockfile changes, were retained. Original scope/design documents remain available in [HOST_MVP.md](HOST_MVP.md) and Orqos `docs/HOST_BACKEND.md`.
 
-## Exact operator path
+## Current operator path
 
-Use a Linux systemd host with cgroup v2, kernel 5.6+ and x86_64/aarch64 for native files. Ubuntu 24.04 is the initial recipe. Install OS prerequisites:
+Use [PACKAGES.md](PACKAGES.md) for the complete prebuilt Ubuntu 24.04 installation path, including download commands, local/remote setup, first login, TLS, diagnostics, upgrades and recovery. The paired native assets require reviewed, published releases; [RELEASING.md](RELEASING.md) describes that maintainer step. For a source build, use [NATIVE_SETUP.md](NATIVE_SETUP.md), which installs the same setup helpers under distinct source ownership.
 
-```sh
-sudo apt update
-sudo apt install -y build-essential pkg-config libssl-dev git curl unzip python3 \
-  postgresql postgresql-client nginx iproute2 nftables tmux ttyd nodejs npm \
-  mkcert libnss3-tools
-sudo systemctl enable --now postgresql nginx
-```
+The former `native/install.sh CERT KEY [HOST PREVIEW]` interface and manual configuration bootstrap have been replaced. The current source installer is `sudo native/install.sh [PROTECTED_JSON]`; it launches the setup wizard or consumes protected JSON. The wizard configures the database, certificates, secrets, first login and default account slots, then migrates and starts validated services. Do not bypass setup with hand-edited credentials or manually start gated services.
 
-Install Erlang/OTP 27, Elixir 1.18 and Rust stable using your usual package source/version manager. Ubuntu's stock Elixir is too old for the locked dependencies; Elixir must be at least 1.16. Use Node 18+ and ttyd with Unix socket, writable and base-path support. [NATIVE_SETUP.md](NATIVE_SETUP.md) explains version checks, public IPv4 DNS, firewall integration and toolchain provisioning.
+After setup, run `sudo rawpair doctor`, then [create your first shared workspace](FIRST_WORKSPACE.md). Add collaborators with `sudo rawpair user add`; workspace owners grant membership through the UI. For a source upgrade, rebuild/reinstall the assets and complete `sudo rawpair setup`; package users upgrade the matching pair through the bootstrap.
 
-Build and install Orqos, provision the two example slots, and review the nonconflicting subnet and account mapping:
+RawPair and collaboration run under separate unprivileged accounts; Orqos performs constrained privileged operations. Keep loopback controls 9080, 4000 and 1234 private. Provisioned workspace accounts have locked passwords, expired account dates, nologin shells, dedicated primary groups and no supplementary groups. Do not loosen those restrictions to make host SSH access work.
 
-```sh
-cd ~/dev/orqos
-cargo build --release --locked
-sudo packaging/install-host.sh
-sudo packaging/provision-workspace.sh project-a
-sudo packaging/provision-workspace.sh project-b
-sudoedit /etc/orqos/host.json
-sudo systemctl enable --now orqos-host
-sudo journalctl -u orqos-host -n 50 --no-pager
-```
-
-Provisioned workspace accounts have locked passwords, expired account dates, nologin shells, dedicated primary groups and no supplementary groups. Systemd launches Bash explicitly without PAM login. Keep these restrictions; they prevent SSH sessions/forwarding outside the workspace namespace. The example inventory permits 2 CPU cores, 2048 MiB RAM and 512 tasks per slot. The installer enables IPv4 forwarding, preserves inventory/secrets and never launches a workspace automatically.
-
-As the ordinary browser user, generate and trust local TLS, then build/install RawPair and bootstrap logins:
-
-```sh
-mkcert -install
-mkcert -cert-file /tmp/rawpair-local.pem -key-file /tmp/rawpair-local-key.pem \
-  rawpair.localhost '*.apps.rawpair.localhost'
-cd ~/dev/rawpair
-native/build.sh
-sudo native/install.sh /tmp/rawpair-local.pem /tmp/rawpair-local-key.pem
-sudo native/admin.sh migrate
-sudo native/admin.sh create-user
-sudo native/admin.sh create-user
-sudo systemctl enable --now rawpair-host rawpair-collaboration
-sudo systemctl reload nginx
-```
-
-`create-user` prompts for username and a 12..1024-byte password without echoing it. Installation generates secrets, an ordinary PostgreSQL role/database, nginx configuration and environment files on a fresh host. Existing environments are preserved. If PostgreSQL already has a `rawpair` role, populate `/etc/rawpair/rawpair.env` using `native/rawpair.env.example` and its actual credentials, then rerun installation. See NATIVE_SETUP for exact ownership/modes and custom domains. RawPair/Node run as separate unprivileged accounts; Orqos alone performs the constrained privileged work. Never publish loopback control ports 9080, 4000 or 1234.
-
-Open `https://rawpair.localhost` on the deployment host. Nested `.localhost` names normally resolve to browser-local loopback; NATIVE_SETUP includes `/etc/hosts`/resolver fallbacks. For remote collaborators use real server-resolving management/application names, certificates trusted by every browser, and the install script's hostname arguments. Public access uses ordinary DNS/inbound HTTPS or a tunnel supporting both hostnames and WebSockets.
-
-Create two workspaces in separate slots, Start each, add the second login as a member, and open the editor/terminal from both accounts. Run both development servers on localhost:3000, register `web` on port 3000 in each workspace, and open their distinct preview URLs. Owners can deliberately publish either application. Stop either workspace to stop its processes while the other remains independent. The setup guide also includes per-workspace PostgreSQL data/socket commands, logs, upgrade, restart, backups and cleanup.
-
-For existing Docker workspace records, first create a login, then use `sudo native/admin.sh adopt-legacy` in a host/mixed installation or `Rawpair.Release.adopt_legacy()` through the container release with `RAWPAIR_USERNAME`. This assigns only previously ownerless records. Old chosen-username sessions are invalid. The separate Docker deployment recipe is [CONTAINER_SETUP.md](CONTAINER_SETUP.md); legacy CLI/Ansible/compose helpers do not install the new native services or authenticated gateway.
+For retained Docker deployments, use [CONTAINER_SETUP.md](CONTAINER_SETUP.md), including its documented operator action for previously ownerless records. Legacy CLI/Ansible/compose helpers do not configure the native services or current authenticated gateway.
 
 ## Checks actually run
 
