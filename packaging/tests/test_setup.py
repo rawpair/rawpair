@@ -38,12 +38,15 @@ class SetupValidation(unittest.TestCase):
     def test_local_ca_consent_explains_scope_defaults_no_and_requires_yes(self):
         for answers, expected in [([''], False), (['no'], False), (['yes'], True), (['maybe', 'yes'], True)]:
             output = io.StringIO()
-            with self.subTest(answers=answers), patch('builtins.input', side_effect=answers), contextlib.redirect_stdout(output):
+            with self.subTest(answers=answers), patch('builtins.input', side_effect=answers), \
+                 patch.object(setup, 'browser_trust_stores', return_value=[('Firefox', 'sql:/fixture-profile')]), \
+                 contextlib.redirect_stdout(output):
                 self.assertEqual(setup.local_ca_consent(), expected)
             self.assertIn('any hostname', output.getvalue())
             self.assertIn('system trust', output.getvalue())
             self.assertIn('browser trust', output.getvalue())
             self.assertIn('manually', output.getvalue())
+            self.assertIn('Existing browser stores: Firefox', output.getvalue())
 
     def test_unattended_ca_consent_requires_local_boolean(self):
         for value in (True, False):
